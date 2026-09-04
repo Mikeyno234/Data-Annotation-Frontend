@@ -183,6 +183,20 @@ export interface ImageBox {
   color?: string
 }
 
+export interface ImagePolygon {
+  id: string
+  points: Array<{ x: number; y: number }>
+  label: string
+  confidence?: number
+  color?: string
+}
+
+export interface ImageClassificationPayload {
+  selectedLabels: string[]
+}
+
+export type ImageAnnotationPayload = ImageBox[] | ImagePolygon[] | ImageClassificationPayload
+
 export interface TextEntity {
   id: string
   start: number

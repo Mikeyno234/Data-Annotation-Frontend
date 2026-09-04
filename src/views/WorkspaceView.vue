@@ -8,6 +8,7 @@ import type { DataItem } from '@/types'
 import type { LabelOption } from '@/types'
 import { projectsApi } from '@/api/projects'
 import { toast } from '@/utils/toast'
+import { parseLabelConfigXml } from '@/utils/annotation'
 import AudioWorkspace from '@/components/workspace/AudioWorkspace.vue'
 import ImageWorkspace from '@/components/workspace/ImageWorkspace.vue'
 import TextWorkspace from '@/components/workspace/TextWorkspace.vue'
@@ -37,35 +38,12 @@ async function loadProjectConfig(projectId: number) {
   try {
     const projectRes: any = await projectsApi.getProject(projectId)
     const project = projectRes.data || projectRes
-    projectLabels.value = readProjectLabels(project.label_config)
+    projectLabels.value = parseLabelConfigXml(project.label_config)
     projectAnnotationType.value = project.annotation_type || ''
     projectModality.value = project.modality || ''
   } catch (e) {
     console.error('Failed to load project config', e)
   }
-}
-
-function readProjectLabels(config?: string): LabelOption[] {
-  if (!config || !config.trim()) return []
-  const palette = ['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6']
-  try {
-    const doc = new DOMParser().parseFromString(config, 'application/xml')
-    const nodes = Array.from(doc.querySelectorAll('Label, Choice'))
-    if (nodes.length > 0) {
-      return nodes.map((label, index) => ({
-        name: label.getAttribute('value')?.trim() || label.getAttribute('alias')?.trim() || '',
-        color: label.getAttribute('background') || palette[index % palette.length],
-      })).filter((label) => label.name)
-    }
-  } catch {}
-
-  const matches = [...config.matchAll(/<(?:Label|Choice)[^>]*?(?:value|alias)=["']([^"']+)["'][^>]*?>/gi)]
-  return matches.map((m, idx) => {
-    const name = m[1] || ''
-    const bgMatch = m[0].match(/background=["']([^"']+)["']/i)
-    const color = bgMatch ? bgMatch[1] : palette[idx % palette.length]
-    return { name: name.trim(), color }
-  }).filter((l) => l.name)
 }
 
 async function fetchTasks() {
