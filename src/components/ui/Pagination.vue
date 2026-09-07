@@ -137,25 +137,29 @@ function handleLimitChange(e: Event) {
       </div>
     </div>
 
-    <!-- Right: Borderless Minimalist Navigation: < 1 2 3 > Go to [ 1 ] -->
-    <div class="flex items-center gap-1.5">
-      <!-- Prev Button with Left Slide Micro-animation -->
+    <!-- Right: Navigation controls -->
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-muted-foreground font-mono mr-1">
+        Page <strong class="text-foreground font-bold">{{ total > 0 ? page : 0 }}</strong> of <span class="font-bold text-foreground">{{ computedTotalPages }}</span>
+      </span>
+
+      <!-- Prev Button -->
       <button
         type="button"
         :disabled="page <= 1 || disabled"
-        class="group/prev flex size-8 items-center justify-center rounded-xl border-0 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground active:scale-90 disabled:opacity-25 disabled:pointer-events-none transition-all duration-200 cursor-pointer shadow-xs"
+        class="group/prev flex size-8 items-center justify-center rounded-xl border border-border/50 bg-muted/50 text-foreground hover:bg-accent hover:border-border active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 cursor-pointer shadow-2xs"
         title="Previous page"
         @click="setPage(page - 1)"
       >
-        <ChevronLeft class="size-4 transition-transform duration-200 group-hover/prev:-translate-x-0.5" />
+        <ChevronLeft class="size-4 transition-transform duration-150 group-hover/prev:-translate-x-0.5" />
       </button>
 
-      <!-- Numbered Page Links with Smooth Scale & Glow -->
+      <!-- Numbered Page Links -->
       <div class="flex items-center gap-1">
         <template v-for="(p, idx) in visiblePages" :key="idx">
           <span
             v-if="p === '...'"
-            class="flex size-8 items-center justify-center text-xs text-muted-foreground/60 font-mono font-bold"
+            class="flex size-8 items-center justify-center text-xs text-muted-foreground font-mono font-bold"
           >
             …
           </span>
@@ -163,11 +167,11 @@ function handleLimitChange(e: Event) {
             v-else
             type="button"
             :disabled="disabled"
-            class="flex min-w-[32px] h-8 px-2.5 items-center justify-center rounded-xl border-0 text-xs font-semibold transition-all duration-200 cursor-pointer select-none"
+            class="flex min-w-[32px] h-8 px-2.5 items-center justify-center rounded-xl border text-xs font-semibold transition-all duration-150 cursor-pointer select-none"
             :class="
               p === page
-                ? 'bg-primary text-primary-foreground font-bold shadow-sm shadow-primary/30 scale-105'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95'
+                ? 'bg-primary text-primary-foreground border-primary font-bold shadow-sm shadow-primary/30 scale-105'
+                : 'bg-card/60 text-muted-foreground border-border/50 hover:text-foreground hover:bg-muted hover:border-border hover:scale-105 active:scale-95'
             "
             @click="setPage(Number(p))"
           >
@@ -176,19 +180,19 @@ function handleLimitChange(e: Event) {
         </template>
       </div>
 
-      <!-- Next Button with Right Slide Micro-animation -->
+      <!-- Next Button -->
       <button
         type="button"
         :disabled="page >= computedTotalPages || disabled"
-        class="group/next flex size-8 items-center justify-center rounded-xl border-0 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground active:scale-90 disabled:opacity-25 disabled:pointer-events-none transition-all duration-200 cursor-pointer shadow-xs"
+        class="group/next flex size-8 items-center justify-center rounded-xl border border-border/50 bg-muted/50 text-foreground hover:bg-accent hover:border-border active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 cursor-pointer shadow-2xs"
         title="Next page"
         @click="setPage(page + 1)"
       >
-        <ChevronRight class="size-4 transition-transform duration-200 group-hover/next:translate-x-0.5" />
+        <ChevronRight class="size-4 transition-transform duration-150 group-hover/next:translate-x-0.5" />
       </button>
 
-      <!-- Go To Input Box: Borderless with Focus Ring -->
-      <div class="flex items-center gap-2 ml-2">
+      <!-- Go To Input Box -->
+      <div v-if="computedTotalPages > 1" class="flex items-center gap-1.5 ml-1">
         <span class="text-xs text-muted-foreground font-medium">Go to</span>
         <input
           v-model="jumpPage"
@@ -196,7 +200,7 @@ function handleLimitChange(e: Event) {
           min="1"
           :max="computedTotalPages"
           :disabled="disabled"
-          class="h-8 w-12 rounded-xl border-0 bg-muted/40 hover:bg-muted/60 focus:bg-card text-center text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-xs transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          class="h-8 w-12 rounded-xl border border-border/60 bg-muted/40 hover:bg-muted/70 focus:bg-card text-center text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-xs transition-all duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           @keydown.enter.prevent="handleJumpPage"
           @blur="handleJumpPage"
         />

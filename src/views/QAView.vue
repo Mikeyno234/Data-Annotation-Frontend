@@ -64,15 +64,15 @@ async function fetchQATasks() {
       limit: pageLimit.value,
       status: selectedStatusFilter.value !== 'ALL' ? selectedStatusFilter.value : undefined,
     })
-    if (res.data) {
-      qaTasks.value = res.data.data || res.data
-      if (res.data.pagination) {
-        totalTasks.value = res.data.pagination.total
-        totalPages.value = res.data.pagination.total_pages
-      } else {
-        totalTasks.value = qaTasks.value.length
-        totalPages.value = 1
-      }
+    const payload = res?.data?.data || res?.data || res
+    qaTasks.value = Array.isArray(payload) ? payload : []
+    const pagination = res?.pagination || res?.data?.pagination
+    if (pagination) {
+      totalTasks.value = pagination.total ?? qaTasks.value.length
+      totalPages.value = pagination.total_pages ?? 1
+    } else {
+      totalTasks.value = qaTasks.value.length
+      totalPages.value = 1
     }
   } catch (err: any) {
     toast.error('Failed to load QA tasks', err?.message)

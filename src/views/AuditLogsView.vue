@@ -30,15 +30,15 @@ async function fetchLogs() {
       search: searchQuery.value.trim() || undefined,
       status: selectedStatusFilter.value !== 'ALL' ? selectedStatusFilter.value : undefined,
     })
-    if (res.data) {
-      auditLogs.value = res.data.data || res.data
-      if (res.data.pagination) {
-        totalLogs.value = res.data.pagination.total
-        totalPages.value = res.data.pagination.total_pages
-      } else {
-        totalLogs.value = auditLogs.value.length
-        totalPages.value = 1
-      }
+    const payload = res?.data?.data || res?.data || res
+    auditLogs.value = Array.isArray(payload) ? payload : []
+    const pagination = res?.pagination || res?.data?.pagination
+    if (pagination) {
+      totalLogs.value = pagination.total ?? auditLogs.value.length
+      totalPages.value = pagination.total_pages ?? 1
+    } else {
+      totalLogs.value = auditLogs.value.length
+      totalPages.value = 1
     }
   } catch (err: any) {
     toast.error('Failed to load audit logs', err?.message)

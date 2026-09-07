@@ -10,6 +10,8 @@ import ProjectDetailHeader from '@/components/projects/ProjectDetailHeader.vue'
 import ProjectExportModal from '@/components/projects/ProjectExportModal.vue'
 import ProjectDataItemsTable from '@/components/projects/ProjectDataItemsTable.vue'
 import UploadDatasetModal from '@/components/projects/UploadDatasetModal.vue'
+import CreateProjectModal from '@/components/projects/CreateProjectModal.vue'
+import { useProjectForm } from '@/components/projects/useProjectForm'
 import {
   Layers,
   Code2,
@@ -28,10 +30,19 @@ const dataItems = ref<DataItem[]>([])
 const isLoading = ref(true)
 
 const canUploadDataset = computed(() => authStore.hasPermission('dataset.create'))
+const canEditProject = computed(() => authStore.hasPermission('project.update'))
 const showUploadModal = ref(false)
 const selectedUploadFiles = ref<File[]>([])
 const uploadName = ref('')
 const isUploading = ref(false)
+
+const projectForm = useProjectForm(() => fetchProjectData())
+
+function handleOpenEditModal() {
+  if (project.value) {
+    projectForm.openEditModal(project.value)
+  }
+}
 
 function openUploadModal() {
   selectedUploadFiles.value = []
@@ -91,7 +102,7 @@ async function handleUploadDataset() {
 
 const selectedStatusFilter = ref('ALL')
 const currentPage = ref(1)
-const pageLimit = ref(15)
+const pageLimit = ref(10)
 const totalDataItems = ref(0)
 const totalPages = ref(1)
 
@@ -263,8 +274,10 @@ onMounted(fetchProjectData)
       :datasets="datasets"
       :can-export="canExport"
       :can-upload="canUploadDataset"
+      :can-edit="canEditProject"
       @export="openExportModal"
       @upload="openUploadModal"
+      @edit="handleOpenEditModal"
     />
 
     <ProjectDataItemsTable
@@ -306,6 +319,24 @@ onMounted(fetchProjectData)
       @files-selected="handleFilesSelected"
       @clear-files="handleClearFiles"
       @submit="handleUploadDataset"
+    />
+
+    <!-- Edit Project Modal (Customize Classes / Labels for this Project) -->
+    <CreateProjectModal
+      :show-create-modal="projectForm.showCreateModal.value"
+      :editing-project-id="projectForm.editingProjectId.value"
+      :new-project="projectForm.newProject.value"
+      :project-labels="projectForm.projectLabels.value"
+      :modality-options="projectForm.modalityOptions.value"
+      :annotation-type-options="projectForm.annotationTypeOptions.value"
+      :is-metadata-loading="projectForm.isMetadataLoading.value"
+      :selected-task-object="projectForm.selectedTaskObject.value"
+      @update:show-create-modal="projectForm.showCreateModal.value = $event"
+      @modality-change="projectForm.onModalityChange"
+      @select-task="projectForm.handleSelectTask"
+      @add-label="projectForm.handleAddProjectLabel"
+      @remove-label="projectForm.handleRemoveProjectLabel"
+      @submit="projectForm.handleCreateProject"
     />
   </div>
 </template>

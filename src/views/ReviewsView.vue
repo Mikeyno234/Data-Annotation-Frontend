@@ -44,15 +44,15 @@ async function fetchReviews() {
       status: selectedStatusFilter.value !== 'ALL' ? selectedStatusFilter.value : undefined,
       search: searchQuery.value.trim() || undefined,
     })
-    if (res.data) {
-      reviews.value = res.data.data || res.data
-      if (res.data.pagination) {
-        totalReviews.value = res.data.pagination.total
-        totalPages.value = res.data.pagination.total_pages
-      } else {
-        totalReviews.value = reviews.value.length
-        totalPages.value = 1
-      }
+    const payload = res?.data?.data || res?.data || res
+    reviews.value = Array.isArray(payload) ? payload : []
+    const pagination = res?.pagination || res?.data?.pagination
+    if (pagination) {
+      totalReviews.value = pagination.total ?? reviews.value.length
+      totalPages.value = pagination.total_pages ?? 1
+    } else {
+      totalReviews.value = reviews.value.length
+      totalPages.value = 1
     }
   } catch (err: any) {
     toast.error('Failed to load review queue', err?.message)

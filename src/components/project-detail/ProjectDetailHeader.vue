@@ -13,6 +13,7 @@ import {
   Layers,
   Database,
   Calendar,
+  Settings2,
 } from 'lucide-vue-next'
 
 defineProps<{
@@ -20,11 +21,13 @@ defineProps<{
   datasets?: Dataset[]
   canExport: boolean
   canUpload?: boolean
+  canEdit?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'export'): void
   (e: 'upload'): void
+  (e: 'edit'): void
 }>()
 
 const router = useRouter()
@@ -56,6 +59,17 @@ const router = useRouter()
 
       <!-- Action Buttons -->
       <div class="flex items-center gap-2">
+        <Button
+          v-if="canEdit"
+          variant="outline"
+          class="h-10 gap-2 px-4 rounded-xl text-xs font-semibold shadow-xs cursor-pointer font-sans"
+          title="Edit project taxonomy, classes, and specifications"
+          @click="emit('edit')"
+        >
+          <Settings2 class="size-4 text-primary" />
+          <span>Edit Classes & Setup</span>
+        </Button>
+
         <Button
           v-if="canUpload"
           variant="outline"

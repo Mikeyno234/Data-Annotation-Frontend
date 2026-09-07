@@ -16,6 +16,8 @@ import {
   Sparkles,
   ShieldCheck,
   Tag,
+  Plus,
+  X,
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -40,6 +42,8 @@ const emit = defineEmits<{
   (e: 'update:showCreateModal', val: boolean): void
   (e: 'modalityChange', val: string): void
   (e: 'selectTask', opt: MetadataOption): void
+  (e: 'addLabel', name: string, color: string): void
+  (e: 'removeLabel', index: number): void
   (e: 'submit'): void
 }>()
 
@@ -64,6 +68,20 @@ watch(
 function handleBlueprintSelect(opt: MetadataOption) {
   emit('selectTask', opt)
   currentStep.value = 'DETAILS'
+}
+
+const newLabelName = ref('')
+const newLabelColor = ref('#38bdf8')
+const palette = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#38bdf8', '#8b5cf6', '#ec4899', '#64748b']
+
+function addNewLabel() {
+  const name = newLabelName.value.trim()
+  if (!name) return
+  emit('addLabel', name, newLabelColor.value)
+  newLabelName.value = ''
+  // pick next color from palette
+  const currIdx = palette.indexOf(newLabelColor.value)
+  newLabelColor.value = palette[(currIdx + 1) % palette.length]
 }
 </script>
 
@@ -196,34 +214,85 @@ function handleBlueprintSelect(opt: MetadataOption) {
             ></textarea>
           </div>
 
-          <!-- Inherited Classes / Taxonomy (Minimal Vercel Spec Box) -->
-          <div class="rounded-xl border border-border/60 bg-card/60 p-3.5 space-y-2.5">
+          <!-- Interactive Project Classes & Taxonomy Editor -->
+          <div class="rounded-xl border border-border/60 bg-card/60 p-3.5 space-y-3 shadow-2xs">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
-                Configured Classes ({{ projectLabels.length }})
-              </span>
-              <router-link
-                to="/admin/annotation-types"
-                class="text-[11px] font-mono text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
-              >
-                <span>Edit in Catalog</span>
-                <ExternalLink class="size-2.5" />
-              </router-link>
-            </div>
-
-            <!-- Crisp Class Pills / Tags -->
-            <div v-if="projectLabels.length > 0" class="flex flex-wrap gap-1.5">
-              <div
-                v-for="label in projectLabels"
-                :key="label.name"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background/80 px-2.5 py-1 text-[11px] font-mono text-foreground select-none"
-              >
-                <span class="size-2 rounded-full shrink-0" :style="{ backgroundColor: label.color }"></span>
-                <span>{{ label.name }}</span>
+              <div>
+                <span class="text-[11px] font-mono uppercase tracking-wider font-bold text-foreground">
+                  Project Classes & Labels ({{ projectLabels.length }})
+                </span>
+                <p class="text-[10.5px] text-muted-foreground mt-0.5">
+                  Customize classes specifically for this project (catalog template remains clean).
+                </p>
               </div>
             </div>
-            <div v-else class="text-[11px] text-muted-foreground py-1">
-              Dynamic / freeform input (no preset classes).
+
+            <!-- Crisp Class Pills with Delete button -->
+            <div v-if="projectLabels.length > 0" class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+              <div
+                v-for="(label, lIdx) in projectLabels"
+                :key="label.name"
+                class="group inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background/90 px-2 py-0.5 text-[11px] font-mono text-foreground select-none hover:border-border"
+              >
+                <span class="size-2.5 rounded-full shrink-0 shadow-2xs" :style="{ backgroundColor: label.color }"></span>
+                <span>{{ label.name }}</span>
+                <button
+                  type="button"
+                  class="ml-1 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                  title="Remove label from project"
+                  @click="emit('removeLabel', lIdx)"
+                >
+                  <X class="size-3" />
+                </button>
+              </div>
+            </div>
+            <div v-else class="text-[11px] text-muted-foreground py-1 italic">
+              No classes defined yet. Add custom labels below or submit to allow freeform input.
+            </div>
+
+            <!-- Quick Add Label Input Bar -->
+            <div class="flex items-center gap-2 pt-2 border-t border-border/40">
+              <!-- Free Color Picker (Native Popover + Preview) -->
+              <label
+                class="relative flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 shadow-2xs cursor-pointer overflow-hidden transition-transform hover:scale-105 active:scale-95"
+                :style="{ backgroundColor: newLabelColor }"
+                title="Click to pick any color freely"
+              >
+                <input
+                  v-model="newLabelColor"
+                  type="color"
+                  class="absolute inset-0 size-full opacity-0 cursor-pointer"
+                />
+              </label>
+
+              <!-- Optional Hex Display/Edit -->
+              <input
+                v-model="newLabelColor"
+                type="text"
+                maxlength="7"
+                class="w-16 rounded-lg border border-border/60 bg-background px-2 py-1 text-center font-mono text-[11px] text-foreground uppercase focus:outline-none focus:ring-1 focus:ring-primary/40 shrink-0"
+                placeholder="#38BDF8"
+              />
+
+              <!-- Class Name Input -->
+              <input
+                v-model="newLabelName"
+                type="text"
+                placeholder="Class name (e.g. Car, Person, Helmet)..."
+                class="flex-1 rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 font-sans"
+                @keydown.enter.prevent="addNewLabel"
+              />
+
+              <Button
+                size="sm"
+                type="button"
+                class="h-7.5 px-3 rounded-lg text-xs gap-1 cursor-pointer shrink-0 font-semibold"
+                :disabled="!newLabelName.trim()"
+                @click="addNewLabel"
+              >
+                <Plus class="size-3" />
+                <span>Add Class</span>
+              </Button>
             </div>
           </div>
 
@@ -263,6 +332,7 @@ function handleBlueprintSelect(opt: MetadataOption) {
             :task="selectedTaskObject"
             :modality="newProject.modality"
             :fallback-title="newProject.name || 'Workspace Preview'"
+            :allow-upload="false"
           />
         </div>
       </div>

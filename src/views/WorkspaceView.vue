@@ -54,57 +54,67 @@ async function fetchTasks() {
       await loadProjectConfig(projectIdQuery)
     }
 
-    const taskIdQuery = route.query.task_id
-    if (taskIdQuery) {
-      const selected: any = await annotationsApi.getDataItem(Number(taskIdQuery))
-      const item = selected.data || selected
-      dataItems.value = [item]
-      currentIndex.value = 0
-      await loadProjectConfig(item.project_id)
-      if (item.status === 'UNASSIGNED') {
-        const checkout: any = await workflowApi.checkoutTask(item.project_id)
-        activeItem.value = checkout.data || checkout
-      } else {
-        // Resume without re-checking out — item already locked to this user
-        activeItem.value = item
-      }
-      return
-    }
+    const taskIdQuery = route.query.task_id ? Number(route.query.task_id) : undefined
 
     const myId = authStore.user?.id
 
-    // 1. Load own IN_PROGRESS tasks first — always resume without a new checkout
-    const [mineRes, queueRes]: any = await Promise.all([
-      annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 50, status: 'IN_PROGRESS' }),
-      annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 50, status: 'UNASSIGNED' }),
+    // 1. Load project tasks queue (or task by ID)
+    const [mineRes, queueRes, allRes]: any = await Promise.all([
+      annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100, status: 'IN_PROGRESS' }),
+      annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100, status: 'UNASSIGNED' }),
+      taskIdQuery ? annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100 }) : Promise.resolve({ data: [] }),
     ])
 
     const mine = (mineRes.data || []).filter(
       (item: DataItem) => !myId || item.locked_by_id === myId
     )
-    const merged = [...mine, ...(queueRes.data || [])]
+    
+    // Build the active working queue
+    let merged: DataItem[] = [...mine, ...(queueRes.data || [])]
+
+    // If opening a specific task ID (e.g. from Project Table), ensure it's in dataItems and find its index
+    if (taskIdQuery) {
+      const allItems: DataItem[] = allRes.data || []
+      const foundInAll = allItems.find((i) => i.id === taskIdQuery)
+      if (foundInAll && !merged.some((i) => i.id === taskIdQuery)) {
+        merged.unshift(foundInAll)
+      } else if (!foundInAll) {
+        try {
+          const singleRes: any = await annotationsApi.getDataItem(taskIdQuery)
+          const single = singleRes.data || singleRes
+          if (single && !merged.some((i) => i.id === taskIdQuery)) {
+            merged.unshift(single)
+          }
+        } catch {}
+      }
+    }
 
     if (merged.length > 0) {
       dataItems.value = merged
-      if (currentIndex.value >= merged.length) currentIndex.value = 0
+      if (taskIdQuery) {
+        const foundIdx = merged.findIndex((i) => i.id === taskIdQuery)
+        currentIndex.value = foundIdx >= 0 ? foundIdx : 0
+      } else if (currentIndex.value >= merged.length) {
+        currentIndex.value = 0
+      }
       const candidate = dataItems.value[currentIndex.value]
       await loadProjectConfig(candidate.project_id)
 
       if (candidate.status === 'IN_PROGRESS' && myId && candidate.locked_by_id === myId) {
-        // Already checked out by me — resume without a new checkout (draft will restore)
         activeItem.value = candidate
         toast.info('Resuming task', `Continuing task #${candidate.id} — your draft will be restored.`)
-      } else {
+      } else if (candidate.status === 'UNASSIGNED') {
         try {
           const checkout: any = await workflowApi.checkoutTask(candidate.project_id)
           activeItem.value = checkout.data || checkout
         } catch {
-          // Task was claimed by someone else between list and checkout — skip it
-          dataItems.value = merged.filter((item: DataItem) => item.id !== candidate.id)
-          activeItem.value = dataItems.value[0] || null
-          if (activeItem.value) await loadProjectConfig(activeItem.value.project_id)
+          activeItem.value = candidate
         }
+      } else {
+        // ANNOTATED, COMPLETED, or ACCEPTED
+        activeItem.value = candidate
       }
+      return
     } else {
       dataItems.value = []
       activeItem.value = null
@@ -246,7 +256,11 @@ onBeforeUnmount(() => {
         :item="activeItem"
         :labels="projectLabels"
         :annotation-type="projectAnnotationType"
+        :has-next="currentIndex < dataItems.length - 1"
+        :has-prev="currentIndex > 0"
         @submitted="handleSubmitted"
+        @next="nextTask"
+        @prev="prevTask"
       />
       <div v-else class="rounded-2xl border border-border/60 bg-card/90 p-16 text-center shadow-2xs">
         <h2 class="text-base font-bold text-foreground">No editor available</h2>

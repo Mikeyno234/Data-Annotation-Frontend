@@ -10,16 +10,33 @@ import CardContent from '@/components/ui/CardContent.vue'
 import VideoPlayerCanvas from './video/VideoPlayerCanvas.vue'
 import VideoTimelineScrubber from './video/VideoTimelineScrubber.vue'
 import VideoSegmentList from './video/VideoSegmentList.vue'
+import VideoClassificationWorkspace from './video/VideoClassificationWorkspace.vue'
 
 const props = defineProps<{
   item: DataItem
   labels?: LabelOption[]
   annotationType?: string
+  hasNext?: boolean
+  hasPrev?: boolean
 }>()
 
 const emit = defineEmits<{
   submitted: []
+  next: []
+  prev: []
 }>()
+
+// Detect whether this project is clip-level classification vs frame/second timeline intervals
+const isClassificationMode = computed(() => {
+  const t = (props.annotationType || '').toUpperCase()
+  return (
+    t.includes('CLASSIF') ||
+    t.includes('CHOICE') ||
+    t.includes('TAG') ||
+    t.includes('SCENE') ||
+    t.includes('ACTION_RECOGNITION')
+  )
+})
 
 const playerRef = ref<InstanceType<typeof VideoPlayerCanvas> | null>(null)
 const mediaUrl = ref('')
@@ -38,7 +55,7 @@ const activeLabelColor = computed(() => labels.value.find((label) => label.name 
 const activeTrack = ref(0)
 const draftRange = ref<{ start: number; end: number } | null>(null)
 
-// Initialize Session
+// Initialize Session for Timeline mode
 const session = useAnnotationSession<VideoInterval[]>({
   item: props.item,
   annotationType: props.annotationType || 'Video temporal intervals',
@@ -150,6 +167,7 @@ function removeInterval(id: string) {
 }
 
 async function loadMedia() {
+  if (isClassificationMode.value) return
   try {
     mediaUrl.value = await createDataItemMediaUrl(props.item.id)
   } catch (err: any) {
@@ -165,7 +183,9 @@ const hotkeyHints = [
 ]
 
 onMounted(() => {
-  loadMedia()
+  if (!isClassificationMode.value) {
+    loadMedia()
+  }
 })
 
 onUnmounted(() => {
@@ -174,7 +194,22 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- 1. Dedicated Video Clip Classification Mode -->
+  <VideoClassificationWorkspace
+    v-if="isClassificationMode"
+    :item="item"
+    :labels="labels"
+    :annotation-type="annotationType"
+    :has-next="hasNext"
+    :has-prev="hasPrev"
+    @submitted="emit('submitted')"
+    @next="emit('next')"
+    @prev="emit('prev')"
+  />
+
+  <!-- 2. Temporal Intervals / Action Timeline Mode -->
   <WorkspaceShell
+    v-else
     :item="item"
     :session="session"
     :labels="labels"

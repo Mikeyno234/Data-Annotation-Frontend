@@ -46,15 +46,15 @@ async function fetchMyTasks() {
       my_tasks: true,
       status: filter.value !== 'ALL' ? filter.value : undefined,
     })
-    if (res.data) {
-      tasks.value = res.data.data || res.data
-      if (res.data.pagination) {
-        totalTasks.value = res.data.pagination.total
-        totalPages.value = res.data.pagination.total_pages
-      } else {
-        totalTasks.value = tasks.value.length
-        totalPages.value = 1
-      }
+    const payload = res?.data?.data || res?.data || res
+    tasks.value = Array.isArray(payload) ? payload : []
+    const pagination = res?.pagination || res?.data?.pagination
+    if (pagination) {
+      totalTasks.value = pagination.total ?? tasks.value.length
+      totalPages.value = pagination.total_pages ?? 1
+    } else {
+      totalTasks.value = tasks.value.length
+      totalPages.value = 1
     }
   } catch (err: any) {
     toast.error('Failed to load tasks', err?.message)

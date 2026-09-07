@@ -138,6 +138,17 @@ export const toolsByModality: Record<ModalityType, ToolOption[]> = {
       defaultPreviewData: { type: 'VIDEO_TIMELINE', duration: '00:30', actions: [{ label: 'Ball Dribble', start: '00:02', end: '00:07', color: '#f59e0b' }] },
       defaultPreviewUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80',
     },
+    {
+      code: 'VIDEO_CLASSIFICATION',
+      label: 'Video Clip Classification',
+      icon: VideoIcon,
+      desc: 'Categorize whole video clip into single or multi-class events',
+      defaultXml: (labels) => `<View><Choices name="action" toName="video">${labels.map((l) => `<Choice value="${l.name}"/>`).join('')}</Choices><Video name="video" value="$video_url"/></View>`,
+      defaultInstructions: 'Inspect video clip and classify overall scene or event category with confidence level.',
+      defaultBadges: ['Clip Classification', 'Scene Tagging', 'Action Recognition'],
+      defaultPreviewData: { type: 'VIDEO_CLASSIFICATION', category: 'Harassment', confidence: 'HIGH', tags: [{ label: 'Harassment', color: '#ef4444' }] },
+      defaultPreviewUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80',
+    },
   ],
 }
 

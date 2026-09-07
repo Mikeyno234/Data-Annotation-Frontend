@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, toRef } from 'vue'
-import { Eye, UploadCloud, RotateCcw } from 'lucide-vue-next'
+import { Eye, UploadCloud, RotateCcw, Layers, Image as ImageIcon, Video as VideoIcon, Headphones, FileText } from 'lucide-vue-next'
 import type { MetadataOption } from '@/api/metadata'
 import type { AnnotationType } from '@/types'
 import AudioTypePreview, { type AudioSegmentItem } from './preview/AudioTypePreview.vue'
@@ -25,11 +25,17 @@ export type {
   ImageTagItem,
 }
 
-const props = defineProps<{
-  task?: MetadataOption | AnnotationType | null
-  modality?: string
-  fallbackTitle?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    task?: MetadataOption | AnnotationType | null
+    modality?: string
+    fallbackTitle?: string
+    allowUpload?: boolean
+  }>(),
+  {
+    allowUpload: true,
+  }
+)
 
 const activeHoverId = ref<string | null>(null)
 const customFileUrl = ref<string | null>(null)
@@ -123,6 +129,15 @@ const hasAssetForModality = computed(() => {
   return false
 })
 
+// Modality icon for static empty state
+const modalityIcon = computed(() => {
+  const m = (itemModality.value || '').toUpperCase()
+  if (m === 'AUDIO') return Headphones
+  if (m === 'VIDEO') return VideoIcon
+  if (m === 'TEXT') return FileText
+  return ImageIcon
+})
+
 const displayInstructions = computed(() => {
   return props.task?.instructions || props.task?.description || 'Interactive ground-truth annotation canvas preview.'
 })
@@ -149,10 +164,11 @@ const displayInstructions = computed(() => {
         </div>
       </div>
 
-      <!-- Status Indicator & Reset Control -->
+      <!-- Status Indicator & Reset / Upload Control -->
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Hidden file input for header action -->
+        <!-- Hidden file input for header action (only when allowUpload is true) -->
         <input
+          v-if="allowUpload"
           ref="headerFileInputRef"
           type="file"
           class="hidden"
@@ -160,24 +176,26 @@ const displayInstructions = computed(() => {
           @change="onHeaderFileChange"
         />
 
-        <div v-if="customFileName" class="flex items-center gap-1.5 rounded-md border border-border bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-          <UploadCloud class="size-3 text-primary" />
-          <span class="max-w-[80px] truncate">{{ customFileName }}</span>
-          <button type="button" class="ml-0.5 hover:text-primary cursor-pointer" title="Reset to default blueprint" @click="resetCustomAsset">
-            <RotateCcw class="size-2.5" />
-          </button>
-        </div>
+        <template v-if="allowUpload">
+          <div v-if="customFileName" class="flex items-center gap-1.5 rounded-md border border-border bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+            <UploadCloud class="size-3 text-primary" />
+            <span class="max-w-[80px] truncate">{{ customFileName }}</span>
+            <button type="button" class="ml-0.5 hover:text-primary cursor-pointer" title="Reset to default blueprint" @click="resetCustomAsset">
+              <RotateCcw class="size-2.5" />
+            </button>
+          </div>
 
-        <button
-          v-else
-          type="button"
-          class="flex items-center gap-1 rounded-md border border-border/80 bg-background/80 hover:bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          title="Upload image/video/audio to test in live preview"
-          @click="triggerHeaderUpload"
-        >
-          <UploadCloud class="size-3 text-primary" />
-          <span>Upload Test File</span>
-        </button>
+          <button
+            v-else
+            type="button"
+            class="flex items-center gap-1 rounded-md border border-border/80 bg-background/80 hover:bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            title="Upload image/video/audio to test in live preview"
+            @click="triggerHeaderUpload"
+          >
+            <UploadCloud class="size-3 text-primary" />
+            <span>Upload Test File</span>
+          </button>
+        </template>
 
         <span class="flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
           <span class="size-1.5 rounded-full bg-emerald-500"></span>
@@ -188,14 +206,39 @@ const displayInstructions = computed(() => {
 
     <!-- Modality Viewport -->
     <div class="relative flex-1 min-h-[320px] w-full overflow-hidden bg-zinc-950/90 select-none">
-      <!-- 1. EMPTY DROPZONE STATE WHEN NO ASSET ATTACHED -->
-      <SampleAssetDropzone
-        v-if="!hasAssetForModality"
-        :modality="itemModality"
-        :item-title="itemTitle"
-        @file-selected="onCustomFileSelected"
-        @text-submitted="onCustomTextSubmitted"
-      />
+      <!-- 1. EMPTY STATE WHEN NO ASSET ATTACHED -->
+      <template v-if="!hasAssetForModality">
+        <!-- Interactive Dropzone (only in catalog playground / when allowUpload is true) -->
+        <SampleAssetDropzone
+          v-if="allowUpload"
+          :modality="itemModality"
+          :item-title="itemTitle"
+          @file-selected="onCustomFileSelected"
+          @text-submitted="onCustomTextSubmitted"
+        />
+
+        <!-- Clean Static Read-Only Empty State (when creating project / allowUpload is false) -->
+        <div
+          v-else
+          class="relative flex h-full w-full flex-col items-center justify-center p-6 text-center"
+        >
+          <div class="flex size-14 items-center justify-center rounded-2xl border border-white/10 bg-zinc-900/80 text-zinc-400 shadow-inner mb-3">
+            <component :is="modalityIcon" class="size-6 text-zinc-500" />
+          </div>
+          <div class="space-y-1 max-w-xs">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-300">
+              No Sample Asset Attached
+            </h4>
+            <p class="text-[11.5px] leading-relaxed text-zinc-500">
+              This blueprint has no default sample media. Tasks will use the dataset files you upload to the project.
+            </p>
+          </div>
+          <div class="mt-4 flex items-center gap-1.5 rounded-full border border-white/5 bg-white/[0.03] px-3 py-1 text-[10px] font-mono text-zinc-500">
+            <Layers class="size-3 text-zinc-600" />
+            <span>Dataset media uploaded separately</span>
+          </div>
+        </div>
+      </template>
 
       <!-- 2. INTERACTIVE PREVIEWS WHEN ASSET EXISTS -->
       <AudioTypePreview

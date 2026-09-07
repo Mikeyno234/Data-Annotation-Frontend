@@ -108,15 +108,15 @@ async function fetchProjects() {
       modality: selectedModality.value !== 'ALL' ? selectedModality.value : undefined,
       search: searchQuery.value.trim() || undefined,
     })
-    if (res.data) {
-      projects.value = res.data.data || res.data
-      if (res.data.pagination) {
-        totalProjects.value = res.data.pagination.total
-        totalPages.value = res.data.pagination.total_pages
-      } else {
-        totalProjects.value = projects.value.length
-        totalPages.value = 1
-      }
+    const payload = res?.data?.data || res?.data || res
+    projects.value = Array.isArray(payload) ? payload : []
+    const pagination = res?.pagination || res?.data?.pagination
+    if (pagination) {
+      totalProjects.value = pagination.total ?? projects.value.length
+      totalPages.value = pagination.total_pages ?? 1
+    } else {
+      totalProjects.value = projects.value.length
+      totalPages.value = 1
     }
   } catch (err: any) {
     toast.error('Failed to load projects', err?.message)
@@ -234,6 +234,8 @@ onMounted(async () => {
       @update:show-create-modal="projectForm.showCreateModal.value = $event"
       @modality-change="projectForm.onModalityChange"
       @select-task="projectForm.handleSelectTask"
+      @add-label="projectForm.handleAddProjectLabel"
+      @remove-label="projectForm.handleRemoveProjectLabel"
       @submit="projectForm.handleCreateProject"
     />
 

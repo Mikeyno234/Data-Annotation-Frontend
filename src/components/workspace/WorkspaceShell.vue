@@ -26,6 +26,7 @@ const props = withDefaults(
     classLabelTitle?: string
     hotkeyHints?: Array<{ key: string; label: string }>
     showHotkeys?: boolean
+    showHeader?: boolean
   }>(),
   {
     labels: () => [],
@@ -36,6 +37,7 @@ const props = withDefaults(
     classLabelTitle: 'Class / Label:',
     hotkeyHints: () => [],
     showHotkeys: false,
+    showHeader: true,
   }
 )
 
@@ -56,7 +58,7 @@ function handleSelectLabel(name: string) {
 <template>
   <div class="flex flex-col gap-6">
     <!-- Top Action Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-card/90 p-4 shadow-sm backdrop-blur">
+    <div v-if="showHeader" class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-card/90 p-4 shadow-sm backdrop-blur">
       <!-- Task & Modality Info -->
       <div class="flex items-center gap-3">
         <div>

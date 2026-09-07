@@ -8,6 +8,7 @@ import { Eye, Code, Layers, SlidersHorizontal, ExternalLink } from 'lucide-vue-n
 import VisualizerImage from './visualizer/VisualizerImage.vue'
 import VisualizerAudio from './visualizer/VisualizerAudio.vue'
 import VisualizerText from './visualizer/VisualizerText.vue'
+import VisualizerVideo from './visualizer/VisualizerVideo.vue'
 
 const props = defineProps<{
   payload: any
@@ -231,8 +232,16 @@ onMounted(() => loadMedia())
 
     <!-- Main Content Tab View -->
     <div v-if="activeTab === 'visual'" class="p-4 sm:p-5">
+      <VisualizerVideo
+        v-if="parsedData.type === 'classification' && (modality === 'VIDEO' || (annotationType || '').toUpperCase().includes('VIDEO'))"
+        :label="parsedData.label"
+        :confidence="parsedData.confidence"
+        :notes="parsedData.notes"
+        :media-url="mediaUrl"
+        :media-load-error="mediaLoadError"
+      />
       <VisualizerImage
-        v-if="parsedData.type === 'image_boxes'"
+        v-else-if="parsedData.type === 'image_boxes'"
         :regions="parsedData.regions || []"
         :labels="parsedData.labels || []"
         :media-url="mediaUrl"

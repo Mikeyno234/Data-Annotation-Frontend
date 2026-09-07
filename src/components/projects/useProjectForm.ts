@@ -38,12 +38,22 @@ export function useProjectForm(onSuccess: () => void) {
   function buildLabelConfig() {
     const labels = projectLabels.value
       .filter((l) => l.name && l.name.trim())
+    const modality = (newProject.value.modality || 'IMAGE').toUpperCase()
+    const target = modality === 'AUDIO' ? 'audio' : modality === 'VIDEO' ? 'video' : modality.toLowerCase()
+    const annotType = (newProject.value.annotation_type || '').toUpperCase()
+    const isChoice = annotType.includes('CHOICE') || annotType.includes('CLASSIF') || annotType.includes('TAG')
+
+    if (isChoice) {
+      const choicesXml = labels.map((l) => `<Choice value="${escapeXml(l.name.trim())}"/>`).join('')
+      const controlName = modality === 'VIDEO' ? 'action' : modality === 'TEXT' ? 'sentiment' : 'choice'
+      return `<View><Choices name="${controlName}" toName="${target}">${choicesXml}</Choices></View>`
+    }
+
+    const labelsXml = labels
       .map((l) => `<Label value="${escapeXml(l.name.trim())}" background="${l.color || '#38bdf8'}"/>`)
       .join('')
-    const modality = (newProject.value.modality || 'AUDIO').toUpperCase()
-    const target = modality === 'AUDIO' ? 'audio' : modality.toLowerCase()
     const control = modality === 'TEXT' ? 'Labels name="label" toName="text"' : `Labels name="label" toName="${target}"`
-    return `<View><${control}>${labels}</Labels></View>`
+    return `<View><${control}>${labelsXml}</Labels></View>`
   }
 
   function parseProjectLabels(config?: string): LabelOption[] {

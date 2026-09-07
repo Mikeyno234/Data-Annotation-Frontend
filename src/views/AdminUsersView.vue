@@ -39,11 +39,14 @@ async function fetchUsersData() {
       adminApi.getRoles(),
     ])
 
-    if (usersRes.status === 'fulfilled' && usersRes.value.data) {
-      users.value = usersRes.value.data.data || usersRes.value.data
-      if (usersRes.value.data.pagination) {
-        totalUsers.value = usersRes.value.data.pagination.total
-        totalPages.value = usersRes.value.data.pagination.total_pages
+    if (usersRes.status === 'fulfilled' && usersRes.value) {
+      const uRes = usersRes.value
+      const payload = uRes?.data?.data || uRes?.data || uRes
+      users.value = Array.isArray(payload) ? payload : []
+      const pagination = uRes?.pagination || uRes?.data?.pagination
+      if (pagination) {
+        totalUsers.value = pagination.total ?? users.value.length
+        totalPages.value = pagination.total_pages ?? 1
       } else {
         totalUsers.value = users.value.length
         totalPages.value = 1
