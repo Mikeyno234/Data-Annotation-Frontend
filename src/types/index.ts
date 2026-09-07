@@ -60,6 +60,14 @@ export interface Menu {
   levels: MenuLevel[]
 }
 
+export interface MenuGroup {
+  id: number
+  name: string
+  code: string
+  icon?: string
+  submenus: Menu[]
+}
+
 export interface Role {
   id: number
   organization_id?: number

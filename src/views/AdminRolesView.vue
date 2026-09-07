@@ -6,11 +6,10 @@ import PermissionMatrix from '@/components/admin/roles/PermissionMatrix.vue'
 import RoleEditModal from '@/components/admin/roles/RoleEditModal.vue'
 import OrgFilterBar from '@/components/admin/roles/OrgFilterBar.vue'
 import { useRoleManagement } from '@/components/admin/roles/useRoleManagement'
-import { ShieldAlert, Plus } from 'lucide-vue-next'
+import { Plus } from 'lucide-vue-next'
 
 const {
   roles,
-  organizations,
   isLoading,
   selectedRoleId,
   autoSaveStatus,
@@ -44,14 +43,9 @@ onMounted(fetchRolesData)
     <!-- Top Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <div class="flex items-center gap-2.5">
-          <div class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <ShieldAlert class="size-5" />
-          </div>
-          <h1 class="text-2xl font-bold tracking-tight text-foreground font-sans">Roles & Permissions</h1>
-        </div>
-        <p class="text-xs text-muted-foreground mt-1 font-sans">
-          Manage RBAC security access matrix, menu policies, and feature scopes across tenant organizations.
+        <h1 class="text-xl font-bold tracking-tight text-foreground font-sans">Roles & Permissions</h1>
+        <p class="text-xs text-muted-foreground mt-0.5 font-sans">
+          Configure role access levels, menu visibility, and granular permissions.
         </p>
       </div>
 
@@ -73,7 +67,7 @@ onMounted(fetchRolesData)
       @select-org="setOrgFilter"
     />
 
-    <!-- Main Workspace: Unbreakable Responsive Master-Detail Layout -->
+    <!-- Main Workspace: Responsive Master-Detail Layout -->
     <div class="flex flex-col md:flex-row gap-6 items-start w-full">
       <!-- Left: Role Profiles Master Sidebar -->
       <div class="w-full md:w-72 lg:w-80 xl:w-84 shrink-0">

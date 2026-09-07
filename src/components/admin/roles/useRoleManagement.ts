@@ -1,9 +1,8 @@
 import { ref, computed } from 'vue'
 import { adminApi } from '@/api/admin'
-import type { Role, Permission, Menu, Organization } from '@/types'
+import type { Role, Permission, Menu, Organization, MenuGroup } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from '@/utils/toast'
-import type { MenuGroup } from '@/components/admin/roles/PermissionMatrix.vue'
 
 export function useRoleManagement() {
   const authStore = useAuthStore()
@@ -69,7 +68,7 @@ export function useRoleManagement() {
       }
     })
 
-    const assignedIds = new Set(result.flatMap((g) => g.submenus.map((s) => s.id)))
+    const assignedIds = new Set(result.flatMap((g: MenuGroup) => g.submenus.map((s: Menu) => s.id)))
     const orphans = menus.value.filter((m) => !assignedIds.has(m.id) && m.levels && m.levels.length > 0)
     if (orphans.length > 0) {
       result.push({ id: 9999, name: 'Other Modules', code: 'OTHER', submenus: orphans })

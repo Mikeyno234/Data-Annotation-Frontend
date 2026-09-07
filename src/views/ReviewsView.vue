@@ -29,10 +29,10 @@ const totalPages = ref(1)
 let searchDebounceTimer: any = null
 
 const statusTabs = [
-  { id: 'PENDING', label: 'Pending Review' },
+  { id: 'PENDING', label: 'Pending' },
   { id: 'APPROVED', label: 'Approved' },
-  { id: 'REJECTED', label: 'Rejected / Rework' },
-  { id: 'ALL', label: 'All Reviews' },
+  { id: 'REJECTED', label: 'Rejected' },
+  { id: 'ALL', label: 'All' },
 ]
 
 async function fetchReviews() {
@@ -88,7 +88,7 @@ function handleLimitChange(limit: number) {
 
 async function handleApprove(rev: Review) {
   try {
-    await workflowApi.approveReview(rev.annotation_id, 'Meets enterprise accuracy standards.')
+    await workflowApi.approveReview(rev.annotation_id, 'Approved')
     toast.success('Annotation Approved', `Annotation #${rev.annotation_id} verified`)
     fetchReviews()
   } catch (err: any) {
@@ -128,25 +128,25 @@ onMounted(() => {
     <!-- Top Header -->
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-foreground">Quality Review Queue</h1>
-        <p class="text-xs text-muted-foreground mt-1">
-          Reviewer inspection workflow, verdict audits, and annotation validation
+        <h1 class="text-xl font-bold tracking-tight text-foreground">Reviews</h1>
+        <p class="text-xs text-muted-foreground mt-0.5">
+          Inspect and verify submitted dataset annotations.
         </p>
       </div>
     </div>
 
     <!-- Filter Tabs & Search Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="flex flex-wrap items-center gap-1.5 rounded-2xl bg-card/90 p-1.5 border border-border/50 shadow-2xs">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-1 p-1 rounded-xl bg-muted/30 border border-border/60">
         <button
           v-for="tab in statusTabs"
           :key="tab.id"
           type="button"
-          class="rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer select-none"
+          class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
           :class="
             selectedStatusFilter === tab.id
-              ? 'bg-primary text-primary-foreground font-bold shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              ? 'bg-background text-foreground shadow-xs border border-border/70'
+              : 'text-muted-foreground hover:text-foreground'
           "
           @click="setStatusFilter(tab.id)"
         >
