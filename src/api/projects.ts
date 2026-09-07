@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { Project, Dataset, Batch, Pagination } from '@/types'
+import type { Project, Dataset, Batch, Pagination, ExportFormatOption } from '@/types'
 
 export interface CreateProjectPayload {
   name: string
@@ -44,5 +44,8 @@ export const projectsApi = {
       params: { format },
       responseType: 'blob',
     })
+  },
+  getExportFormats(id: number | string) {
+    return apiClient.get<{ success: boolean; data: ExportFormatOption[] }>(`/projects/${id}/export-formats`)
   }
 }

@@ -35,7 +35,7 @@ const canUploadDataset = computed(() => authStore.hasPermission('dataset.create'
 // Upload Dataset Modal State
 const showUploadModal = ref(false)
 const uploadProjectId = ref<number | null>(null)
-const uploadFile = ref<File | null>(null)
+const selectedUploadFiles = ref<File[]>([])
 const uploadName = ref('')
 const uploadModality = ref('')
 const isUploading = ref(false)
@@ -43,33 +43,54 @@ const isUploading = ref(false)
 function openUploadModal(id: number, modality: string) {
   uploadProjectId.value = id
   uploadModality.value = modality
-  uploadFile.value = null
+  selectedUploadFiles.value = []
   uploadName.value = ''
   showUploadModal.value = true
 }
 
-function handleFileSelect(e: Event) {
-  const target = e.target as HTMLInputElement
-  if (target.files && target.files[0]) {
-    uploadFile.value = target.files[0]
-    uploadName.value = target.files[0].name
+function handleFilesSelected(files: File[]) {
+  selectedUploadFiles.value = files
+  if (files.length === 1) {
+    const rawName = files[0].name.replace(/\.[^/.]+$/, '')
+    uploadName.value = rawName
+  } else if (files.length > 1) {
+    const dateStr = new Date().toISOString().slice(0, 10)
+    uploadName.value = `Batch_Upload_${dateStr}_(${files.length}_files)`
   }
 }
 
+function handleClearFiles() {
+  selectedUploadFiles.value = []
+  uploadName.value = ''
+}
+
 async function handleUploadDataset() {
-  if (!uploadProjectId.value || !uploadFile.value) {
-    toast.error('Validation Error', 'Please select a file to upload')
+  if (!uploadProjectId.value || selectedUploadFiles.value.length === 0) {
+    toast.error('Validation Error', 'Please select at least one file or a ZIP archive to upload')
     return
   }
   isUploading.value = true
   try {
     const formData = new FormData()
     formData.append('project_id', String(uploadProjectId.value))
-    formData.append('file', uploadFile.value)
-    formData.append('name', uploadName.value || uploadFile.value.name)
+    formData.append('name', uploadName.value || 'Batch Upload')
+    if (uploadModality.value) {
+      formData.append('modality', uploadModality.value)
+    }
+
+    // Check if single ZIP or multiple files
+    if (selectedUploadFiles.value.length === 1 && selectedUploadFiles.value[0].name.toLowerCase().endsWith('.zip')) {
+      formData.append('file', selectedUploadFiles.value[0])
+    } else {
+      selectedUploadFiles.value.forEach((file) => {
+        formData.append('files', file)
+      })
+    }
+
     await projectsApi.uploadDataset(formData)
-    toast.success('Upload Successful', 'File uploaded and tasks queued')
+    toast.success('Upload Successful', `Successfully uploaded and queued ${selectedUploadFiles.value.length} item(s)`)
     showUploadModal.value = false
+    selectedUploadFiles.value = []
     fetchProjects()
   } catch (err: any) {
     toast.error('Upload Failed', err?.message)
@@ -213,9 +234,6 @@ onMounted(async () => {
       @update:show-create-modal="projectForm.showCreateModal.value = $event"
       @modality-change="projectForm.onModalityChange"
       @select-task="projectForm.handleSelectTask"
-      @ai-prompt-submit="projectForm.handleAiPromptSubmit"
-      @add-label="projectForm.handleAddProjectLabel"
-      @remove-label="projectForm.handleRemoveProjectLabel"
       @submit="projectForm.handleCreateProject"
     />
 
@@ -224,9 +242,11 @@ onMounted(async () => {
       :show-upload-modal="showUploadModal"
       :is-uploading="isUploading"
       :upload-name="uploadName"
+      :selected-files="selectedUploadFiles"
       @update:show-upload-modal="showUploadModal = $event"
       @update:upload-name="uploadName = $event"
-      @file-select="handleFileSelect"
+      @files-selected="handleFilesSelected"
+      @clear-files="handleClearFiles"
       @submit="handleUploadDataset"
     />
   </div>

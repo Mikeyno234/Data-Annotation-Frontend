@@ -48,7 +48,7 @@ const router = useRouter()
             <h1 class="text-2xl font-bold text-foreground font-sans">{{ project?.name || 'Project Details' }}</h1>
             <Badge v-if="project" :variant="project.modality === 'AUDIO' ? 'success' : 'info'" class="text-xs font-sans">
               {{ project.modality }}
-            </Badge>
+            </Badge >
           </div>
           <span class="text-xs text-muted-foreground font-sans">{{ project?.code }} • Organization ID: {{ project?.organization_id }}</span>
         </div>

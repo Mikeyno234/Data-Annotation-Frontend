@@ -13,13 +13,18 @@ const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     dashboard: 'Dashboard',
     projects: 'Projects',
+    'project-detail': 'Project Details',
     workspace: 'Annotation Workspace',
+    'my-tasks': 'My Tasks',
     reviews: 'Review Queue',
     qa: 'Quality Assurance',
-    'admin-users': 'Users & Roles',
-    'admin-menus': 'Menus & Navigation',
+    'admin-users': 'Users Directory',
+    'admin-roles': 'Roles & Permissions',
+    'admin-menus': 'Menu Configuration',
+    'admin-annotation-types': 'Task Catalog',
     'admin-audit-logs': 'Audit Trail',
     profile: 'Profile & Settings',
+    settings: 'Profile & Settings',
   }
   return titles[String(route.name)] || 'Annotation Operations'
 })

@@ -3,6 +3,7 @@ import apiClient from './client'
 export interface MetadataOption {
   value: string
   label: string
+  modality?: string
   parent_id?: number
   level?: 'CATEGORY' | 'SUB_TYPE'
   tool_type?: string

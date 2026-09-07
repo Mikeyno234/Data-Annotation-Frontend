@@ -87,19 +87,21 @@ export function useProjectForm(onSuccess: () => void) {
 
   async function onModalityChange(modality: string) {
     newProject.value.modality = modality
-    await refreshAnnotationTypes()
-    if (annotationTypeOptions.value.length > 0) {
-      newProject.value.annotation_type = annotationTypeOptions.value[0].value
+    // Filter choices available for this modality if needed
+    const available = annotationTypeOptions.value.filter(
+      (o) => !o.modality || o.modality === modality
+    )
+    if (available.length > 0 && (!newProject.value.annotation_type || !available.some(a => a.value === newProject.value.annotation_type))) {
+      newProject.value.annotation_type = available[0].value
       applyTemplateLabels(newProject.value.annotation_type)
-    } else {
-      newProject.value.annotation_type = ''
-      projectLabels.value = []
-      newProject.value.label_config = ''
     }
   }
 
   function handleSelectTask(opt: MetadataOption) {
     newProject.value.annotation_type = opt.value
+    if (opt.modality) {
+      newProject.value.modality = opt.modality
+    }
     applyTemplateLabels(opt.value)
   }
 
@@ -156,11 +158,13 @@ export function useProjectForm(onSuccess: () => void) {
   async function fetchMetadata() {
     isMetadataLoading.value = true
     try {
-      const res: any = await metadataApi.getAnnotationOptions(newProject.value.modality)
+      const res: any = await metadataApi.getAnnotationOptions('ALL')
       const data = res.data || res
       modalityOptions.value = data.modalities || []
       annotationTypeOptions.value = data.annotation_types || []
-      if (!newProject.value.modality && modalityOptions.value[0]) newProject.value.modality = modalityOptions.value[0].value
+      if (!newProject.value.modality && modalityOptions.value[0]) {
+        newProject.value.modality = modalityOptions.value[0].value
+      }
     } catch (err: any) {
       toast.error('Failed to load project options', err?.message)
     } finally {
@@ -169,13 +173,12 @@ export function useProjectForm(onSuccess: () => void) {
   }
 
   async function refreshAnnotationTypes() {
-    if (!newProject.value.modality) return
     try {
-      const res: any = await metadataApi.getAnnotationOptions(newProject.value.modality)
+      const res: any = await metadataApi.getAnnotationOptions('ALL')
       const data = res.data || res
       annotationTypeOptions.value = data.annotation_types || []
     } catch {
-      annotationTypeOptions.value = []
+      // keep existing options if fail
     }
   }
 
@@ -203,9 +206,9 @@ export function useProjectForm(onSuccess: () => void) {
         applyTemplateLabels(match.value)
         newProject.value.name = `${match.label} Project`
       }
-    } else if (!newProject.value.annotation_type && annotationTypeOptions.value[0]) {
-      newProject.value.annotation_type = annotationTypeOptions.value[0].value
-      applyTemplateLabels(newProject.value.annotation_type)
+    } else {
+      newProject.value.annotation_type = ''
+      newProject.value.label_config = ''
     }
 
     showCreateModal.value = true

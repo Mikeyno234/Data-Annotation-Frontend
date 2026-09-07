@@ -301,3 +301,10 @@ export interface PaginatedResponse<T> {
   data: T[]
   pagination: Pagination
 }
+
+export interface ExportFormatOption {
+  id: string
+  name: string
+  desc: string
+  ext: string
+}

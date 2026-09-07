@@ -2,17 +2,17 @@
 import { ref, computed } from 'vue'
 import type { MetadataOption } from '@/api/metadata'
 import {
-  Sparkles,
-  ArrowUp,
   Headphones,
   FileText,
   Image as ImageIcon,
   Video as VideoIcon,
   Check,
   Search,
+  Layers,
+  Sparkles,
+  ArrowUpRight,
 } from 'lucide-vue-next'
 import Input from '@/components/ui/Input.vue'
-import Button from '@/components/ui/Button.vue'
 
 const props = defineProps<{
   options: MetadataOption[]
@@ -25,33 +25,45 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select', opt: MetadataOption): void
   (e: 'update:modalityFilter', val: string): void
-  (e: 'aiPromptSubmit', prompt: string): void
 }>()
 
 const searchQuery = ref('')
-const aiPrompt = ref('')
+
+const modalityTabs = computed(() => {
+  return [
+    { value: 'ALL', label: 'All Modalities', icon: Layers },
+    { value: 'IMAGE', label: 'Image & Vision', icon: ImageIcon },
+    { value: 'AUDIO', label: 'Audio & Speech', icon: Headphones },
+    { value: 'TEXT', label: 'Text & NLP', icon: FileText },
+    { value: 'VIDEO', label: 'Video Streams', icon: VideoIcon },
+  ]
+})
 
 const filteredOptions = computed(() => {
   let list = props.options
   if (props.modalityFilter && props.modalityFilter !== 'ALL') {
-    list = list.filter((o) => (o as any).modality === props.modalityFilter)
+    list = list.filter((o) => (o.modality || '').toUpperCase() === props.modalityFilter.toUpperCase())
   }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim()
     list = list.filter(
       (o) =>
-        o.label.toLowerCase().includes(q) ||
-        o.value.toLowerCase().includes(q) ||
+        (o.label || '').toLowerCase().includes(q) ||
+        (o.value || '').toLowerCase().includes(q) ||
         (o.description || '').toLowerCase().includes(q) ||
-        (o.tool_type || '').toLowerCase().includes(q)
+        (o.tool_type || '').toLowerCase().includes(q) ||
+        (o.instructions || '').toLowerCase().includes(q)
     )
   }
   return list
 })
 
-function onAiSubmit() {
-  if (!aiPrompt.value.trim()) return
-  emit('aiPromptSubmit', aiPrompt.value)
+function getModalityIcon(m?: string) {
+  const norm = (m || '').toUpperCase()
+  if (norm === 'AUDIO') return Headphones
+  if (norm === 'TEXT') return FileText
+  if (norm === 'VIDEO') return VideoIcon
+  return ImageIcon
 }
 
 function parseBadges(badges?: any): string[] {
@@ -67,152 +79,171 @@ function parseBadges(badges?: any): string[] {
 </script>
 
 <template>
-  <div class="space-y-4 w-full">
-    <!-- AI Intent Resolver -->
-    <div class="rounded-2xl border border-primary/25 bg-primary/5 p-3 sm:p-3.5 space-y-2">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1.5 text-xs font-bold text-primary font-sans">
-          <Sparkles class="size-3.5 animate-pulse text-primary" />
-          <span>Describe your project goal, and AI will pick the best blueprint</span>
-        </div>
-        <span class="text-[10px] font-mono font-semibold text-muted-foreground">AI Engine Matcher</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <Input
-          v-model="aiPrompt"
-          placeholder="e.g. Detect vehicles with bounding boxes, speech diarization, sentiment..."
-          class="h-9 bg-card text-xs border-border/50 rounded-xl"
-          @keyup.enter="onAiSubmit"
-        />
-        <Button
-          type="button"
-          size="sm"
-          class="h-9 shrink-0 gap-1.5 px-3 font-semibold rounded-xl btn-tactile cursor-pointer"
-          @click="onAiSubmit"
-        >
-          <ArrowUp class="size-3.5" />
-          <span class="hidden sm:inline">Resolve</span>
-        </Button>
-      </div>
-    </div>
-
-    <!-- Modality Filter Pills & Search -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <!-- Modality Tabs -->
-      <div class="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-muted/40 border border-border/40">
+  <div class="space-y-4 w-full select-none">
+    <!-- Top Bar: Modality Tabs & Search Filter (Vercel Segments) -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/25 p-1.5 rounded-2xl border border-border/50">
+      <!-- Modality Tab Switcher -->
+      <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
         <button
+          v-for="tab in modalityTabs"
+          :key="tab.value"
           type="button"
-          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all duration-150 cursor-pointer font-sans btn-tactile"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-tight transition-all duration-150 cursor-pointer whitespace-nowrap"
           :class="
-            modalityFilter === 'ALL'
-              ? 'bg-card text-foreground font-semibold shadow-2xs border border-border/60'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+            modalityFilter === tab.value
+              ? 'bg-background text-foreground shadow-xs border border-border/70 font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
           "
-          @click="emit('update:modalityFilter', 'ALL')"
+          @click="emit('update:modalityFilter', tab.value)"
         >
-          All
-        </button>
-
-        <button
-          v-for="m in modalityList"
-          :key="m.value"
-          type="button"
-          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all duration-150 cursor-pointer font-sans btn-tactile"
-          :class="
-            modalityFilter === m.value
-              ? 'bg-card text-foreground font-semibold shadow-2xs border border-border/60'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-          "
-          @click="emit('update:modalityFilter', m.value)"
-        >
-          <component
-            :is="m.value === 'AUDIO' ? Headphones : m.value === 'IMAGE' ? ImageIcon : m.value === 'TEXT' ? FileText : VideoIcon"
-            class="size-3"
-          />
-          <span>{{ m.label }}</span>
+          <component :is="tab.icon" class="size-3.5" :class="modalityFilter === tab.value ? 'text-primary' : 'opacity-70'" />
+          <span>{{ tab.label }}</span>
         </button>
       </div>
 
-      <!-- Quick Search -->
-      <div class="relative w-full sm:w-56">
-        <Search class="pointer-events-none absolute left-3 top-2.5 size-3.5 text-muted-foreground" />
+      <!-- Live Count & Search Bar -->
+      <div class="relative min-w-[240px] sm:w-72">
+        <Search class="pointer-events-none absolute left-3 top-2.5 size-3.5 text-muted-foreground/70" />
         <Input
           v-model="searchQuery"
-          placeholder="Filter catalog..."
-          class="h-8 pl-8.5 text-xs rounded-xl border-border/50 bg-card"
+          placeholder="Filter blueprints..."
+          class="h-8.5 pl-8.5 text-xs rounded-xl bg-background border-border/60 focus:border-primary/50"
         />
+        <span
+          v-if="searchQuery"
+          class="absolute right-2.5 top-2 text-[10px] font-mono text-muted-foreground cursor-pointer hover:text-foreground"
+          @click="searchQuery = ''"
+        >
+          ✕
+        </span>
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
-      <div v-for="i in 4" :key="i" class="h-28 rounded-2xl border border-border/30 bg-muted/20 animate-pulse"></div>
+    <!-- Loading Skeletons -->
+    <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-1">
+      <div
+        v-for="i in 6"
+        :key="i"
+        class="h-44 rounded-2xl border border-border/40 bg-card/40 animate-pulse flex flex-col justify-between p-4"
+      >
+        <div class="space-y-2">
+          <div class="h-4 w-28 bg-muted/60 rounded"></div>
+          <div class="h-3 w-full bg-muted/40 rounded"></div>
+        </div>
+        <div class="h-6 w-16 bg-muted/30 rounded"></div>
+      </div>
     </div>
 
     <!-- Empty Catalog Result -->
     <div
       v-else-if="filteredOptions.length === 0"
-      class="p-8 text-center rounded-2xl border border-dashed border-border/60 bg-muted/20 text-xs text-muted-foreground"
+      class="py-14 text-center rounded-2xl border border-dashed border-border/70 bg-card/30 flex flex-col items-center justify-center space-y-2"
     >
-      No task blueprints found matching your filter.
+      <div class="flex size-10 items-center justify-center rounded-xl bg-muted/40 text-muted-foreground border border-border/40">
+        <Layers class="size-5" />
+      </div>
+      <p class="text-xs font-semibold text-foreground">No blueprints match your filter</p>
+      <p class="text-[11px] text-muted-foreground max-w-xs">
+        Try switching the modality tab or clearing the search query to view all available schemas.
+      </p>
+      <button
+        type="button"
+        class="mt-2 text-xs text-primary font-semibold hover:underline cursor-pointer"
+        @click="searchQuery = ''; emit('update:modalityFilter', 'ALL')"
+      >
+        Reset Filters
+      </button>
     </div>
 
-    <!-- Catalog Blueprints Grid -->
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
+    <!-- Vercel-Grade Interactive Blueprint Cards Grid -->
+    <div
+      v-else
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[54vh] overflow-y-auto pr-1 pb-1 scrollbar-thin"
+    >
       <div
         v-for="opt in filteredOptions"
         :key="opt.value"
-        class="group relative flex flex-col justify-between rounded-2xl border p-3.5 transition-all duration-200 cursor-pointer select-none btn-tactile"
+        class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-card/80 p-4 transition-all duration-200 cursor-pointer hover:border-foreground/25 hover:shadow-sm"
         :class="[
           selectedCode === opt.value
-            ? 'border-primary/50 bg-card shadow-xs ring-2 ring-primary/25'
-            : 'border-border/50 bg-card/70 hover:border-border hover:bg-muted/40 shadow-2xs',
+            ? 'border-primary bg-primary/[0.03] ring-2 ring-primary/20 shadow-xs'
+            : 'border-border/60 hover:bg-card',
         ]"
         @click="emit('select', opt)"
       >
-        <!-- Selection Check Indicator -->
-        <div
-          v-if="selectedCode === opt.value"
-          class="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xs"
-        >
-          <Check class="size-3 stroke-[3]" />
-        </div>
-
+        <!-- Top Visual Header -->
         <div>
-          <div class="flex items-center gap-2 pr-6">
-            <span class="text-xs font-bold text-foreground group-hover:text-primary transition-colors font-sans line-clamp-1">
-              {{ opt.label }}
-            </span>
-          </div>
+          <div class="flex items-start justify-between gap-2">
+            <!-- Modality & Tool Indicators -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider border"
+                :class="
+                  selectedCode === opt.value
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-muted/70 text-foreground border-border/60'
+                "
+              >
+                <component :is="getModalityIcon(opt.modality)" class="size-3" />
+                {{ opt.modality || 'MULTI' }}
+              </span>
 
-          <div class="flex items-center gap-1.5 mt-1">
-            <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono font-medium bg-muted text-muted-foreground uppercase">
-              {{ (opt as any).modality }}
-            </span>
-            <span
-              v-if="opt.tool_type"
-              class="rounded px-1.5 py-0.2 font-mono text-[9.5px] font-semibold bg-primary/10 text-primary border border-primary/20"
+              <span
+                v-if="opt.tool_type"
+                class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold bg-muted/40 text-muted-foreground border border-border/40"
+              >
+                {{ opt.tool_type }}
+              </span>
+            </div>
+
+            <!-- Selection Indicator -->
+            <div
+              class="flex size-5 shrink-0 items-center justify-center rounded-full transition-all duration-150"
+              :class="
+                selectedCode === opt.value
+                  ? 'bg-primary text-primary-foreground scale-105 shadow-2xs'
+                  : 'border border-border/60 bg-muted/20 text-transparent group-hover:border-foreground/30'
+              "
             >
-              {{ opt.tool_type }}
-            </span>
+              <Check class="size-3 stroke-[3]" />
+            </div>
           </div>
 
-          <p class="mt-2 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed font-sans">
-            {{ opt.description || opt.instructions || 'Interactive dataset annotation blueprint from task catalog.' }}
-          </p>
+          <!-- Title & Description -->
+          <div class="mt-3">
+            <h4
+              class="text-xs font-bold tracking-tight text-foreground transition-colors group-hover:text-primary line-clamp-1"
+            >
+              {{ opt.label }}
+            </h4>
+            <p class="mt-1 text-[11px] leading-relaxed text-muted-foreground line-clamp-2 min-h-8">
+              {{ opt.description || opt.instructions || 'Standard multi-modal annotation blueprint configuration.' }}
+            </p>
+          </div>
         </div>
 
-        <!-- Badges -->
-        <div v-if="parseBadges(opt.badges).length > 0" class="mt-2.5 flex flex-wrap gap-1">
-          <span
-            v-for="b in parseBadges(opt.badges).slice(0, 3)"
-            :key="b"
-            class="rounded-md bg-muted/60 px-1.5 py-0.2 text-[9px] font-mono text-muted-foreground"
+        <!-- Card Footer: Badges & Select CTA -->
+        <div class="mt-4 pt-3 border-t border-border/40 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1 overflow-hidden flex-wrap max-h-5">
+            <span
+              v-for="b in parseBadges(opt.badges).slice(0, 2)"
+              :key="b"
+              class="rounded-md bg-muted/60 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground truncate max-w-[110px]"
+            >
+              {{ b }}
+            </span>
+          </div>
+
+          <div
+            class="inline-flex items-center gap-1 text-[10.5px] font-bold transition-transform duration-150 group-hover:translate-x-0.5"
+            :class="selectedCode === opt.value ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'"
           >
-            {{ b }}
-          </span>
+            <span>{{ selectedCode === opt.value ? 'Active' : 'Choose' }}</span>
+            <ArrowUpRight class="size-3" />
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
