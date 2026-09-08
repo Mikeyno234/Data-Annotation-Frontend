@@ -110,8 +110,8 @@ function restart() {
 
       <!-- Annotator Notes if present -->
       <div v-if="notes" class="space-y-1.5 pt-2 border-t border-border/40">
-        <div class="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-semibold">Annotator Comment</div>
-        <div class="p-2.5 rounded-lg bg-muted/30 border border-border/40 text-xs text-foreground/80 leading-relaxed font-normal">
+        <div class="text-[11px] font-medium text-foreground">Catatan Anotator</div>
+        <div class="p-2.5 rounded-lg bg-muted/40 border border-border/50 text-xs text-muted-foreground leading-relaxed">
           {{ notes }}
         </div>
       </div>

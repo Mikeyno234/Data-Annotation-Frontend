@@ -109,12 +109,12 @@ function getAnnotatorName(rev: Review): string {
     <!-- Reviewer Rejection / Feedback Note -->
     <div
       v-if="rev.comment"
-      class="px-4 py-2 bg-amber-500/5 border-b border-amber-500/15 flex items-start gap-2 text-xs"
+      class="px-4 py-2.5 bg-muted/40 border-b border-border/60 flex items-start gap-2.5 text-xs"
     >
-      <MessageSquare class="size-3.5 text-amber-500 shrink-0 mt-0.5" />
+      <MessageSquare class="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
       <div class="space-y-0.5">
-        <span class="text-[10px] font-mono uppercase text-amber-600 dark:text-amber-400 font-semibold tracking-wider">Feedback Comment:</span>
-        <p class="text-foreground/80 leading-relaxed italic">{{ rev.comment }}</p>
+        <span class="text-[11px] font-medium text-foreground">Catatan Reviewer:</span>
+        <p class="text-xs text-muted-foreground leading-relaxed">{{ rev.comment }}</p>
       </div>
     </div>
 
