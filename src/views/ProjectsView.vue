@@ -164,18 +164,19 @@ onMounted(async () => {
       :search-query="searchQuery"
       :selected-modality="selectedModality"
       :can-create-project="canCreateProject"
+      :total-count="totalProjects"
       @update:search-query="handleSearchInput"
       @update:selected-modality="setModalityFilter"
       @create="projectForm.openCreateModal"
     />
 
     <!-- Projects Grid -->
-    <div v-if="isLoading" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-      <div v-for="i in 6" :key="i" class="h-64 rounded-2xl border border-border/40 bg-card/50 animate-pulse"></div>
+    <div v-if="isLoading" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div v-for="i in 6" :key="i" class="h-48 rounded-xl border border-border/50 bg-card/40 animate-pulse"></div>
     </div>
 
     <div v-else-if="projects.length > 0" class="flex flex-col gap-6">
-      <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <ProjectCard
           v-for="proj in projects"
           :key="proj.id"

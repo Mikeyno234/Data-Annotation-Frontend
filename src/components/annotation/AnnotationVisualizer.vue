@@ -171,7 +171,7 @@ onMounted(() => loadMedia())
 </script>
 
 <template>
-  <div class="rounded-2xl border border-border/70 bg-card overflow-hidden transition-all shadow-xs">
+  <div class="rounded-lg border border-border/60 bg-muted/10 overflow-hidden transition-all">
     <audio
       ref="audioRef"
       :src="mediaUrl || undefined"
@@ -181,57 +181,55 @@ onMounted(() => loadMedia())
     ></audio>
 
     <!-- Header & Mode Switcher -->
-    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-muted/30 border-b border-border/50">
+    <div class="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2 bg-muted/30 border-b border-border/40 text-xs">
       <div class="flex items-center gap-2">
-        <div class="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Layers class="size-4" />
-        </div>
-        <span class="text-xs font-bold text-foreground tracking-tight">Completed Annotation</span>
+        <span class="text-xs font-semibold text-foreground/90 tracking-tight">Annotation Output</span>
         <Badge v-if="parsedData.type === 'image_boxes'" variant="secondary" class="text-[10px] py-0 px-2 font-mono">
-          {{ parsedData.regions?.length || 0 }} Bounding Box{{ (parsedData.regions?.length || 0) > 1 ? 'es' : '' }}
+          {{ parsedData.regions?.length || 0 }} Box{{ (parsedData.regions?.length || 0) > 1 ? 'es' : '' }}
         </Badge>
         <Badge v-else-if="parsedData.type === 'audio_segments'" variant="secondary" class="text-[10px] py-0 px-2 font-mono">
-          {{ parsedData.segments?.length || 0 }} Audio Segments
+          {{ parsedData.segments?.length || 0 }} Segments
         </Badge>
       </div>
 
-      <div class="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          class="h-7 text-[11px] gap-1.5 px-2.5 rounded-lg border-border/80 hover:bg-muted/70 cursor-pointer text-foreground font-semibold shadow-2xs"
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          title="Open interactive canvas workspace"
           @click="openInWorkspace"
         >
-          <SlidersHorizontal class="size-3 text-primary" />
-          <span>Open in Workspace</span>
-          <ExternalLink class="size-2.5 opacity-60 ml-0.5" />
-        </Button>
+          <span>Workspace</span>
+          <ExternalLink class="size-3 opacity-60" />
+        </button>
 
-        <div class="flex items-center gap-1 bg-muted/60 p-0.5 rounded-xl">
+        <div class="h-3 w-px bg-border/60"></div>
+
+        <div class="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md">
           <button
             type="button"
-            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer"
-            :class="activeTab === 'visual' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+            class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium cursor-pointer transition-all"
+            :class="activeTab === 'visual' ? 'bg-card text-foreground shadow-2xs font-semibold' : 'text-muted-foreground hover:text-foreground'"
             @click="activeTab = 'visual'"
           >
-            <Eye class="size-3.5" />
+            <Eye class="size-3" />
             <span>Visual</span>
           </button>
           <button
             type="button"
-            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer"
-            :class="activeTab === 'json' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+            class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium cursor-pointer transition-all"
+            :class="activeTab === 'json' ? 'bg-card text-foreground shadow-2xs font-semibold' : 'text-muted-foreground hover:text-foreground'"
             @click="activeTab = 'json'"
           >
-            <Code class="size-3.5" />
-            <span>Raw JSON</span>
+            <Code class="size-3" />
+            <span>JSON</span>
           </button>
         </div>
       </div>
     </div>
 
     <!-- Main Content Tab View -->
-    <div v-if="activeTab === 'visual'" class="p-4 sm:p-5">
+    <div v-if="activeTab === 'visual'" class="p-3 sm:p-4">
       <VisualizerVideo
         v-if="parsedData.type === 'classification' && (modality === 'VIDEO' || (annotationType || '').toUpperCase().includes('VIDEO'))"
         :label="parsedData.label"

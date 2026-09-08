@@ -125,28 +125,37 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-6 max-w-7xl mx-auto">
-    <!-- Top Header -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <h1 class="text-xl font-bold tracking-tight text-foreground">Reviews</h1>
-        <p class="text-xs text-muted-foreground mt-0.5">
-          Inspect and verify submitted dataset annotations.
+    <!-- Top Header Section -->
+    <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-2xl font-bold tracking-tight text-foreground font-display">Quality Reviews</h1>
+          <span
+            v-if="totalReviews !== undefined"
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-muted text-muted-foreground border border-border/50"
+          >
+            {{ totalReviews }} queued
+          </span>
+        </div>
+        <p class="text-xs text-muted-foreground/80 leading-relaxed max-w-xl">
+          Inspect, approve, or request reworks on submitted annotations across datasets.
         </p>
       </div>
     </div>
 
     <!-- Filter Tabs & Search Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-1 p-1 rounded-xl bg-muted/30 border border-border/60">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <!-- Segmented Tab Controls -->
+      <div class="inline-flex p-1 rounded-lg bg-muted/40 border border-border/50 shadow-2xs self-start sm:self-auto">
         <button
           v-for="tab in statusTabs"
           :key="tab.id"
           type="button"
-          class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
+          class="rounded-md px-3.5 py-1.5 text-xs font-medium transition-all cursor-pointer select-none"
           :class="
             selectedStatusFilter === tab.id
-              ? 'bg-background text-foreground shadow-xs border border-border/70'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-card text-foreground font-semibold shadow-xs border border-border/60'
+              : 'text-muted-foreground hover:text-foreground border border-transparent'
           "
           @click="setStatusFilter(tab.id)"
         >
@@ -154,13 +163,15 @@ onMounted(() => {
         </button>
       </div>
 
+      <!-- Search Input -->
       <div class="relative w-full sm:w-72">
-        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <Input
-          v-model="searchQuery"
-          placeholder="Search by file or note..."
-          class="pl-10 text-xs"
-          @input="handleSearchInput"
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/70 pointer-events-none" />
+        <input
+          :value="searchQuery"
+          type="text"
+          placeholder="Filter by file or comment..."
+          class="w-full h-9 pl-9 pr-3 text-xs rounded-lg bg-card/80 border border-border/60 text-foreground placeholder:text-muted-foreground/60 transition-all focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 shadow-2xs"
+          @input="searchQuery = ($event.target as HTMLInputElement).value; handleSearchInput()"
         />
       </div>
     </div>

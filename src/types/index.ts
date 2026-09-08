@@ -237,6 +237,7 @@ export interface Annotation {
   reviews?: Review[]
 	created_at: string
 	data_item?: DataItem
+  annotator?: User
 }
 
 export interface Review {
