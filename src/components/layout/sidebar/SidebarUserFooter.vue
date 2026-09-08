@@ -113,13 +113,20 @@ onBeforeUnmount(() => document.removeEventListener('click', closeProfileMenu))
           <div class="truncate text-xs font-semibold text-sidebar-foreground/95 tracking-tight group-hover:text-white transition-colors">
             {{ authStore.user?.full_name || 'User' }}
           </div>
-          <!-- Organization & Role pill line -->
-          <div class="flex items-center gap-1 text-[10px] font-mono text-sidebar-muted tracking-tight truncate">
-            <span class="text-primary/90 font-medium truncate max-w-[80px]" :title="organizationName">
-              {{ organizationName }}
+          <!-- Organization & Role Line with Hover Reveal -->
+          <div class="flex items-center gap-1.5 text-[11px] text-sidebar-muted min-w-0">
+            <span
+              class="relative inline-flex items-center text-primary/90 font-medium cursor-help transition-colors hover:text-primary"
+              :title="organizationName"
+            >
+              <span class="truncate max-w-[110px] group-hover:max-w-[160px] transition-all duration-200">
+                {{ organizationName }}
+              </span>
             </span>
-            <span class="text-sidebar-border">•</span>
-            <span class="truncate">{{ authStore.currentRole }}</span>
+            <span class="text-sidebar-border shrink-0">•</span>
+            <span class="truncate text-sidebar-muted/80 text-[10.5px] shrink-0 font-medium">
+              {{ authStore.currentRole }}
+            </span>
           </div>
         </div>
       </div>
