@@ -3,14 +3,6 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useWorkspaceStore } from '../workspace'
 import type { DataItem } from '@/types'
 
-// Mock annotations API
-vi.mock('@/api/annotations', () => ({
-  annotationsApi: {
-    saveDraft: vi.fn().mockResolvedValue({}),
-    submitAnnotation: vi.fn().mockResolvedValue({ id: 1, status: 'SUBMITTED' }),
-  },
-}))
-
 describe('useWorkspaceStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -33,81 +25,41 @@ describe('useWorkspaceStore', () => {
   it('initializes with default state', () => {
     const store = useWorkspaceStore()
     expect(store.currentItem).toBeNull()
-    expect(store.canUndo).toBe(false)
-    expect(store.canRedo).toBe(false)
+    expect(store.isSaving).toBe(false)
+    expect(store.isDraftSaving).toBe(false)
+    expect(store.lastDraftSavedAt).toBeNull()
+    expect(store.draftRestoredAt).toBeNull()
+  })
+
+  it('sets and resets active item via explicit actions', () => {
+    const store = useWorkspaceStore()
+    store.setCurrentItem(mockItem)
+    expect(store.currentItem).toEqual(mockItem)
+
+    store.setIsSaving(true)
+    expect(store.isSaving).toBe(true)
+
+    store.resetWorkspace()
+    expect(store.currentItem).toBeNull()
     expect(store.isSaving).toBe(false)
   })
 
-  it('manages undo/redo state history accurately', () => {
+  it('manages draft status and clearing', () => {
     const store = useWorkspaceStore()
-    store.setCurrentItem(mockItem)
+    localStorage.setItem(`draft_task_${mockItem.id}`, JSON.stringify({ payload: 'test' }))
 
-    store.pushState({ boxes: [{ id: 1, label: 'Car' }] })
-    store.pushState({ boxes: [{ id: 1, label: 'Car' }, { id: 2, label: 'Truck' }] })
+    store.setIsDraftSaving(true)
+    const now = new Date()
+    store.setLastDraftSavedAt(now)
+    store.setDraftRestoredAt(now)
 
-    expect(store.canUndo).toBe(true)
-    expect(store.canRedo).toBe(false)
+    expect(store.isDraftSaving).toBe(true)
+    expect(store.lastDraftSavedAt).toEqual(now)
+    expect(store.draftRestoredAt).toEqual(now)
 
-    // Undo back to first state
-    const previous = store.undo()
-    expect(previous).toEqual({ boxes: [{ id: 1, label: 'Car' }] })
-    expect(store.canUndo).toBe(false)
-    expect(store.canRedo).toBe(true)
-
-    // Redo forward to second state
-    const restored = store.redo()
-    expect(restored).toEqual({ boxes: [{ id: 1, label: 'Car' }, { id: 2, label: 'Truck' }] })
-    expect(store.canUndo).toBe(true)
-    expect(store.canRedo).toBe(false)
-  })
-
-  it('avoids duplicate consecutive pushes in undo history', () => {
-    const store = useWorkspaceStore()
-    store.setCurrentItem(mockItem)
-
-    const payload = { boxes: [{ id: 1 }] }
-    store.pushState(payload)
-    store.pushState(payload)
-
-    expect(store.canUndo).toBe(false)
-  })
-
-  it('handles draft persistence and cache retrieval', async () => {
-    const store = useWorkspaceStore()
-    store.setCurrentItem(mockItem)
-
-    const draftData = { regions: [{ x: 10, y: 10 }] }
-    store.registerDraftPayload(draftData, 'BOUNDING_BOX')
-
-    await store.saveDraft()
-
-    // Check localStorage cache
-    const cached = localStorage.getItem(`draft_task_${mockItem.id}`)
-    expect(cached).not.toBeNull()
-    expect(JSON.parse(cached!).payload).toEqual(draftData)
-
-    // Check loading draft
-    const loaded = store.loadDraft(mockItem)
-    expect(loaded?.payload).toEqual(draftData)
-
-    // Clear draft
     store.clearDraft(mockItem.id)
     expect(localStorage.getItem(`draft_task_${mockItem.id}`)).toBeNull()
-  })
-
-  it('tracks elapsed time when timer starts and stops', () => {
-    vi.useFakeTimers()
-    const store = useWorkspaceStore()
-    store.setCurrentItem(mockItem)
-
-    expect(store.elapsedTimeSeconds).toBe(0)
-
-    vi.advanceTimersByTime(3500)
-    expect(store.elapsedTimeSeconds).toBe(3)
-
-    store.stopTimer()
-    vi.advanceTimersByTime(2000)
-    expect(store.elapsedTimeSeconds).toBe(3) // does not increment after stop
-    vi.useRealTimers()
+    expect(store.lastDraftSavedAt).toBeNull()
+    expect(store.draftRestoredAt).toBeNull()
   })
 })

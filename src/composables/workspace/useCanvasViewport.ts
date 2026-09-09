@@ -11,7 +11,7 @@ export interface UseCanvasViewportOptions {
 }
 
 /**
- * ponytail: Clean, minimal canvas pan/zoom composable with screen-to-world transforms.
+ * Composable for viewport transformation math: zoom clamping, pan bounds, and world-to-screen coordinate mapping.
  */
 export function useCanvasViewport(options: UseCanvasViewportOptions) {
   const { canvasRef, onViewportChange } = options

@@ -19,7 +19,7 @@ export interface DrawCanvasContext {
 }
 
 /**
- * ponytail: Pure 2D canvas renderer for image, bounding boxes, and polygon layers.
+ * High-performance 2D Canvas renderer: draws image layer, bounding boxes, labels, and polygon vectors.
  */
 export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanvasContext) {
   const { width, height } = c.canvas

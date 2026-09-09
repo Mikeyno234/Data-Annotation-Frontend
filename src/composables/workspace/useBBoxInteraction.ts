@@ -35,7 +35,7 @@ export function getBoxHandles(box: ImageBox): Array<{ type: ResizeHandle; x: num
 }
 
 /**
- * ponytail: Clean composable for Bounding Box interactions (creation, handle resizing, dragging, color lasso).
+ * Composable for bounding box operations: interactive resizing handles, drag translation, and color lasso snapping.
  */
 export function useBBoxInteraction(options: UseBBoxInteractionOptions) {
   const {

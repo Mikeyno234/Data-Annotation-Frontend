@@ -24,7 +24,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// ponytail: clean native Axios without monkey patch, rely on TanStack Query for caching and deduplication
+// Standard Axios instance; TanStack Vue Query handles request caching, deduplication, and stale-time.
 
 // Silent refresh queue state
 let isRefreshing = false

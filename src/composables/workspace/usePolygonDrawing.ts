@@ -14,7 +14,7 @@ export interface UsePolygonDrawingOptions {
 }
 
 /**
- * ponytail: Clean composable for polygon segmentation drawing, vertex appending, snapping, and closing.
+ * Composable for interactive polygon segmentation: point snapping, vertex placement, and polygon closure.
  */
 export function usePolygonDrawing(options: UsePolygonDrawingOptions) {
   const {

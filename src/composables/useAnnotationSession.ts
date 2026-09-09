@@ -57,9 +57,9 @@ export interface UseAnnotationSessionReturn<T> {
 }
 
 /**
- * Deep Composable for Annotation Session Lifecycle.
- * Composes lease timer, draft autosave/restore, undo/redo linear history,
- * global keyboard shortcuts, anti-bot lead time checks, and submission.
+ * Production annotation session controller.
+ * Orchestrates lead time tracking, draft autosave/recovery, undo/redo linear history,
+ * global keyboard shortcuts, payload validation, and submission pipeline.
  */
 export function useAnnotationSession<T>(
   options: UseAnnotationSessionOptions<T>
@@ -83,17 +83,21 @@ export function useAnnotationSession<T>(
   const payload = ref<T>(initialData) as Ref<T>
 
   // 2. Linear History Stack (Undo / Redo)
-  const historyStack = useHistoryStack<T>(payload, (state) => {
-    workspaceStore.registerDraftPayload(state, annotationType)
-  })
+  const historyStack = useHistoryStack<T>(payload)
 
-  // 3. Timer & Lead Time Tracking
+  // 3. Timer & Lead Time Tracking (Single source of truth for timer)
   const leaseLock = useLeaseLock()
 
   // 4. Draft wrapper actions
   async function saveDraft(customPayload?: T): Promise<void> {
     const data = customPayload !== undefined ? customPayload : payload.value
-    await draftStorage.saveDraft(item.id, data)
+    workspaceStore.setIsDraftSaving(true)
+    try {
+      await draftStorage.saveDraft(item.id, data)
+      workspaceStore.setLastDraftSavedAt(draftStorage.lastDraftSavedAt.value)
+    } finally {
+      workspaceStore.setIsDraftSaving(false)
+    }
   }
 
   function clearDraft(): void {
@@ -114,7 +118,7 @@ export function useAnnotationSession<T>(
     }
 
     isSaving.value = true
-    workspaceStore.isSaving = true
+    workspaceStore.setIsSaving(true)
 
     try {
       const leadTime = Math.max(leaseLock.elapsedTimeSeconds.value, 2.5)
@@ -137,7 +141,7 @@ export function useAnnotationSession<T>(
       throw err
     } finally {
       isSaving.value = false
-      workspaceStore.isSaving = false
+      workspaceStore.setIsSaving(false)
     }
   }
 
@@ -203,6 +207,7 @@ export function useAnnotationSession<T>(
       window.addEventListener('keydown', handleGlobalKeyDown)
 
       if (draftStorage.isDraftRestored.value) {
+        workspaceStore.setDraftRestoredAt(draftStorage.draftRestoredAt.value)
         toast.info('Draft restored', `Loaded progress from previous session (${draftStorage.draftRestoredAt.value?.toLocaleTimeString()})`)
       }
     })

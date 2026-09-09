@@ -1,5 +1,4 @@
 import { ref, type Ref } from 'vue'
-import { useWorkspaceStore } from '@/stores/workspace'
 
 export interface UseLeaseLockReturn {
   elapsedTimeSeconds: Ref<number>
@@ -10,10 +9,9 @@ export interface UseLeaseLockReturn {
 }
 
 /**
- * Composable for tracking active annotator lead time and lease duration.
+ * Composable for tracking active annotator lead time and lock checkout duration.
  */
 export function useLeaseLock(): UseLeaseLockReturn {
-  const workspaceStore = useWorkspaceStore()
   const elapsedTimeSeconds = ref(0)
   const startTime = ref(Date.now())
   let timerInterval: ReturnType<typeof setInterval> | null = null
@@ -22,7 +20,6 @@ export function useLeaseLock(): UseLeaseLockReturn {
     stopTimer()
     startTime.value = Date.now()
     elapsedTimeSeconds.value = 0
-    workspaceStore.startTimer()
     timerInterval = setInterval(() => {
       elapsedTimeSeconds.value = Math.floor((Date.now() - startTime.value) / 1000)
     }, 1000)
@@ -33,10 +30,10 @@ export function useLeaseLock(): UseLeaseLockReturn {
       clearInterval(timerInterval)
       timerInterval = null
     }
-    workspaceStore.stopTimer()
   }
 
   function resetTimer() {
+    stopTimer()
     startTime.value = Date.now()
     elapsedTimeSeconds.value = 0
   }
