@@ -3,33 +3,41 @@ import { ref, computed } from 'vue'
 import { authApi } from '@/api/auth'
 import type { User, Organization } from '@/types'
 
+export function safeGetStorageJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key) || sessionStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+export function safeGetStorageString(keys: string[]): string | null {
+  for (const k of keys) {
+    const val = localStorage.getItem(k) || sessionStorage.getItem(k)
+    if (val) return val
+  }
+  return null
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(
-    localStorage.getItem('annotation_auth_token') || sessionStorage.getItem('annotation_auth_token') || localStorage.getItem('matrix_auth_token')
+    safeGetStorageString(['annotation_auth_token', 'matrix_auth_token'])
   )
   const refreshToken = ref<string | null>(
-    localStorage.getItem('annotation_refresh_token') || sessionStorage.getItem('annotation_refresh_token')
+    safeGetStorageString(['annotation_refresh_token', 'matrix_refresh_token'])
   )
   const user = ref<User | null>(
-    (localStorage.getItem('annotation_auth_user') || sessionStorage.getItem('annotation_auth_user') || localStorage.getItem('matrix_auth_user'))
-      ? JSON.parse(
-          (localStorage.getItem('annotation_auth_user') || sessionStorage.getItem('annotation_auth_user') || localStorage.getItem('matrix_auth_user'))!
-        )
-      : null
+    safeGetStorageJson<User | null>('annotation_auth_user', null) ||
+    safeGetStorageJson<User | null>('matrix_auth_user', null)
   )
   const organization = ref<Organization | null>(
-    (localStorage.getItem('annotation_auth_org') || sessionStorage.getItem('annotation_auth_org') || localStorage.getItem('matrix_auth_org'))
-      ? JSON.parse(
-          (localStorage.getItem('annotation_auth_org') || sessionStorage.getItem('annotation_auth_org') || localStorage.getItem('matrix_auth_org'))!
-        )
-      : null
+    safeGetStorageJson<Organization | null>('annotation_auth_org', null) ||
+    safeGetStorageJson<Organization | null>('matrix_auth_org', null)
   )
   const permissions = ref<string[]>(
-    (localStorage.getItem('annotation_auth_perms') || sessionStorage.getItem('annotation_auth_perms') || localStorage.getItem('matrix_auth_perms'))
-      ? JSON.parse(
-          (localStorage.getItem('annotation_auth_perms') || sessionStorage.getItem('annotation_auth_perms') || localStorage.getItem('matrix_auth_perms'))!
-        )
-      : []
+    safeGetStorageJson<string[]>('annotation_auth_perms', []) ||
+    safeGetStorageJson<string[]>('matrix_auth_perms', [])
   )
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
@@ -151,21 +159,28 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     token.value = null
+    refreshToken.value = null
     user.value = null
     organization.value = null
     permissions.value = []
-    localStorage.removeItem('annotation_auth_token')
-    localStorage.removeItem('annotation_auth_user')
-    localStorage.removeItem('annotation_auth_org')
-    localStorage.removeItem('annotation_auth_perms')
-    localStorage.removeItem('matrix_auth_token')
-    localStorage.removeItem('matrix_auth_user')
-    localStorage.removeItem('matrix_auth_org')
-    localStorage.removeItem('matrix_auth_perms')
-    sessionStorage.removeItem('annotation_auth_token')
-    sessionStorage.removeItem('annotation_auth_user')
-    sessionStorage.removeItem('annotation_auth_org')
-    sessionStorage.removeItem('annotation_auth_perms')
+
+    const keys = [
+      'annotation_auth_token',
+      'annotation_refresh_token',
+      'annotation_auth_user',
+      'annotation_auth_org',
+      'annotation_auth_perms',
+      'matrix_auth_token',
+      'matrix_refresh_token',
+      'matrix_auth_user',
+      'matrix_auth_org',
+      'matrix_auth_perms',
+    ]
+
+    for (const key of keys) {
+      localStorage.removeItem(key)
+      sessionStorage.removeItem(key)
+    }
   }
 
   async function fetchCurrentUser() {
@@ -204,6 +219,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     token,
+    refreshToken,
     user,
     organization,
     permissions,
@@ -215,6 +231,7 @@ export const useAuthStore = defineStore('auth', () => {
     hasPermission,
     login,
     logout,
+    refreshAuthToken,
     setOrganization,
     fetchCurrentUser,
     updateProfile,
