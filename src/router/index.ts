@@ -100,8 +100,16 @@ const routes = [
     meta: { requiresAuth: true, permission: 'audit.view' },
   },
   {
+    path: '/403',
+    name: 'forbidden',
+    component: () => import('@/views/ForbiddenView.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/:pathMatch(.*)*',
-    redirect: '/dashboard',
+    name: 'not-found',
+    component: () => import('@/views/NotFoundView.vue'),
+    meta: { public: true },
   },
 ]
 
@@ -114,19 +122,19 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
   if (to.meta.public) {
-    if (authStore.isAuthenticated) {
+    if (to.path === '/login' && authStore.isAuthenticated) {
       return next('/dashboard')
     }
     return next()
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return next('/login')
+    return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 
   if (to.meta.permission && typeof to.meta.permission === 'string') {
     if (!authStore.hasPermission(to.meta.permission)) {
-      return next('/dashboard')
+      return next({ path: '/403' })
     }
   }
 

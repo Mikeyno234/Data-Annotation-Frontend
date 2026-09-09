@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from '@/utils/toast'
 import { ArrowRight, Layers, Loader2, CheckCircle2 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const email = ref('')
 const password = ref('')
@@ -30,7 +31,8 @@ async function handleLogin() {
     isSuccess.value = true
     toast.success('Welcome back!', `Signed in as ${authStore.user?.full_name}`)
     setTimeout(() => {
-      router.push('/dashboard')
+      const redirectTarget = (route.query.redirect as string) || '/dashboard'
+      router.push(redirectTarget)
     }, 450)
   } catch (err: any) {
     toast.error('Authentication Failed', err?.message || 'Invalid email or password')
