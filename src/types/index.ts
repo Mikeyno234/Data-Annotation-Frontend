@@ -305,6 +305,13 @@ export interface Pagination {
   total_pages: number
 }
 
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+  pagination?: Pagination
+}
+
 export interface PaginatedResponse<T> {
   success: boolean
   data: T[]

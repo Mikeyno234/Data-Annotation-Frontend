@@ -1,5 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 import router from '@/router'
+export type { ApiResponse, PaginatedResponse } from '@/types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
@@ -10,9 +11,6 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 })
-
-// In-flight request deduplication map to prevent redundant concurrent backend hits
-const inFlightRequests = new Map<string, Promise<any>>()
 
 // Request interceptor to attach JWT Token
 apiClient.interceptors.request.use(
@@ -26,26 +24,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Custom get wrapper with automatic In-Flight Promise Deduplication
-const originalGet = apiClient.get.bind(apiClient)
-apiClient.get = function (url: string, config?: any): Promise<any> {
-  const requestKey = `GET:${url}:${JSON.stringify(config?.params || {})}`
-  
-  if (inFlightRequests.has(requestKey)) {
-    return inFlightRequests.get(requestKey)!
-  }
-
-  const promise = originalGet(url, config)
-    .finally(() => {
-      // Hold the slot briefly for 500ms to throttle burst spam clicks
-      setTimeout(() => {
-        inFlightRequests.delete(requestKey)
-      }, 500)
-    })
-
-  inFlightRequests.set(requestKey, promise)
-  return promise
-} as any
+// ponytail: clean native Axios without monkey patch, rely on TanStack Query for caching and deduplication
 
 // Silent refresh queue state
 let isRefreshing = false
