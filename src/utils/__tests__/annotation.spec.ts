@@ -9,6 +9,7 @@ import {
   hexToRgb,
   isPointInPolygon,
   computeColorLassoBounds,
+  getSelectionCharacterOffsets,
 } from '../annotation'
 
 describe('Annotation Utilities', () => {
@@ -117,4 +118,107 @@ describe('Annotation Utilities', () => {
       expect(snapped?.height).toBe(4)
     })
   })
+
+  describe('getSelectionCharacterOffsets', () => {
+    it('returns exact character offsets for duplicate words across different positions', () => {
+      // Create container with repetitive test string
+      const container = document.createElement('div')
+      const text = 'Doctor Alice and Doctor Bob visit the Doctor'
+      // Character indexes:
+      // "Doctor" #1: 0..6
+      // "Doctor" #2: 17..23
+      // "Doctor" #3: 38..44
+      container.textContent = text
+      document.body.appendChild(container)
+
+      const textNode = container.firstChild as Text
+      expect(textNode).toBeTruthy()
+
+      // 1. Highlight 1st occurrence of "Doctor" (0..6)
+      const range1 = document.createRange()
+      range1.setStart(textNode, 0)
+      range1.setEnd(textNode, 6)
+
+      const selection = window.getSelection()!
+      selection.removeAllRanges()
+      selection.addRange(range1)
+
+      const res1 = getSelectionCharacterOffsets(container)
+      expect(res1).toEqual({
+        start: 0,
+        end: 6,
+        text: 'Doctor',
+      })
+      expect(text.slice(res1!.start, res1!.end)).toBe('Doctor')
+
+      // 2. Highlight 2nd occurrence of "Doctor" (17..23)
+      const range2 = document.createRange()
+      range2.setStart(textNode, 17)
+      range2.setEnd(textNode, 23)
+
+      selection.removeAllRanges()
+      selection.addRange(range2)
+
+      const res2 = getSelectionCharacterOffsets(container)
+      expect(res2).toEqual({
+        start: 17,
+        end: 23,
+        text: 'Doctor',
+      })
+      expect(text.slice(res2!.start, res2!.end)).toBe('Doctor')
+
+      // 3. Highlight 3rd occurrence of "Doctor" (38..44)
+      const range3 = document.createRange()
+      range3.setStart(textNode, 38)
+      range3.setEnd(textNode, 44)
+
+      selection.removeAllRanges()
+      selection.addRange(range3)
+
+      const res3 = getSelectionCharacterOffsets(container)
+      expect(res3).toEqual({
+        start: 38,
+        end: 44,
+        text: 'Doctor',
+      })
+      expect(text.slice(res3!.start, res3!.end)).toBe('Doctor')
+
+      // 4. Highlight with surrounding whitespace: " Doctor Bob " (16..28)
+      // "Doctor Alice and Doctor Bob visit the Doctor"
+      // Index 16 is space before Doctor, index 27 is 'b', index 28 is space after Bob
+      const rangeWhitespace = document.createRange()
+      rangeWhitespace.setStart(textNode, 16) // " Doctor Bob "
+      rangeWhitespace.setEnd(textNode, 28)
+
+      selection.removeAllRanges()
+      selection.addRange(rangeWhitespace)
+
+      const resWhitespace = getSelectionCharacterOffsets(container)
+      expect(resWhitespace).toEqual({
+        start: 17,
+        end: 27,
+        text: 'Doctor Bob',
+      })
+      expect(text.slice(resWhitespace!.start, resWhitespace!.end)).toBe('Doctor Bob')
+
+      // 5. Non-collapsed selection outside container should return null
+      const outsideContainer = document.createElement('div')
+      outsideContainer.textContent = 'Outside text'
+      document.body.appendChild(outsideContainer)
+
+      const outsideRange = document.createRange()
+      outsideRange.setStart(outsideContainer.firstChild!, 0)
+      outsideRange.setEnd(outsideContainer.firstChild!, 7)
+      selection.removeAllRanges()
+      selection.addRange(outsideRange)
+
+      expect(getSelectionCharacterOffsets(container)).toBeNull()
+
+      // Cleanup DOM
+      selection.removeAllRanges()
+      document.body.removeChild(container)
+      document.body.removeChild(outsideContainer)
+    })
+  })
 })
+

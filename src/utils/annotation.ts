@@ -253,3 +253,48 @@ export function computeColorLassoBounds(
     height: Math.max(Math.round(maxLy - minLy), 1),
   }
 }
+
+export interface SelectionOffsets {
+  start: number
+  end: number
+  text: string
+}
+
+/**
+ * Calculates exact character offsets of the current window selection relative to a container element.
+ * Solves the duplicate word bug by using DOM Range coordinates instead of String.prototype.indexOf.
+ * Automatically trims surrounding whitespace while maintaining offset precision.
+ */
+export function getSelectionCharacterOffsets(container: HTMLElement): SelectionOffsets | null {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null
+
+  const range = selection.getRangeAt(0)
+
+  // Verify that the selection is actually inside the container
+  if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) {
+    return null
+  }
+
+  const rawText = range.toString()
+  if (!rawText || !rawText.trim()) return null
+
+  // Calculate raw character start offset from start of container to range start
+  const preCaretRange = range.cloneRange()
+  preCaretRange.selectNodeContents(container)
+  preCaretRange.setEnd(range.startContainer, range.startOffset)
+  const rawStart = preCaretRange.toString().length
+
+  // Calculate leading and trailing whitespace to adjust start/end to match trimmed text
+  const leadingWhitespaceMatch = rawText.match(/^\s+/)
+  const leadingSpaces = leadingWhitespaceMatch ? leadingWhitespaceMatch[0].length : 0
+  const trimmed = rawText.trim()
+  const start = rawStart + leadingSpaces
+  const end = start + trimmed.length
+
+  return {
+    start,
+    end,
+    text: trimmed,
+  }
+}

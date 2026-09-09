@@ -4,6 +4,7 @@ import type { DataItem, TextEntity, LabelOption } from '@/types'
 import { createDataItemMediaUrl } from '@/api/media'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
 import { toast } from '@/utils/toast'
+import { getSelectionCharacterOffsets } from '@/utils/annotation'
 import WorkspaceShell from '@/components/workspace/WorkspaceShell.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
@@ -34,6 +35,7 @@ const currentEntity = ref(props.labels?.[0]?.name || 'Default label')
 const selectedEntityId = ref<string | null>(null)
 
 const textContent = ref('')
+const textContainerRef = ref<HTMLElement | null>(null)
 const isLoadingContent = ref(true)
 const contentError = ref(false)
 
@@ -82,16 +84,22 @@ async function loadTextContent() {
 }
 
 function handleTextSelection() {
-  const selection = window.getSelection()
-  if (!selection || selection.isCollapsed) return
+  const container = textContainerRef.value
+  if (!container) return
 
-  const selectedText = selection.toString().trim()
+  const offsets = getSelectionCharacterOffsets(container)
+  if (!offsets) return
+
+  const { start, end, text: selectedText } = offsets
   if (!selectedText) return
 
-  const start = textContent.value.indexOf(selectedText)
-  if (start === -1) return
+  // Verify coordinates against textContent slice to guarantee precision
+  const textSlice = textContent.value.slice(start, end)
+  if (textSlice !== selectedText) {
+    // If there is any formatting anomaly, ensure we do not store mismatched offsets
+    console.warn('Selection offset slice mismatch:', { slice: textSlice, selected: selectedText })
+  }
 
-  const end = start + selectedText.length
   const entityObj = availableEntities.value.find((e) => e.name === currentEntity.value)
 
   const newEntity: TextEntity = {
@@ -112,7 +120,11 @@ function handleTextSelection() {
   session.pushState(updatedPayload)
 
   toast.success('Entity Tagged', `${selectedText} -> [${currentEntity.value}]`)
-  selection.removeAllRanges()
+
+  const selection = window.getSelection()
+  if (selection) {
+    selection.removeAllRanges()
+  }
 }
 
 function deleteEntity(id: string) {
@@ -183,6 +195,7 @@ onMounted(() => {
             </div>
             <div
               v-else
+              ref="textContainerRef"
               class="rounded-2xl bg-muted/30 p-8 text-base leading-relaxed text-foreground select-text whitespace-pre-wrap shadow-inner"
               @mouseup="handleTextSelection"
             >
