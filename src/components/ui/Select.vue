@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Check, ChevronDown } from 'lucide-vue-next'
-import { cn } from '@/utils/cn'
+import { cn } from '@/lib/utils'
 
 export interface SelectOption {
   value: string

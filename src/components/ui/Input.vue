@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { cn } from '@/utils/cn'
+import { cn } from '@/lib/utils'
 
 interface Props {
   modelValue?: string | number

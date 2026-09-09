@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
-import { cn } from '@/utils/cn'
+import { cn } from '@/lib/utils'
 
 interface Props {
   open: boolean
