@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { DataItem, LabelOption, VideoInterval } from '@/types'
 import { createDataItemMediaUrl } from '@/api/media'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
@@ -181,6 +181,18 @@ const hotkeyHints = [
   { key: 'S', label: 'cut at frame' },
   { key: '← →', label: 'step frame' },
 ]
+
+watch(() => props.item.id, () => {
+  if (mediaUrl.value) {
+    URL.revokeObjectURL(mediaUrl.value)
+    mediaUrl.value = ''
+  }
+  now.value = 0
+  duration.value = 0
+  if (!isClassificationMode.value) {
+    loadMedia()
+  }
+})
 
 onMounted(() => {
   if (!isClassificationMode.value) {

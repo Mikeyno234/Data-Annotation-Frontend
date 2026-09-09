@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { DataItem, AudioSegment, LabelOption } from '@/types'
-import { createDataItemMediaUrl } from '@/api/media'
+import { useMediaBlobUrl } from '@/composables/useMediaBlobUrl'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
 import { toast } from '@/utils/toast'
 import WorkspaceShell from '@/components/workspace/WorkspaceShell.vue'
@@ -26,9 +26,14 @@ const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const selectedSegmentId = ref<string | null>(null)
-const mediaError = ref(false)
 const mediaErrorMessage = ref('Media file is not available')
-const mediaUrl = ref('')
+
+const { mediaUrl, error: mediaUrlError } = useMediaBlobUrl(() => props.item.id, {
+  onError: (err: any) => {
+    mediaErrorMessage.value = err?.message || 'Media file is not available'
+  },
+})
+const mediaError = computed(() => !!mediaUrlError.value)
 
 const defaultSpeakers = [
   { name: 'Default label', color: '#38bdf8', bg: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
@@ -72,14 +77,7 @@ const session = useAnnotationSession<AudioSegment[]>({
   },
 })
 
-async function loadMedia() {
-  try {
-    mediaUrl.value = await createDataItemMediaUrl(props.item.id)
-  } catch (err: any) {
-    mediaError.value = true
-    mediaErrorMessage.value = err?.message || mediaErrorMessage.value
-  }
-}
+
 
 function togglePlay() {
   playerRef.value?.togglePlay()
@@ -181,9 +179,7 @@ const hotkeyHints = [
   { key: 'Delete', label: 'remove segment' },
 ]
 
-onMounted(() => {
-  loadMedia()
-})
+
 </script>
 
 <template>

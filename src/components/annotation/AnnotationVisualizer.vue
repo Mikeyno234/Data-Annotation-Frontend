@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { createDataItemMediaUrl } from '@/api/media'
+import { useMediaBlobUrl } from '@/composables/useMediaBlobUrl'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import { Eye, Code, Layers, SlidersHorizontal, ExternalLink } from 'lucide-vue-next'
@@ -20,9 +20,14 @@ const props = defineProps<{
 
 const router = useRouter()
 const activeTab = ref<'visual' | 'json'>('visual')
-const mediaUrl = ref<string | null>(null)
-const mediaLoading = ref(false)
-const mediaLoadError = ref(false)
+
+const {
+  mediaUrl,
+  isLoading: mediaLoading,
+  error: mediaError,
+} = useMediaBlobUrl(() => props.dataItemId)
+
+const mediaLoadError = computed(() => !!mediaError.value)
 
 // Audio playback state
 const audioRef = ref<HTMLAudioElement | null>(null)
@@ -104,19 +109,6 @@ function getColorForLabel(label: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
-async function loadMedia() {
-  if (!props.dataItemId) return
-  mediaLoading.value = true
-  mediaLoadError.value = false
-  try {
-    mediaUrl.value = await createDataItemMediaUrl(props.dataItemId)
-  } catch {
-    mediaLoadError.value = true
-  } finally {
-    mediaLoading.value = false
-  }
-}
-
 function toggleMasterAudioPlay() {
   if (!audioRef.value) return
   if (isAudioPlaying.value) {
@@ -165,9 +157,6 @@ function openInWorkspace() {
     router.push('/workspace')
   }
 }
-
-watch(() => props.dataItemId, () => loadMedia())
-onMounted(() => loadMedia())
 </script>
 
 <template>

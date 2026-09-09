@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import type { DataItem, ImageBox, ImagePolygon, ImageClassificationPayload, ImageAnnotationPayload, LabelOption } from '@/types'
-import { createDataItemMediaUrl } from '@/api/media'
+import { useMediaBlobUrl } from '@/composables/useMediaBlobUrl'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
 import { toast } from '@/utils/toast'
 import { isPointInPolygon, computeColorLassoBounds } from '@/utils/annotation'
@@ -214,13 +214,29 @@ imageEl.onload = () => {
   drawCanvas()
 }
 
-async function loadImage() {
-  try {
-    imageEl.src = await createDataItemMediaUrl(props.item.id)
-  } catch {
-    imageLoaded = false
-  }
+imageEl.onerror = () => {
+  imageLoaded = false
+  drawCanvas()
 }
+
+const { mediaUrl, load: reloadMedia } = useMediaBlobUrl(() => props.item.id, {
+  onSuccess: (url) => {
+    imageEl.src = url
+  },
+  onError: () => {
+    imageLoaded = false
+  },
+})
+
+watch(mediaUrl, (newUrl) => {
+  if (newUrl) {
+    imageEl.src = newUrl
+  } else {
+    imageLoaded = false
+    imageEl.removeAttribute('src')
+    drawCanvas()
+  }
+})
 
 let isDrawingBox = false
 let startX = 0
@@ -995,7 +1011,6 @@ const modalityHeaderTitle = computed(() => {
 })
 
 onMounted(() => {
-  loadImage()
   const canvas = canvasRef.value
   if (canvas) {
     canvas.width = canvas.offsetWidth || 800
