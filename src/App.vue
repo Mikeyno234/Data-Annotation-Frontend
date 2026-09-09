@@ -25,7 +25,6 @@ onMounted(async () => {
         <component :is="Component" />
       </transition>
     </RouterView>
-    <ToastContainer />
   </div>
   <MainLayout v-else>
     <RouterView v-slot="{ Component, route }">
@@ -34,4 +33,5 @@ onMounted(async () => {
       </transition>
     </RouterView>
   </MainLayout>
+  <ToastContainer />
 </template>
