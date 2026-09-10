@@ -62,26 +62,15 @@ function navigateToProject() {
           </div>
 
           <!-- Modality Tag & Project Code -->
-          <span class="text-[11px] font-mono uppercase tracking-wider text-muted-foreground/90 font-medium">
+          <span class="text-xs font-semibold uppercase tracking-wider text-foreground/90">
             {{ project.modality }}
           </span>
-          <span class="text-border/80 text-[11px]">•</span>
-          <span class="text-[11px] font-mono text-muted-foreground/70 tracking-tight">
+          <span class="text-border text-xs">/</span>
+          <span class="text-xs text-muted-foreground/80 font-mono tracking-normal">
             {{ project.code }}
           </span>
         </div>
 
-        <!-- Status Badge -->
-        <span
-          class="px-2 py-0.5 rounded-md text-[11px] font-medium border select-none"
-          :class="
-            project.status === 'ACTIVE'
-              ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-              : 'border-border/60 bg-muted/50 text-muted-foreground'
-          "
-        >
-          {{ project.status === 'ACTIVE' ? 'Active' : project.status }}
-        </span>
       </div>
 
       <!-- Project Title & Description -->

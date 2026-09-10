@@ -81,7 +81,7 @@ const router = useRouter()
           title="Export is locked until tasks in this project are annotated and approved through Review/QA"
         >
           <Lock class="size-3.5" />
-          <span>Export Locked (Pending QA)</span>
+          <span>Export (Pending QA)</span>
         </div>
       </div>
     </div>
