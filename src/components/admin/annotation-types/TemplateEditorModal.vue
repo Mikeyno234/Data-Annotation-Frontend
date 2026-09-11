@@ -220,7 +220,7 @@ const livePreviewItem = computed(() => {
       <!-- Right Column: Live Annotator Preview -->
       <div class="lg:col-span-5 lg:sticky lg:top-4 space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-foreground uppercase tracking-wider font-mono">
+          <span class="text-xs font-semibold text-foreground">
             Annotator Workspace Preview
           </span>
           <span class="text-[11px] text-muted-foreground">Real-time Simulation</span>

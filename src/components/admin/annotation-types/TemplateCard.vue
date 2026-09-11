@@ -37,62 +37,67 @@ const modalityIcon = computed(() => {
   if (m === 'VIDEO') return VideoIcon
   return ImageIcon
 })
+
+function formatTemplateName(name: string) {
+  if (!name) return ''
+  return name.replace(/[_-]+/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+}
 </script>
 
 <template>
-  <Card class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/60 bg-card/95 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
+  <Card class="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-foreground/30 shadow-2xs">
     <div>
       <!-- Thumbnail Header with Preview or Ambient Pattern -->
-      <div class="relative h-32 w-full overflow-hidden bg-muted/40 select-none border-b border-border/40">
+      <div class="relative h-28 w-full overflow-hidden bg-muted select-none border-b border-border">
         <img
           v-if="item.preview_image_url"
           :src="item.preview_image_url"
           :alt="item.name"
-          class="h-full w-full object-cover filter brightness-[0.9] transition-transform duration-500 group-hover:scale-105"
+          class="h-full w-full object-cover filter brightness-[0.9] transition-transform duration-300 group-hover:scale-105"
         />
-        <div v-else class="flex h-full w-full items-center justify-center bg-muted/30 text-muted-foreground/40">
-          <component :is="modalityIcon" class="size-9" />
+        <div v-else class="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+          <component :is="modalityIcon" class="size-7" :stroke-width="1.6" />
         </div>
 
         <!-- Badges Overlay -->
-        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-          <Badge variant="outline" class="bg-card/90 backdrop-blur-md text-[10px] font-bold shadow-2xs">
-            <component :is="modalityIcon" class="size-3 mr-1" />
-            {{ item.modality }}
+        <div class="absolute top-2 left-2 flex items-center gap-1.5">
+          <Badge variant="outline" class="bg-card/90 text-xs capitalize shadow-2xs backdrop-blur-xs">
+            <component :is="modalityIcon" class="size-3 mr-1" :stroke-width="1.6" />
+            {{ item.modality.toLowerCase() }}
           </Badge>
           <span
             v-if="item.tool_type"
-            class="rounded-md bg-zinc-950/80 px-2 py-0.5 font-mono text-[9px] font-semibold text-white/90 backdrop-blur-md border border-white/10"
+            class="rounded bg-background/90 px-1.5 py-0.5 text-[10px] text-foreground border border-border font-medium"
           >
             {{ item.tool_type }}
           </span>
         </div>
 
-        <div class="absolute top-2.5 right-2.5">
+        <div class="absolute top-2 right-2">
           <Badge
-            :variant="item.status === 'ACTIVE' ? 'success' : 'outline'"
+            :variant="item.status === 'ACTIVE' ? 'success' : 'secondary'"
             :dot="item.status === 'ACTIVE'"
-            class="text-[9px] font-bold tracking-wider uppercase backdrop-blur-md"
+            class="bg-card/90 backdrop-blur-xs shadow-2xs"
           >
-            {{ item.status }}
+            {{ item.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
           </Badge>
         </div>
       </div>
 
-      <CardContent class="p-5">
-        <h3 class="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1 tracking-tight">
-          {{ item.name }}
+      <CardContent class="p-4">
+        <h3 class="text-xs font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1 tracking-tight">
+          {{ formatTemplateName(item.name) }}
         </h3>
-        <p class="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2 min-h-8">
+        <p class="mt-0.5 text-xs text-muted-foreground line-clamp-2 min-h-7 leading-relaxed">
           {{ item.description || item.instructions || 'Standard schema template for multi-modal data labeling.' }}
         </p>
 
         <!-- Dynamic Tags / Badges -->
-        <div v-if="parsedBadges.length > 0" class="mt-3 flex flex-wrap gap-1.5">
+        <div v-if="parsedBadges.length > 0" class="mt-2.5 flex flex-wrap gap-1">
           <span
             v-for="(badge, bIdx) in parsedBadges.slice(0, 3)"
             :key="bIdx"
-            class="rounded-md bg-muted/60 border border-border/40 px-2 py-0.5 text-[10px] font-mono text-muted-foreground"
+            class="rounded bg-muted border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium"
           >
             {{ badge }}
           </span>
@@ -101,41 +106,41 @@ const modalityIcon = computed(() => {
     </div>
 
     <!-- Actions Bottom Bar -->
-    <div class="flex items-center justify-between border-t border-border/40 bg-muted/15 px-5 py-2.5">
+    <div class="flex items-center justify-between border-t border-border bg-muted/20 px-3.5 py-2">
       <span class="font-mono text-[10px] text-muted-foreground truncate max-w-[120px]">
         {{ item.code }}
       </span>
 
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1">
         <Button
           size="sm"
           variant="secondary"
-          class="h-7.5 px-2.5 text-[11px] font-semibold gap-1 rounded-xl btn-tactile cursor-pointer bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-          title="Create a new project using this blueprint"
+          class="h-6.5 px-2 text-xs font-medium gap-1 rounded cursor-pointer"
+          title="Create a new project using this template"
           @click="emit('createProject', item)"
         >
-          <span>Use Blueprint</span>
+          <span>Use Template</span>
         </Button>
 
         <Button
           v-if="canUpdate"
           variant="ghost"
           size="sm"
-          class="size-7.5 p-0 rounded-xl hover:bg-primary/10 hover:text-primary"
+          class="size-6.5 p-0 rounded hover:bg-muted"
           title="Edit Schema"
           @click="emit('edit', item)"
         >
-          <Edit2 class="size-3.5" />
+          <Edit2 class="size-3" :stroke-width="1.6" />
         </Button>
         <Button
           v-if="canDelete"
           variant="ghost"
           size="sm"
-          class="size-7.5 p-0 rounded-xl hover:bg-destructive/10 hover:text-destructive"
+          class="size-6.5 p-0 rounded hover:bg-destructive/10 hover:text-destructive"
           title="Delete Schema"
           @click="emit('delete', item)"
         >
-          <Trash2 class="size-3.5" />
+          <Trash2 class="size-3" :stroke-width="1.6" />
         </Button>
       </div>
     </div>
