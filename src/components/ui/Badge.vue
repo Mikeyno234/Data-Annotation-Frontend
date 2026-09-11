@@ -15,16 +15,16 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const badgeClasses = computed(() => {
-  const base = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-all focus:outline-none select-none tracking-tight'
+  const base = 'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium transition-all focus:outline-none select-none tracking-tight'
 
   const variants = {
-    default: 'bg-primary text-primary-foreground border border-primary/20 shadow-2xs',
-    secondary: 'bg-muted/80 text-muted-foreground border border-border/40',
-    outline: 'bg-muted/30 text-foreground border border-border/60 shadow-2xs',
-    destructive: 'bg-destructive/10 text-destructive border border-destructive/25 font-bold',
-    success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 font-bold',
-    warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 font-bold',
-    info: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 font-bold',
+    default: 'bg-primary/10 text-primary border border-primary/20',
+    secondary: 'bg-muted text-muted-foreground border border-border/60',
+    outline: 'bg-transparent text-foreground border border-border',
+    destructive: 'bg-destructive/10 text-destructive border border-destructive/20',
+    success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+    info: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
   }
 
   return cn(base, variants[props.variant], props.className)

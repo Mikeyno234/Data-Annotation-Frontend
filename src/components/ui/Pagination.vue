@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import Select, { type SelectOption } from '@/components/ui/Select.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -16,7 +17,7 @@ const props = withDefaults(
     limit: 20,
     totalPages: 1,
     showPageSize: true,
-    pageSizeOptions: () => [10, 20, 50, 100],
+    pageSizeOptions: () => [10, 20, 50, 70, 100],
     disabled: false,
   }
 )
@@ -26,15 +27,6 @@ const emit = defineEmits<{
   'update:limit': [limit: number]
   'change': [payload: { page: number; limit: number }]
 }>()
-
-const jumpPage = ref<number | string>(props.page)
-
-watch(
-  () => props.page,
-  (newPage) => {
-    jumpPage.value = newPage
-  }
-)
 
 const computedTotalPages = computed(() => {
   if (props.totalPages && props.totalPages > 0) return props.totalPages
@@ -89,21 +81,14 @@ function setPage(p: number) {
   emit('change', { page: p, limit: props.limit || 20 })
 }
 
-function handleJumpPage() {
-  const target = Number(jumpPage.value)
-  if (!target || isNaN(target)) {
-    jumpPage.value = props.page
-    return
-  }
-  const validPage = Math.max(1, Math.min(target, computedTotalPages.value))
-  jumpPage.value = validPage
-  if (validPage !== props.page) {
-    setPage(validPage)
-  }
-}
+const pageSizeSelectOptions = computed<SelectOption<number>[]>(() =>
+  props.pageSizeOptions.map((opt) => ({
+    value: opt,
+    label: `${opt}`,
+  }))
+)
 
-function handleLimitChange(e: Event) {
-  const newLimit = Number((e.target as HTMLSelectElement).value)
+function onLimitSelect(newLimit: number) {
   emit('update:limit', newLimit)
   emit('update:page', 1)
   emit('change', { page: 1, limit: newLimit })
@@ -112,54 +97,65 @@ function handleLimitChange(e: Event) {
 
 <template>
   <div class="flex flex-wrap items-center justify-between gap-4 py-2 px-1 text-xs select-none">
-    <!-- Left: Entry count & borderless per-page selector -->
-    <div class="flex flex-wrap items-center gap-3">
-      <span v-if="total > 0" class="text-xs text-muted-foreground font-medium">
-        Total <span class="font-bold text-foreground font-mono">{{ total }}</span>
-      </span>
-      <span v-else class="text-xs text-muted-foreground">
-        No records
-      </span>
-
-      <!-- Page Size Dropdown: Borderless with smooth micro-animation -->
-      <div v-if="showPageSize && total > 0" class="group relative flex items-center">
-        <select
-          :value="limit"
-          :disabled="disabled"
-          class="h-8 appearance-none rounded-xl border-0 bg-muted/40 hover:bg-muted/70 pl-3 pr-7 text-xs font-semibold text-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer transition-all duration-200 shadow-xs hover:shadow-sm"
-          @change="handleLimitChange"
-        >
-          <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">
-            {{ opt }}
-          </option>
-        </select>
-        <ChevronDown class="pointer-events-none absolute right-2 size-3.5 text-muted-foreground transition-transform duration-200 group-hover:translate-y-0.5" />
-      </div>
+    <!-- Left: Natural results count statement -->
+    <div class="text-xs text-muted-foreground font-medium">
+      <template v-if="total > 0">
+        Showing
+        <span class="font-semibold text-foreground tabular-nums">{{ fromItem }}</span>
+        to
+        <span class="font-semibold text-foreground tabular-nums">{{ toItem }}</span>
+        of
+        <span class="font-semibold text-foreground tabular-nums">{{ total }}</span>
+        results
+      </template>
+      <template v-else>
+        No results found
+      </template>
     </div>
 
-    <!-- Right: Navigation controls -->
-    <div class="flex items-center gap-2">
-      <span class="text-xs text-muted-foreground font-mono mr-1">
-        Page <strong class="text-foreground font-bold">{{ total > 0 ? page : 0 }}</strong> of <span class="font-bold text-foreground">{{ computedTotalPages }}</span>
-      </span>
+    <!-- Right: Page size selector, Page info, and Navigation controls -->
+    <div class="flex flex-wrap items-center gap-3 sm:gap-5">
+      <!-- Rows per page selector -->
+      <div v-if="showPageSize && total > 0" class="flex items-center gap-2">
+        <span class="text-xs text-muted-foreground font-medium whitespace-nowrap">Rows per page</span>
+        <Select
+          :model-value="limit"
+          :options="pageSizeSelectOptions"
+          :disabled="disabled"
+          size="sm"
+          direction="up"
+          class-name="w-[72px]"
+          menu-class-name="min-w-[72px] w-[72px]"
+          @change="onLimitSelect(Number($event))"
+        />
+      </div>
 
-      <!-- Prev Button -->
-      <button
-        type="button"
-        :disabled="page <= 1 || disabled"
-        class="group/prev flex size-8 items-center justify-center rounded-xl border border-border/50 bg-muted/50 text-foreground hover:bg-accent hover:border-border active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 cursor-pointer shadow-2xs"
-        title="Previous page"
-        @click="setPage(page - 1)"
-      >
-        <ChevronLeft class="size-4 transition-transform duration-150 group-hover/prev:-translate-x-0.5" />
-      </button>
+      <!-- Page info -->
+      <div class="flex items-center text-xs text-muted-foreground font-medium whitespace-nowrap">
+        Page
+        <span class="font-semibold text-foreground tabular-nums mx-1">{{ total > 0 ? page : 0 }}</span>
+        of
+        <span class="font-semibold text-foreground tabular-nums ml-1">{{ computedTotalPages }}</span>
+      </div>
 
-      <!-- Numbered Page Links -->
+      <!-- Navigation buttons -->
       <div class="flex items-center gap-1">
+        <!-- Prev Button -->
+        <button
+          type="button"
+          :disabled="page <= 1 || disabled"
+          class="flex size-7 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shadow-2xs"
+          title="Previous page"
+          @click="setPage(page - 1)"
+        >
+          <ChevronLeft class="size-3.5" :stroke-width="1.8" />
+        </button>
+
+        <!-- Numbered Page Links -->
         <template v-for="(p, idx) in visiblePages" :key="idx">
           <span
             v-if="p === '...'"
-            class="flex size-8 items-center justify-center text-xs text-muted-foreground font-mono font-bold"
+            class="flex size-7 items-center justify-center text-xs text-muted-foreground tabular-nums"
           >
             …
           </span>
@@ -167,43 +163,28 @@ function handleLimitChange(e: Event) {
             v-else
             type="button"
             :disabled="disabled"
-            class="flex min-w-[32px] h-8 px-2.5 items-center justify-center rounded-xl border text-xs font-semibold transition-all duration-150 cursor-pointer select-none"
+            class="flex min-w-[28px] h-7 px-2 items-center justify-center rounded-md border text-xs font-medium tabular-nums transition-all cursor-pointer select-none shadow-2xs"
             :class="
               p === page
-                ? 'bg-primary text-primary-foreground border-primary font-bold shadow-sm shadow-primary/30 scale-105'
-                : 'bg-card/60 text-muted-foreground border-border/50 hover:text-foreground hover:bg-muted hover:border-border hover:scale-105 active:scale-95'
+                ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
+                : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted'
             "
             @click="setPage(Number(p))"
           >
             {{ p }}
           </button>
         </template>
-      </div>
 
-      <!-- Next Button -->
-      <button
-        type="button"
-        :disabled="page >= computedTotalPages || disabled"
-        class="group/next flex size-8 items-center justify-center rounded-xl border border-border/50 bg-muted/50 text-foreground hover:bg-accent hover:border-border active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 cursor-pointer shadow-2xs"
-        title="Next page"
-        @click="setPage(page + 1)"
-      >
-        <ChevronRight class="size-4 transition-transform duration-150 group-hover/next:translate-x-0.5" />
-      </button>
-
-      <!-- Go To Input Box -->
-      <div v-if="computedTotalPages > 1" class="flex items-center gap-1.5 ml-1">
-        <span class="text-xs text-muted-foreground font-medium">Go to</span>
-        <input
-          v-model="jumpPage"
-          type="number"
-          min="1"
-          :max="computedTotalPages"
-          :disabled="disabled"
-          class="h-8 w-12 rounded-xl border border-border/60 bg-muted/40 hover:bg-muted/70 focus:bg-card text-center text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-xs transition-all duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          @keydown.enter.prevent="handleJumpPage"
-          @blur="handleJumpPage"
-        />
+        <!-- Next Button -->
+        <button
+          type="button"
+          :disabled="page >= computedTotalPages || disabled"
+          class="flex size-7 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shadow-2xs"
+          title="Next page"
+          @click="setPage(page + 1)"
+        >
+          <ChevronRight class="size-3.5" :stroke-width="1.8" />
+        </button>
       </div>
     </div>
   </div>
