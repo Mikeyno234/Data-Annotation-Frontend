@@ -201,63 +201,65 @@ function isNodeActive(node: NavigationNode): boolean {
 </script>
 
 <template>
-  <div class="flex-1 min-h-0 overflow-y-auto px-3 py-3 font-sans">
+  <div class="flex-1 min-h-0 overflow-y-auto px-2 py-3 font-sans">
     <nav class="space-y-4">
       <!-- Standalone Workspace Items -->
       <div v-if="dynamicTree.filter((n) => n.children.length === 0).length > 0">
-        <div class="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted/80">
+        <div class="mb-1 px-2.5 text-[10px] font-mono font-medium uppercase tracking-wider text-sidebar-muted/70">
           Workspace
         </div>
         <RouterLink
           v-for="item in dynamicTree.filter((n) => n.children.length === 0)"
           :key="item.id"
           :to="item.path"
-          class="mb-1 flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-all group"
+          class="mb-0.5 flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-medium transition-all group"
           :class="[
             isNodeActive(item)
-              ? 'bg-sidebar-accent text-sidebar-foreground font-semibold shadow-xs'
-              : 'text-sidebar-muted hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+              ? 'bg-sidebar-accent text-sidebar-foreground font-medium border border-sidebar-border shadow-2xs'
+              : 'text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border border-transparent',
           ]"
         >
           <div class="flex items-center gap-2.5 min-w-0">
             <component
               :is="item.icon"
-              class="size-4 shrink-0 transition-colors"
-              :class="isNodeActive(item) ? 'text-primary' : 'text-sidebar-muted group-hover:text-sidebar-foreground'"
+              class="size-3.5 shrink-0 transition-colors"
+              :stroke-width="1.6"
+              :class="isNodeActive(item) ? 'text-sidebar-primary' : 'text-sidebar-muted group-hover:text-sidebar-foreground'"
             />
             <span class="truncate">{{ item.name }}</span>
           </div>
-          <ChevronRight v-if="isNodeActive(item)" class="size-3 text-primary shrink-0 opacity-80" />
+          <ChevronRight v-if="isNodeActive(item)" class="size-3 text-sidebar-primary shrink-0 opacity-70" :stroke-width="1.6" />
         </RouterLink>
       </div>
 
       <!-- Hierarchical Parent Items with Submenus -->
       <div v-for="parent in dynamicTree.filter((n) => n.children.length > 0)" :key="parent.id">
-        <div class="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted/80">
+        <div class="mb-1 px-2.5 text-[10px] font-mono font-medium uppercase tracking-wider text-sidebar-muted/70">
           {{ parent.name }}
         </div>
 
-        <div class="space-y-1">
+        <div class="space-y-0.5">
           <RouterLink
             v-for="child in parent.children"
             :key="child.id"
             :to="child.path"
-            class="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-all group"
+            class="flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-medium transition-all group"
             :class="[
               isNodeActive(child)
-                ? 'bg-sidebar-accent text-sidebar-foreground font-semibold shadow-xs'
-                : 'text-sidebar-muted hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+                ? 'bg-sidebar-accent text-sidebar-foreground font-medium border border-sidebar-border shadow-2xs'
+                : 'text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border border-transparent',
             ]"
           >
             <div class="flex items-center gap-2.5 min-w-0">
               <component
                 :is="child.icon"
-                class="size-4 shrink-0 transition-colors"
-                :class="isNodeActive(child) ? 'text-primary' : 'text-sidebar-muted group-hover:text-sidebar-foreground'"
+                class="size-3.5 shrink-0 transition-colors"
+                :stroke-width="1.6"
+                :class="isNodeActive(child) ? 'text-sidebar-primary' : 'text-sidebar-muted group-hover:text-sidebar-foreground'"
               />
               <span class="truncate">{{ child.name }}</span>
             </div>
-            <ChevronRight v-if="isNodeActive(child)" class="size-3 text-primary shrink-0 opacity-80" />
+            <ChevronRight v-if="isNodeActive(child)" class="size-3 text-sidebar-primary shrink-0 opacity-70" :stroke-width="1.6" />
           </RouterLink>
         </div>
       </div>
