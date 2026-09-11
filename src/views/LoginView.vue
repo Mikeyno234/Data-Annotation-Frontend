@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from '@/utils/toast'
+import Input from '@/components/ui/Input.vue'
+import Button from '@/components/ui/Button.vue'
 import { ArrowRight, Layers, Loader2, CheckCircle2 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -44,121 +46,125 @@ async function handleLogin() {
 
 <template>
   <div class="min-h-screen w-full flex flex-col lg:flex-row bg-background select-none font-sans overflow-x-hidden">
-    <!-- LEFT HALF: Brand Identity with Staggered Entrance Animation -->
-    <div class="lg:w-1/2 w-full bg-[#fdf6f0] dark:bg-[#16120e] p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-border/40 min-h-[260px] lg:min-h-screen">
-      <!-- Ambient background decoration with subtle pulse -->
-      <div class="absolute -top-24 -left-24 size-96 rounded-full bg-orange-400/15 blur-[100px] pointer-events-none animate-pulse duration-1000"></div>
-      <div class="absolute bottom-10 left-10 size-64 rounded-full bg-orange-300/10 blur-[80px] pointer-events-none"></div>
+    <!-- LEFT HALF: Utilitarian Brand Identity with Coordinate Grid & Technical Architecture -->
+    <div class="lg:w-1/2 w-full bg-muted/40 p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-border min-h-[300px] lg:min-h-screen">
+      <!-- Subtle Technical Grid Overlay -->
+      <div
+        class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
+        style="background-size: 32px 32px; background-image: linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px);"
+      ></div>
 
-      <!-- Top: Main Logo & Title with Slide-down Entrance -->
-      <div class="relative z-10 max-w-lg pt-4 lg:pt-20 animate-fade-in-down">
-        <div class="flex items-center gap-3.5 group">
-          <!-- Geometric Brand Icon with Hover Spring -->
-          <div class="relative size-11 flex items-center justify-center rounded-xl bg-[#fa694c] shadow-md shadow-orange-500/25 text-white transition-all duration-300 group-hover:scale-105 group-hover:rotate-3">
-            <Layers class="size-6 transition-transform duration-300 group-hover:scale-110" />
-            <div class="absolute -bottom-1 -right-1 size-3.5 rounded-sm bg-orange-300 border-2 border-[#fdf6f0] dark:border-[#16120e] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5"></div>
+      <!-- Top: Main Logo & Title -->
+      <div class="relative z-10 max-w-lg pt-4 lg:pt-16">
+        <div class="flex items-center gap-3 group">
+          <div class="size-8 rounded-md bg-foreground text-background flex items-center justify-center border border-border shrink-0 shadow-2xs">
+            <Layers class="size-4" :stroke-width="1.6" />
           </div>
-          <span class="text-3xl font-extrabold tracking-tight text-foreground">
-            Data Annotation
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-semibold tracking-tight text-foreground">
+              Data Annotation
+            </span>
+            <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60">
+              Enterprise
+            </span>
+          </div>
+        </div>
+
+        <div class="mt-8 space-y-2">
+          <h1 class="text-2xl lg:text-3xl font-semibold tracking-tight text-foreground">
+            Precision labeling workforce infrastructure.
+          </h1>
+          <p class="text-xs text-muted-foreground leading-relaxed max-w-md">
+            High-throughput annotation workflows, deterministic consensus metrics, and programmatic quality assurance.
+          </p>
         </div>
       </div>
 
-      <!-- Empty spacer -->
-      <div class="relative z-10 hidden lg:block"></div>
-
-      <!-- Bottom-Right Geometric Tile Decoration with Fade-in Animation -->
-      <div class="absolute bottom-0 right-0 pointer-events-none hidden sm:grid grid-cols-2 grid-rows-2 w-32 h-32 opacity-90 animate-fade-in-up">
-        <div class="bg-orange-400/70 transition-all duration-500 hover:opacity-80"></div>
-        <div class="bg-orange-500 transition-all duration-500 hover:opacity-80"></div>
-        <div class="bg-purple-300 dark:bg-purple-900/60 transition-all duration-500 hover:opacity-80"></div>
-        <div class="bg-pink-400 transition-all duration-500 hover:opacity-80"></div>
+      <!-- Bottom: Quality & Security Assurance Note -->
+      <div class="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/80 pt-4 font-sans">
+        <span>Enterprise Data Platform</span>
+        <span>ISO / SOC-2 Compliant</span>
       </div>
     </div>
 
-    <!-- RIGHT HALF: Clean Centered Login Card with Scale-in Animation -->
+    <!-- RIGHT HALF: Clean Centered Login Card -->
     <div class="lg:w-1/2 w-full bg-background flex items-center justify-center p-6 lg:p-12 relative">
-      <div class="w-full max-w-md animate-scale-in">
-        <!-- Floating Login Box -->
-        <div class="bg-card rounded-2xl p-8 sm:p-10 shadow-xl border border-border/50 transition-all duration-300 hover:shadow-2xl">
-          <div class="mb-7">
-            <h2 class="text-2xl font-bold text-foreground tracking-tight mb-1">
-              Log in
+      <div class="w-full max-w-sm animate-scale-in">
+        <div class="rounded-lg border border-border bg-card p-7 sm:p-8 shadow-2xs">
+          <div class="mb-6">
+            <h2 class="text-lg font-semibold text-foreground tracking-tight">
+              Sign In
             </h2>
-            <p class="text-xs text-muted-foreground">
-              Sign in with your organization email and password
+            <p class="text-xs text-muted-foreground mt-1">
+              Enter your organization credentials to access the workspace
             </p>
           </div>
 
           <form class="space-y-4" @submit.prevent="handleLogin">
             <!-- Email Input -->
-            <div class="space-y-1.5 group">
-              <label class="text-xs font-medium text-foreground transition-colors group-focus-within:text-primary">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">
                 Email Address
               </label>
-              <input
+              <Input
                 v-model="email"
                 type="email"
                 required
                 autocomplete="email"
-                placeholder="name@enterprise.io"
-                class="w-full h-10 px-3 rounded-lg border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200 shadow-xs focus:scale-[1.01]"
+                placeholder="example@mail.com"
+                class="h-9 text-xs"
               />
             </div>
 
             <!-- Password Input -->
-            <div class="space-y-1.5 group">
-              <label class="text-xs font-medium text-foreground transition-colors group-focus-within:text-primary">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">
                 Password
               </label>
-              <input
+              <Input
                 v-model="password"
                 type="password"
                 required
                 autocomplete="current-password"
-                placeholder="••••••••"
-                class="w-full h-10 px-3 rounded-lg border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200 shadow-xs focus:scale-[1.01]"
+                placeholder="••••••••••••"
+                class="h-9 text-xs"
               />
             </div>
 
             <!-- Keep me logged in Checkbox -->
-            <div class="flex items-center justify-between pt-1">
-              <label class="flex items-center gap-2.5 cursor-pointer group select-none">
+            <div class="flex items-center justify-between pt-0.5">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   v-model="rememberMe"
                   type="checkbox"
-                  class="size-3.5 rounded border-border text-primary focus:ring-primary/30 cursor-pointer accent-primary transition-transform group-hover:scale-110"
+                  class="size-3.5 rounded border-border text-foreground accent-foreground focus:ring-0 cursor-pointer"
                 />
-                <span class="text-xs text-muted-foreground group-hover:text-foreground transition-colors font-medium">
-                  Keep me logged in this browser
+                <span class="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Remember this session
                 </span>
               </label>
             </div>
 
-            <!-- Submit Button with Dynamic Motion States -->
-            <button
+            <!-- Submit Button -->
+            <Button
               type="submit"
               :disabled="isLoading || isSuccess"
-              class="w-full h-10 mt-2 rounded-lg font-medium text-xs transition-all duration-200 active:scale-[0.97] disabled:opacity-75 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-2 shadow-sm relative overflow-hidden"
-              :class="
-                isSuccess
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-foreground text-background hover:bg-foreground/90'
-              "
+              class="w-full h-9 mt-2 font-medium text-xs shadow-2xs"
+              :class="isSuccess ? 'bg-emerald-600 text-white border-emerald-600' : ''"
             >
               <template v-if="isLoading">
-                <Loader2 class="size-4 animate-spin" />
-                <span>Signing in...</span>
+                <Loader2 class="size-3.5 animate-spin" />
+                <span>Authenticating...</span>
               </template>
               <template v-else-if="isSuccess">
-                <CheckCircle2 class="size-4 animate-bounce" />
-                <span>Authenticated!</span>
+                <CheckCircle2 class="size-3.5" :stroke-width="1.6" />
+                <span>Authenticated</span>
               </template>
               <template v-else>
-                <span>Log in</span>
-                <ArrowRight class="size-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                <span>Continue</span>
+                <ArrowRight class="size-3.5" :stroke-width="1.6" />
               </template>
-            </button>
+            </Button>
           </form>
         </div>
       </div>

@@ -7,43 +7,42 @@ const router = useRouter()
 </script>
 
 <template>
-  <div class="min-h-screen w-full flex items-center justify-center p-6 bg-background relative overflow-hidden font-sans">
-    <!-- Ambient glow backdrops -->
-    <div class="absolute -top-32 -left-32 size-96 rounded-full bg-primary/10 blur-[120px] pointer-events-none"></div>
-    <div class="absolute -bottom-32 -right-32 size-96 rounded-full bg-orange-500/10 blur-[120px] pointer-events-none"></div>
-
-    <div class="relative z-10 max-w-md w-full text-center flex flex-col items-center">
+  <div class="min-h-screen w-full flex items-center justify-center p-6 bg-background relative overflow-hidden font-sans select-none">
+    <div class="relative z-10 max-w-sm w-full text-center flex flex-col items-center">
       <!-- 404 Visual Indicator -->
-      <div class="relative size-24 flex items-center justify-center rounded-3xl bg-muted/80 border border-border/80 shadow-inner mb-6">
-        <FileQuestion class="size-12 text-muted-foreground animate-pulse" />
-        <span class="absolute -bottom-2.5 -right-2.5 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-mono font-bold shadow-sm">
-          404
-        </span>
+      <div class="size-16 flex items-center justify-center rounded-lg bg-card border border-border shadow-2xs mb-4">
+        <FileQuestion class="size-8 text-muted-foreground" :stroke-width="1.6" />
       </div>
 
-      <h1 class="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl mb-3">
-        Page not found
+      <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium text-muted-foreground bg-muted border border-border mb-2">
+        Error 404
+      </div>
+
+      <h1 class="text-xl font-semibold tracking-tight text-foreground mb-2">
+        Page Not Found
       </h1>
 
-      <p class="text-sm text-muted-foreground leading-relaxed max-w-sm mb-8">
-        The destination you are looking for does not exist, has been removed, or the link may be broken.
+      <p class="text-xs text-muted-foreground leading-relaxed max-w-xs mb-6">
+        The page you are looking for does not exist, has been removed, or is temporarily unavailable.
       </p>
 
-      <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+      <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
         <Button
           variant="outline"
-          class="w-full sm:w-auto gap-2 rounded-xl"
+          size="sm"
+          class="w-full sm:w-auto gap-1.5 text-xs font-medium"
           @click="router.back()"
         >
-          <ArrowLeft class="size-4" />
+          <ArrowLeft class="size-3.5" :stroke-width="1.6" />
           <span>Go Back</span>
         </Button>
         <Button
-          class="w-full sm:w-auto gap-2 rounded-xl shadow-md"
+          size="sm"
+          class="w-full sm:w-auto gap-1.5 text-xs font-medium"
           @click="router.push('/dashboard')"
         >
-          <Home class="size-4" />
-          <span>Return to Dashboard</span>
+          <Home class="size-3.5" :stroke-width="1.6" />
+          <span>Dashboard</span>
         </Button>
       </div>
     </div>

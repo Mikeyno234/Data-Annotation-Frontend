@@ -59,120 +59,120 @@ const isLoading = computed(() => isProjectsLoading.value)
       </div>
 
       <div class="flex items-center gap-3">
-        <Button class="gap-2 shadow-xs transition-transform duration-200 active:scale-95" @click="router.push('/workspace')">
-          <Headphones class="size-4" />
+        <Button class="gap-2 shadow-2xs" @click="router.push('/workspace')">
+          <Layers class="size-4" :stroke-width="1.6" />
           <span>Launch Workspace</span>
         </Button>
       </div>
     </div>
 
-    <!-- KPI Metric Cards Grid with Staggered Cascading Entrance -->
-    <div v-if="analyticsError" class="rounded-2xl bg-destructive/10 p-5 text-sm text-destructive-foreground">
+    <!-- KPI Metric Cards Grid -->
+    <div v-if="analyticsError" class="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-xs text-destructive">
       Failed to load analytics overview.
     </div>
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <Card class="bg-card/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up-delay-1">
-        <CardContent class="p-6 flex items-center justify-between">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <Card class="hover:border-foreground/30 transition-all">
+        <CardContent class="p-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Projects</span>
-            <div class="text-3xl font-extrabold text-foreground mt-1 tracking-tight">
-              {{ analytics?.active_projects ?? '—' }}
+            <div class="text-[11px] font-medium text-muted-foreground">Active Projects</div>
+            <div class="text-2xl font-semibold text-foreground mt-1 tracking-tight">
+              {{ analytics?.active_projects ?? '0' }}
             </div>
           </div>
-          <div class="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 hover:scale-110">
-            <FolderKanban class="size-6" />
+          <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+            <FolderKanban class="size-4" :stroke-width="1.6" />
           </div>
         </CardContent>
       </Card>
 
-      <Card class="bg-card/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up-delay-2">
-        <CardContent class="p-6 flex items-center justify-between">
+      <Card class="hover:border-foreground/30 transition-all">
+        <CardContent class="p-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Completed Tasks</span>
-            <div class="text-3xl font-extrabold text-foreground mt-1 tracking-tight">
-              {{ analytics?.completed_tasks ?? '—' }}
+            <div class="text-[11px] font-medium text-muted-foreground">Completed Tasks</div>
+            <div class="text-2xl font-semibold text-foreground mt-1 tracking-tight">
+              {{ analytics?.completed_tasks ?? '0' }}
             </div>
           </div>
-          <div class="flex size-12 items-center justify-center rounded-2xl bg-success/15 text-success transition-transform duration-300 hover:scale-110">
-            <CheckCircle2 class="size-6" />
+          <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+            <CheckCircle2 class="size-4" :stroke-width="1.6" />
           </div>
         </CardContent>
       </Card>
 
-      <Card class="bg-card/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up-delay-3">
-        <CardContent class="p-6 flex items-center justify-between">
+      <Card class="hover:border-foreground/30 transition-all">
+        <CardContent class="p-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pending Reviews</span>
-            <div class="text-3xl font-extrabold text-foreground mt-1 tracking-tight">
-              {{ analytics?.pending_reviews ?? '—' }}
+            <div class="text-[11px] font-medium text-muted-foreground">Pending Reviews</div>
+            <div class="text-2xl font-semibold text-foreground mt-1 tracking-tight">
+              {{ analytics?.pending_reviews ?? '0' }}
             </div>
           </div>
-          <div class="flex size-12 items-center justify-center rounded-2xl bg-warning/15 text-warning transition-transform duration-300 hover:scale-110">
-            <FileCheck2 class="size-6" />
+          <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+            <FileCheck2 class="size-4" :stroke-width="1.6" />
           </div>
         </CardContent>
       </Card>
 
-      <Card class="bg-card/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up-delay-4">
-        <CardContent class="p-6 flex items-center justify-between">
+      <Card class="hover:border-foreground/30 transition-all">
+        <CardContent class="p-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mean Lead Time</span>
-            <div class="text-3xl font-extrabold text-foreground mt-1 tracking-tight">
+            <div class="text-[11px] font-medium text-muted-foreground">Mean Lead Time</div>
+            <div class="text-2xl font-semibold text-foreground mt-1 tracking-tight">
               {{ analytics?.mean_lead_time ?? '—' }}
             </div>
-            <div class="text-xs font-medium text-muted-foreground mt-1">
-              Quality: <span class="text-foreground font-semibold">{{ analytics?.quality_score ?? '—' }}</span>
+            <div class="text-[11px] text-muted-foreground mt-0.5">
+              Score: <span class="text-foreground font-medium">{{ analytics?.quality_score ?? '—' }}</span>
             </div>
           </div>
-          <div class="flex size-12 items-center justify-center rounded-2xl bg-info/15 text-info transition-transform duration-300 hover:scale-110">
-            <Clock class="size-6" />
+          <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+            <Clock class="size-4" :stroke-width="1.6" />
           </div>
         </CardContent>
       </Card>
     </div>
 
-    <!-- Active Projects Table with Entrance Animation -->
-    <div class="flex flex-col gap-4 mt-2 animate-fade-in-up-delay-4">
+    <!-- Active Projects Table -->
+    <div class="flex flex-col gap-3 mt-2">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold text-foreground tracking-tight">Active Annotation Projects</h2>
-        <Button variant="ghost" size="sm" class="text-xs gap-1.5 font-semibold" @click="router.push('/projects')">
+        <h2 class="text-sm font-semibold text-foreground tracking-tight">Active Annotation Projects</h2>
+        <Button variant="ghost" size="sm" class="text-xs gap-1 text-muted-foreground hover:text-foreground" @click="router.push('/projects')">
           <span>View All</span>
-          <ArrowUpRight class="size-3.5" />
+          <ArrowUpRight class="size-3.5" :stroke-width="1.6" />
         </Button>
       </div>
 
-      <div v-if="!isLoading && recentProjects.length === 0" class="rounded-3xl bg-card/60 p-10 text-center text-sm text-muted-foreground shadow-sm">
+      <div v-if="!isLoading && recentProjects.length === 0" class="rounded-lg border border-border bg-card p-8 text-center text-xs text-muted-foreground">
         No active projects yet.
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card
           v-for="proj in recentProjects"
           :key="proj.id"
-          class="hover:shadow-md hover:-translate-y-0.5 cursor-pointer group bg-card/90"
+          class="hover:border-foreground/30 cursor-pointer group"
           @click="router.push(`/projects/${proj.id}`)"
         >
-          <CardContent class="p-6 flex items-center justify-between">
-            <div class="flex items-start gap-4">
-              <div class="flex size-12 items-center justify-center rounded-2xl bg-secondary text-foreground shrink-0 group-hover:bg-primary/10 transition-colors">
-                <Headphones v-if="proj.modality === 'AUDIO'" class="size-6 text-primary" />
-                <Layers v-else class="size-6 text-primary" />
+          <CardContent class="p-4 flex items-center justify-between">
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="flex size-9 items-center justify-center rounded-md bg-muted text-foreground border border-border shrink-0">
+                <Headphones v-if="proj.modality === 'AUDIO'" class="size-4 text-foreground" :stroke-width="1.6" />
+                <Layers v-else class="size-4 text-foreground" :stroke-width="1.6" />
               </div>
 
-              <div>
+              <div class="min-w-0">
                 <div class="flex items-center gap-2">
-                  <h3 class="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{{ proj.name }}</h3>
-                  <Badge variant="outline" class="text-[11px]">{{ proj.code }}</Badge>
+                  <h3 class="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">{{ proj.name }}</h3>
+                  <Badge variant="outline">{{ proj.code }}</Badge>
                 </div>
-                <p class="text-xs text-muted-foreground line-clamp-1 mt-1">{{ proj.description || 'No description' }}</p>
+                <p class="text-xs text-muted-foreground line-clamp-1 mt-0.5">{{ proj.description || 'No description' }}</p>
               </div>
             </div>
 
-            <div class="flex items-center gap-3">
-              <Badge variant="secondary" class="text-[11px]">
-                {{ proj.modality }}
+            <div class="flex items-center gap-2.5 shrink-0 ml-3">
+              <Badge variant="secondary" class="capitalize">
+                {{ proj.modality.toLowerCase() }}
               </Badge>
-              <ArrowUpRight class="size-4 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              <ArrowUpRight class="size-3.5 text-muted-foreground group-hover:text-foreground transition-transform" :stroke-width="1.6" />
             </div>
           </CardContent>
         </Card>

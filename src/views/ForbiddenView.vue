@@ -7,43 +7,42 @@ const router = useRouter()
 </script>
 
 <template>
-  <div class="min-h-screen w-full flex items-center justify-center p-6 bg-background relative overflow-hidden font-sans">
-    <!-- Ambient glow backdrops -->
-    <div class="absolute -top-32 -left-32 size-96 rounded-full bg-destructive/10 blur-[120px] pointer-events-none"></div>
-    <div class="absolute -bottom-32 -right-32 size-96 rounded-full bg-amber-500/10 blur-[120px] pointer-events-none"></div>
-
-    <div class="relative z-10 max-w-md w-full text-center flex flex-col items-center">
+  <div class="min-h-screen w-full flex items-center justify-center p-6 bg-background relative overflow-hidden font-sans select-none">
+    <div class="relative z-10 max-w-sm w-full text-center flex flex-col items-center">
       <!-- 403 Visual Indicator -->
-      <div class="relative size-24 flex items-center justify-center rounded-3xl bg-destructive/10 border border-destructive/20 shadow-inner mb-6">
-        <ShieldAlert class="size-12 text-destructive" />
-        <span class="absolute -bottom-2.5 -right-2.5 px-2.5 py-0.5 rounded-full bg-destructive text-destructive-foreground text-xs font-mono font-bold shadow-sm">
-          403
-        </span>
+      <div class="size-16 flex items-center justify-center rounded-lg bg-card border border-destructive/30 shadow-2xs mb-4">
+        <ShieldAlert class="size-8 text-destructive" :stroke-width="1.6" />
       </div>
 
-      <h1 class="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl mb-3">
+      <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium text-destructive bg-destructive/10 border border-destructive/20 mb-2">
         Access Denied
+      </div>
+
+      <h1 class="text-xl font-semibold tracking-tight text-foreground mb-2">
+        Access Restricted
       </h1>
 
-      <p class="text-sm text-muted-foreground leading-relaxed max-w-sm mb-8">
-        You don't have the necessary role or permission to access this resource. If you believe this is an error, please contact your workspace administrator.
+      <p class="text-xs text-muted-foreground leading-relaxed max-w-xs mb-6">
+        You do not have permission to access this resource. Please contact your workspace administrator if you need access.
       </p>
 
-      <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+      <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
         <Button
           variant="outline"
-          class="w-full sm:w-auto gap-2 rounded-xl"
+          size="sm"
+          class="w-full sm:w-auto gap-1.5 text-xs font-medium"
           @click="router.back()"
         >
-          <ArrowLeft class="size-4" />
+          <ArrowLeft class="size-3.5" :stroke-width="1.6" />
           <span>Go Back</span>
         </Button>
         <Button
-          class="w-full sm:w-auto gap-2 rounded-xl shadow-md"
+          size="sm"
+          class="w-full sm:w-auto gap-1.5 text-xs font-medium"
           @click="router.push('/dashboard')"
         >
-          <Home class="size-4" />
-          <span>Return to Dashboard</span>
+          <Home class="size-3.5" :stroke-width="1.6" />
+          <span>Dashboard</span>
         </Button>
       </div>
     </div>
