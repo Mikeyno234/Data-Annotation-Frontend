@@ -129,28 +129,33 @@ onMounted(fetchQATasks)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 max-w-7xl mx-auto">
+  <div class="flex flex-col gap-5 max-w-7xl mx-auto">
     <!-- Top Header -->
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-foreground">QA & Consensus Evaluation</h1>
-        <p class="text-xs text-muted-foreground mt-1">
-          Quality assurance scoring, inter-annotator agreement IoU metrics, and conflict resolution
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl font-semibold tracking-tight text-foreground">QA & Consensus Evaluation</h1>
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+            {{ totalTasks }} queued
+          </span>
+        </div>
+        <p class="text-xs text-muted-foreground mt-0.5">
+          Quality assurance scoring, inter-annotator agreement metrics, and conflict resolution
         </p>
       </div>
     </div>
 
     <!-- Status Tabs -->
-    <div class="flex flex-wrap items-center gap-1.5 rounded-2xl bg-card/90 p-1.5 shadow-xs">
+    <div class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs self-start">
       <button
         v-for="tab in statusTabs"
         :key="tab.id"
         type="button"
-        class="rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer select-none"
+        class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
         :class="
           selectedStatusFilter === tab.id
-            ? 'bg-primary text-primary-foreground font-bold shadow-xs'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            ? 'bg-card text-foreground font-medium shadow-2xs border border-border'
+            : 'text-muted-foreground hover:text-foreground border border-transparent'
         "
         @click="setStatusFilter(tab.id)"
       >
@@ -159,22 +164,22 @@ onMounted(fetchQATasks)
     </div>
 
     <!-- QA Tasks List -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center p-16 rounded-3xl bg-card/60 shadow-sm">
-      <RefreshCw class="size-6 animate-spin text-primary mb-2" />
-      <span class="text-xs text-muted-foreground">Loading QA tasks...</span>
+    <div v-if="isLoading" class="flex flex-col items-center justify-center p-16 rounded-lg border border-border bg-card shadow-2xs">
+      <RefreshCw class="size-5 animate-spin text-primary mb-2" :stroke-width="1.6" />
+      <span class="text-xs text-muted-foreground font-medium">Loading QA tasks...</span>
     </div>
 
-    <div v-else-if="qaTasks.length === 0" class="flex flex-col items-center justify-center p-16 rounded-2xl border border-border/60 bg-card/90 text-center shadow-2xs">
-      <div class="flex size-14 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground border border-border/40 mb-4">
-        <ShieldCheck class="size-7 text-emerald-500/80" />
+    <div v-else-if="qaTasks.length === 0" class="flex flex-col items-center justify-center p-16 rounded-lg border border-border bg-card text-center shadow-2xs">
+      <div class="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border mb-3">
+        <ShieldCheck class="size-5 text-foreground" :stroke-width="1.6" />
       </div>
-      <h3 class="text-base font-bold text-foreground tracking-tight">Queue in Equilibrium</h3>
-      <p class="text-xs text-muted-foreground mt-1.5 max-w-sm leading-relaxed">
-        All active submissions have achieved consensus criteria, or no tasks are currently waiting for evaluator review.
+      <h3 class="text-sm font-semibold text-foreground tracking-tight">No Tasks Pending Evaluation</h3>
+      <p class="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed">
+        All submitted annotations have been evaluated, or no tasks are currently waiting for review.
       </p>
-      <Button variant="outline" size="sm" class="mt-5 gap-1.5" @click="fetchQATasks">
-        <RefreshCw class="size-3.5" />
-        <span>Sync Quality Stream</span>
+      <Button variant="outline" size="sm" class="mt-4 gap-1.5 text-xs font-medium" @click="fetchQATasks">
+        <RefreshCw class="size-3" :stroke-width="1.6" />
+        <span>Check for Submissions</span>
       </Button>
     </div>
 
@@ -189,7 +194,7 @@ onMounted(fetchQATasks)
       </div>
 
       <!-- Pagination Bar -->
-      <Card class="bg-card/90 px-5 py-2 shadow-sm">
+      <Card class="px-5 py-2 shadow-2xs border border-border">
         <Pagination
           :page="currentPage"
           :limit="pageLimit"

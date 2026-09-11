@@ -71,7 +71,7 @@ const emit = defineEmits<{
       <Button
         v-if="task.status === 'PENDING' || task.status === 'UNASSIGNED'"
         size="sm"
-        class="gap-1.5 text-xs font-semibold rounded-xl h-9 px-4"
+        class="gap-1.5 text-xs font-medium rounded-md h-8 px-3"
         @click="emit('scoreConsensus', task)"
       >
         <Check class="size-3.5" />
