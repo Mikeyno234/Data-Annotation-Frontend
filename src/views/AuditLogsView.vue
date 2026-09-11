@@ -71,21 +71,32 @@ function handleLimitChange(limit: number) {
   fetchLogs()
 }
 
+function formatAction(action: string): string {
+  if (!action) return '—'
+  return action
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 onMounted(() => {
   fetchLogs()
 })
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 max-w-7xl mx-auto">
+  <div class="flex flex-col gap-5 max-w-7xl mx-auto">
     <!-- Top Header -->
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <div class="flex items-center gap-2">
-          <Terminal class="size-6 text-primary" />
-          <h1 class="text-2xl font-bold tracking-tight text-foreground">Security Audit Trail</h1>
+          <h1 class="text-xl font-semibold tracking-tight text-foreground">Security Audit Trail</h1>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground border border-border/60">
+            {{ totalLogs }} records
+          </span>
         </div>
-        <p class="text-xs text-muted-foreground mt-1">
+        <p class="text-xs text-muted-foreground mt-0.5">
           Comprehensive log of user actions, task lock events, and permission-checked API executions
         </p>
       </div>
@@ -94,24 +105,24 @@ onMounted(() => {
     <!-- Search & Filter Bar -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="relative w-full max-w-sm">
-        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" :stroke-width="1.6" />
         <Input
           v-model="searchQuery"
           placeholder="Search by action, user, or resource..."
-          class="pl-10 text-xs"
+          class="pl-8 text-xs h-8"
           @input="handleSearchInput"
         />
       </div>
 
       <div class="flex items-center gap-2">
-        <SlidersHorizontal class="size-3.5 text-muted-foreground" />
-        <span class="text-xs text-muted-foreground font-semibold">Status:</span>
+        <SlidersHorizontal class="size-3.5 text-muted-foreground" :stroke-width="1.6" />
+        <span class="text-xs text-muted-foreground">Status:</span>
         <select
           v-model="selectedStatusFilter"
-          class="h-10 rounded-xl border-0 bg-muted/60 px-3.5 text-xs text-foreground focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shadow-inner cursor-pointer font-medium"
+          class="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/15 cursor-pointer"
           @change="handleFilterChange"
         >
-          <option value="ALL">All Statuses</option>
+          <option value="ALL">All statuses</option>
           <option value="SUCCESS">Success</option>
           <option value="FAILED">Failed</option>
         </select>
@@ -119,20 +130,20 @@ onMounted(() => {
     </div>
 
     <!-- Audit Logs Table Card -->
-    <Card class="bg-card/90 overflow-hidden shadow-sm">
+    <Card class="overflow-hidden shadow-2xs">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-muted/50 text-xs uppercase font-semibold tracking-wider text-muted-foreground">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-muted/40 text-xs font-medium text-muted-foreground border-b border-border">
             <tr>
-              <th class="px-5 py-4">Timestamp</th>
-              <th class="px-5 py-4">User</th>
-              <th class="px-5 py-4">Action</th>
-              <th class="px-5 py-4">Resource</th>
-              <th class="px-5 py-4">IP Address</th>
-              <th class="px-5 py-4">Status</th>
+              <th class="px-4 py-3 font-medium">Timestamp</th>
+              <th class="px-4 py-3 font-medium">User</th>
+              <th class="px-4 py-3 font-medium">Action</th>
+              <th class="px-4 py-3 font-medium">Resource</th>
+              <th class="px-4 py-3 font-medium">IP address</th>
+              <th class="px-4 py-3 font-medium">Status</th>
             </tr>
           </thead>
-          <tbody class="text-xs">
+          <tbody class="text-xs divide-y divide-border/30">
             <tr v-if="isLoading">
               <td colspan="6" class="p-8 text-center text-muted-foreground font-sans">
                 <RefreshCw class="size-5 animate-spin mx-auto mb-2 text-primary" />
@@ -146,15 +157,22 @@ onMounted(() => {
               </td>
             </tr>
 
-            <tr v-for="log in auditLogs" :key="log.id" class="transition-colors hover:bg-muted/40 odd:bg-muted/10">
-              <td class="px-5 py-4 text-muted-foreground">{{ new Date(log.created_at).toLocaleString() }}</td>
-              <td class="px-5 py-4 font-sans text-foreground font-semibold">{{ log.user_email || 'system' }}</td>
-              <td class="px-5 py-4 text-primary font-bold">{{ log.action }}</td>
-              <td class="px-5 py-4 text-muted-foreground">{{ log.resource_type }} #{{ log.resource_id }}</td>
-              <td class="px-5 py-4 text-muted-foreground">{{ log.ip_address || '127.0.0.1' }}</td>
-              <td class="px-5 py-4">
-                <Badge :variant="log.status === 'SUCCESS' ? 'success' : 'destructive'" class="text-[10px]">
-                  {{ log.status }}
+            <tr v-for="log in auditLogs" :key="log.id" class="transition-colors hover:bg-muted/30">
+              <td class="px-4 py-3 text-muted-foreground tabular-nums whitespace-nowrap">{{ new Date(log.created_at).toLocaleString() }}</td>
+              <td class="px-4 py-3 text-foreground font-medium">{{ log.user_email || 'System' }}</td>
+              <td class="px-4 py-3 text-foreground">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-foreground border border-border/60">
+                  {{ formatAction(log.action) }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-muted-foreground">
+                <span class="capitalize">{{ log.resource_type?.toLowerCase() || 'Resource' }}</span>
+                <span class="text-muted-foreground/70 tabular-nums"> #{{ log.resource_id }}</span>
+              </td>
+              <td class="px-4 py-3 text-muted-foreground tabular-nums font-mono text-[11px]">{{ log.ip_address || '127.0.0.1' }}</td>
+              <td class="px-4 py-3">
+                <Badge :variant="log.status === 'SUCCESS' ? 'success' : 'destructive'" class="text-[11px] capitalize">
+                  {{ log.status?.toLowerCase() || 'unknown' }}
                 </Badge>
               </td>
             </tr>
@@ -163,7 +181,7 @@ onMounted(() => {
       </div>
 
       <!-- Pagination Bar -->
-      <div class="px-5 py-2 border-t border-muted/20">
+      <div class="px-4 py-2 border-t border-border/40">
         <Pagination
           :page="currentPage"
           :limit="pageLimit"
