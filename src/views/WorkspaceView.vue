@@ -176,40 +176,40 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-7xl flex-col gap-6">
+  <div class="mx-auto flex max-w-7xl flex-col gap-5">
     <!-- Task Queue Navigator Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card/95 p-4 shadow-2xs">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl border border-border/40">
-          <Button variant="ghost" size="icon" class="size-8 rounded-lg" :disabled="currentIndex <= 0" @click="prevTask">
-            <ChevronLeft class="size-4" />
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-2xs">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border">
+          <Button variant="ghost" size="icon" class="size-7 rounded" :disabled="currentIndex <= 0" @click="prevTask">
+            <ChevronLeft class="size-3.5" :stroke-width="1.6" />
           </Button>
-          <span class="text-xs text-muted-foreground px-2 font-mono">
-            Task <strong class="text-foreground font-bold">{{ dataItems.length ? currentIndex + 1 : 0 }}</strong>/{{ dataItems.length }}
+          <span class="text-[11px] text-muted-foreground px-1.5 font-mono">
+            Task <strong class="text-foreground font-semibold">{{ dataItems.length ? currentIndex + 1 : 0 }}</strong>/{{ dataItems.length }}
           </span>
-          <Button variant="ghost" size="icon" class="size-8 rounded-lg" :disabled="currentIndex >= dataItems.length - 1" @click="nextTask">
-            <ChevronRight class="size-4" />
+          <Button variant="ghost" size="icon" class="size-7 rounded" :disabled="currentIndex >= dataItems.length - 1" @click="nextTask">
+            <ChevronRight class="size-3.5" :stroke-width="1.6" />
           </Button>
         </div>
 
-        <div class="hidden min-w-0 items-center gap-3 sm:flex pl-2">
+        <div class="hidden min-w-0 items-center gap-3 sm:flex pl-1">
           <div class="min-w-0">
-            <div class="max-w-[20rem] truncate text-sm font-bold text-foreground tracking-tight">{{ activeItem?.file_name || 'Preparing next task...' }}</div>
+            <div class="max-w-[22rem] truncate text-xs font-semibold text-foreground tracking-tight">{{ activeItem?.file_name || 'Preparing next task...' }}</div>
             <div class="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
-              <span>Task #{{ activeItem?.id || '—' }}</span>
-              <span v-if="projectAnnotationType">•</span>
-              <span v-if="projectAnnotationType" class="max-w-[14rem] truncate font-sans font-semibold text-foreground/80">{{ projectAnnotationType }}</span>
+              <span>#{{ activeItem?.id || '—' }}</span>
+              <span v-if="projectAnnotationType" class="text-border">•</span>
+              <span v-if="projectAnnotationType" class="max-w-[16rem] truncate font-sans font-medium text-foreground/80">{{ projectAnnotationType }}</span>
             </div>
           </div>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <Badge variant="outline" class="font-mono text-[10px] uppercase font-bold">
+        <Badge variant="outline">
           {{ effectiveModality }}
         </Badge>
-        <Button variant="outline" size="sm" class="h-8 px-2.5 text-xs gap-1.5" @click="fetchTasks">
-          <RefreshCw class="size-3.5" :class="{ 'animate-spin': isLoading }" />
+        <Button variant="outline" size="sm" class="h-7 px-2 text-[11px] gap-1.5 font-mono" @click="fetchTasks">
+          <RefreshCw class="size-3" :stroke-width="1.6" :class="{ 'animate-spin': isLoading }" />
           <span class="hidden sm:inline">Refresh</span>
         </Button>
       </div>
