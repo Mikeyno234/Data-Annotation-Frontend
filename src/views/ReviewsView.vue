@@ -124,20 +124,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 max-w-7xl mx-auto">
+  <div class="flex flex-col gap-5 max-w-7xl mx-auto">
     <!-- Top Header Section -->
     <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
       <div class="space-y-1">
         <div class="flex items-center gap-2.5">
-          <h1 class="text-2xl font-bold tracking-tight text-foreground font-display">Quality Reviews</h1>
+          <h1 class="text-xl font-semibold tracking-tight text-foreground">Quality Reviews</h1>
           <span
             v-if="totalReviews !== undefined"
-            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-muted text-muted-foreground border border-border/50"
+            class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border"
           >
             {{ totalReviews }} queued
           </span>
         </div>
-        <p class="text-xs text-muted-foreground/80 leading-relaxed max-w-xl">
+        <p class="text-xs text-muted-foreground leading-relaxed max-w-xl">
           Inspect, approve, or request reworks on submitted annotations across datasets.
         </p>
       </div>
@@ -146,15 +146,15 @@ onMounted(() => {
     <!-- Filter Tabs & Search Bar -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <!-- Segmented Tab Controls -->
-      <div class="inline-flex p-1 rounded-lg bg-muted/40 border border-border/50 shadow-2xs self-start sm:self-auto">
+      <div class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs self-start sm:self-auto">
         <button
           v-for="tab in statusTabs"
           :key="tab.id"
           type="button"
-          class="rounded-md px-3.5 py-1.5 text-xs font-medium transition-all cursor-pointer select-none"
+          class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
           :class="
             selectedStatusFilter === tab.id
-              ? 'bg-card text-foreground font-semibold shadow-xs border border-border/60'
+              ? 'bg-card text-foreground font-medium shadow-2xs border border-border'
               : 'text-muted-foreground hover:text-foreground border border-transparent'
           "
           @click="setStatusFilter(tab.id)"
@@ -165,25 +165,24 @@ onMounted(() => {
 
       <!-- Search Input -->
       <div class="relative w-full sm:w-72">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/70 pointer-events-none" />
-        <input
-          :value="searchQuery"
-          type="text"
+        <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" :stroke-width="1.6" />
+        <Input
+          :model-value="searchQuery"
           placeholder="Filter by file or comment..."
-          class="w-full h-9 pl-9 pr-3 text-xs rounded-lg bg-card/80 border border-border/60 text-foreground placeholder:text-muted-foreground/60 transition-all focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 shadow-2xs"
+          class="h-8 pl-8 pr-3 text-xs rounded-md shadow-2xs"
           @input="searchQuery = ($event.target as HTMLInputElement).value; handleSearchInput()"
         />
       </div>
     </div>
 
     <!-- Review Items List -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center p-16 rounded-2xl border border-border/60 bg-card/60 shadow-sm">
-      <RefreshCw class="size-6 animate-spin text-primary mb-2" />
+    <div v-if="isLoading" class="flex flex-col items-center justify-center p-16 rounded-lg border border-border bg-card shadow-2xs">
+      <RefreshCw class="size-5 animate-spin text-primary mb-2" />
       <span class="text-xs text-muted-foreground font-medium">Loading review queue...</span>
     </div>
 
-    <div v-else-if="reviews.length === 0" class="flex flex-col items-center justify-center p-16 rounded-2xl border border-border/60 bg-card/90 text-center shadow-2xs">
-      <FileCheck2 class="size-8 text-muted-foreground mb-2" />
+    <div v-else-if="reviews.length === 0" class="flex flex-col items-center justify-center p-16 rounded-lg border border-border bg-card text-center shadow-2xs">
+      <FileCheck2 class="size-7 text-muted-foreground mb-2" :stroke-width="1.6" />
       <p class="text-xs font-semibold text-foreground">No review items found</p>
       <p class="text-xs text-muted-foreground mt-0.5">There are no annotations matching your current filters.</p>
     </div>
@@ -201,7 +200,7 @@ onMounted(() => {
       </div>
 
       <!-- Pagination Bar -->
-      <Card class="bg-card/95 px-5 py-2 shadow-2xs">
+      <Card class="px-5 py-2 shadow-2xs border border-border">
         <Pagination
           :page="currentPage"
           :limit="pageLimit"
