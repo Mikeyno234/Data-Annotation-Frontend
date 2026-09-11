@@ -30,19 +30,31 @@ const emit = defineEmits<{
   (e: 'pageChange', page: number): void
   (e: 'limitChange', limit: number): void
 }>()
+
+function formatStatus(status: string): string {
+  const map: Record<string, string> = {
+    UNASSIGNED: 'Unassigned',
+    IN_PROGRESS: 'In Progress',
+    ANNOTATED: 'Annotated',
+    ACCEPTED: 'Accepted',
+    COMPLETED: 'Completed',
+    REJECTED: 'Rejected',
+  }
+  return map[status] || status
+}
 </script>
 
 <template>
   <div class="flex flex-col gap-4 mt-2">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <h2 class="text-lg font-bold text-foreground tracking-tight">Data Items & Tasks</h2>
+        <h2 class="text-base font-semibold text-foreground tracking-tight">Data Items & Tasks</h2>
         <!-- Status filter -->
         <div class="flex items-center gap-1.5 ml-2">
-          <SlidersHorizontal class="size-3.5 text-muted-foreground" />
+          <SlidersHorizontal class="size-3 text-muted-foreground" :stroke-width="1.6" />
           <select
             :value="selectedStatusFilter"
-            class="h-8 rounded-xl border-0 bg-muted/60 px-3 text-xs font-semibold text-foreground focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shadow-inner cursor-pointer"
+            class="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/15 cursor-pointer transition-all"
             @change="emit('update:selectedStatusFilter', ($event.target as HTMLSelectElement).value); emit('filterChange')"
           >
             <option value="ALL">All Statuses</option>
@@ -56,72 +68,71 @@ const emit = defineEmits<{
 
       <div class="flex items-center gap-3">
         <!-- Resume in-progress task banner -->
-        <div v-if="myInProgressTask" class="flex items-center gap-2 rounded-xl bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-400">
-          <RotateCcw class="size-3.5" />
+        <div v-if="myInProgressTask" class="flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <RotateCcw class="size-3.5" :stroke-width="1.6" />
           <span>You have an in-progress task</span>
         </div>
-        <Button size="sm" class="gap-1.5 shadow-md rounded-xl font-semibold h-9 px-4 cursor-pointer" @click="emit('checkoutNext')">
-          <Play class="size-3.5 fill-current" />
+        <Button size="sm" class="gap-1.5 shadow-2xs rounded-md h-8 px-3.5 cursor-pointer" @click="emit('checkoutNext')">
+          <Play class="size-3 fill-current" />
           <span>Checkout Next Task</span>
         </Button>
       </div>
     </div>
 
-    <Card class="bg-card/90 overflow-hidden shadow-sm">
+    <Card class="overflow-hidden shadow-2xs border border-border">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-muted/50 text-xs uppercase font-semibold tracking-wider text-muted-foreground">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-muted/40 text-[11px] font-medium text-muted-foreground border-b border-border">
             <tr>
-              <th class="px-5 py-4">Task ID</th>
-              <th class="px-5 py-4">File Name</th>
-              <th class="px-5 py-4">Modality</th>
-              <th class="px-5 py-4">Status</th>
-              <th class="px-5 py-4 text-right">Actions</th>
+              <th class="px-5 py-3">Task ID</th>
+              <th class="px-5 py-3">File Name</th>
+              <th class="px-5 py-3">Modality</th>
+              <th class="px-5 py-3">Status</th>
+              <th class="px-5 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody class="text-xs">
-            <tr v-for="item in dataItems" :key="item.id" class="transition-colors hover:bg-muted/40 odd:bg-muted/10">
-              <td class="px-5 py-4 font-bold text-primary">#{{ item.id }}</td>
-              <td class="px-5 py-4 text-foreground font-semibold">{{ item.file_name }}</td>
-              <td class="px-5 py-4">
-                <Badge variant="outline">{{ item.modality }}</Badge>
+          <tbody class="divide-y divide-border/60">
+            <tr v-for="item in dataItems" :key="item.id" class="transition-colors hover:bg-muted/30">
+              <td class="px-5 py-3.5 font-mono font-medium text-muted-foreground">#{{ item.id }}</td>
+              <td class="px-5 py-3.5 text-foreground font-medium">{{ item.file_name }}</td>
+              <td class="px-5 py-3.5">
+                <Badge variant="outline" class="capitalize">{{ item.modality.toLowerCase() }}</Badge>
               </td>
 
-              <td class="px-5 py-4">
+              <td class="px-5 py-3.5">
                 <Badge
                   :variant="
-                    item.status === 'COMPLETED'
+                    item.status === 'COMPLETED' || item.status === 'ACCEPTED'
                       ? 'success'
                       : item.status === 'ANNOTATED'
                       ? 'info'
                       : item.status === 'IN_PROGRESS'
                       ? 'warning'
-                      : 'outline'
+                      : 'secondary'
                   "
                 >
-                  {{ item.status }}
+                  {{ formatStatus(item.status) }}
                 </Badge>
               </td>
-              <td class="px-5 py-4 text-right">
+              <td class="px-5 py-3.5 text-right">
                 <Button
                   v-if="item.status === 'IN_PROGRESS' && item.locked_by_id === currentUserId"
-                  variant="default"
                   size="sm"
-                  class="h-8 px-3.5 text-xs gap-1 font-semibold rounded-xl cursor-pointer"
+                  class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
                   @click="emit('openTask', item)"
                 >
-                  <RotateCcw class="size-3" />
+                  <RotateCcw class="size-3" :stroke-width="1.6" />
                   <span>Continue</span>
                 </Button>
                 <Button
                   v-else
-                  variant="secondary"
+                  variant="outline"
                   size="sm"
-                  class="h-8 px-3.5 text-xs gap-1 font-semibold hover:bg-primary hover:text-white transition-colors cursor-pointer rounded-xl"
+                  class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
                   @click="emit('openTask', item)"
                 >
-                  <Play class="size-3 fill-current" />
-                  <span>Open in Workspace</span>
+                  <Play class="size-2.5 fill-current" />
+                  <span>Annotate</span>
                 </Button>
               </td>
             </tr>
@@ -136,7 +147,6 @@ const emit = defineEmits<{
           :limit="pageLimit"
           :total="totalDataItems"
           :total-pages="totalPages"
-          :page-size-options="[10, 15, 30, 60]"
           :disabled="isLoading"
           @update:page="emit('pageChange', $event)"
           @update:limit="emit('limitChange', $event)"

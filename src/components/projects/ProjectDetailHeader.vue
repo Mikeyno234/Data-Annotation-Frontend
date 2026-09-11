@@ -31,26 +31,26 @@ const router = useRouter()
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <!-- Top Header -->
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <Button
           variant="outline"
           size="icon"
-          class="size-10 rounded-xl cursor-pointer"
+          class="size-8 rounded-md cursor-pointer"
           @click="router.push('/projects')"
         >
-          <ArrowLeft class="size-4" />
+          <ArrowLeft class="size-3.5" :stroke-width="1.6" />
         </Button>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-bold text-foreground font-sans">{{ project?.name || 'Project Details' }}</h1>
-            <Badge v-if="project" :variant="project.modality === 'AUDIO' ? 'success' : 'info'" class="text-xs font-sans">
-              {{ project.modality }}
-            </Badge >
+            <h1 class="text-xl font-semibold text-foreground tracking-tight">{{ project?.name || 'Project Details' }}</h1>
+            <Badge v-if="project" variant="outline" class="capitalize">
+              {{ project.modality.toLowerCase() }}
+            </Badge>
           </div>
-          <span class="text-xs text-muted-foreground font-sans">{{ project?.code }} • Organization ID: {{ project?.organization_id }}</span>
+          <span class="text-xs text-muted-foreground">{{ project?.code }} • Organization #{{ project?.organization_id }}</span>
         </div>
       </div>
 
@@ -59,67 +59,73 @@ const router = useRouter()
         <Button
           v-if="canUpload"
           variant="outline"
-          class="h-10 gap-2 px-4 rounded-xl text-xs font-semibold shadow-xs cursor-pointer font-sans"
+          size="sm"
+          class="h-8 gap-1.5 px-3 rounded-md text-xs font-medium shadow-2xs cursor-pointer"
           @click="emit('upload')"
         >
-          <Upload class="size-4 text-primary" />
+          <Upload class="size-3.5" :stroke-width="1.6" />
           <span>Upload Dataset</span>
         </Button>
 
         <Button
           v-if="canExport"
           variant="outline"
-          class="h-10 gap-2 px-4 rounded-xl text-xs font-semibold shadow-xs cursor-pointer font-sans"
+          size="sm"
+          class="h-8 gap-1.5 px-3 rounded-md text-xs font-medium shadow-2xs cursor-pointer"
           @click="emit('export')"
         >
-          <Download class="size-4 text-primary" />
+          <Download class="size-3.5" :stroke-width="1.6" />
           <span>Export Dataset</span>
         </Button>
         <div
           v-else
-          class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-muted/60 text-muted-foreground text-xs font-medium font-sans select-none"
+          class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-muted/40 text-muted-foreground text-xs select-none"
           title="Export is locked until tasks in this project are annotated and approved through Review/QA"
         >
-          <Lock class="size-3.5" />
+          <Lock class="size-3" :stroke-width="1.6" />
           <span>Export (Pending QA)</span>
         </div>
       </div>
     </div>
 
     <!-- Metadata Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <Card class="bg-card/90 shadow-sm">
-        <CardContent class="p-5 flex items-center gap-4">
-          <div class="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Layers class="size-6" />
-          </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      <Card class="hover:border-foreground/30 transition-all">
+        <CardContent class="p-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Annotation Type</span>
-            <div class="text-base font-bold text-foreground mt-0.5">{{ project?.annotation_type }}</div>
+            <div class="text-[11px] font-medium text-muted-foreground">Annotation Type</div>
+            <div class="text-sm font-semibold text-foreground mt-1 tracking-tight capitalize">
+              {{ (project?.annotation_type || '').replace(/[_-]+/g, ' ').toLowerCase() }}
+            </div>
+          </div>
+          <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+            <Layers class="size-4" :stroke-width="1.6" />
           </div>
         </CardContent>
       </Card>
 
-      <Card class="bg-card/90 shadow-sm">
-        <CardContent class="p-5 flex items-center gap-4">
-          <div class="flex size-12 items-center justify-center rounded-2xl bg-info/15 text-info">
-            <Database class="size-6" />
-          </div>
+      <Card class="hover:border-foreground/30 transition-all">
+        <CardContent class="p-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Datasets & Batches</span>
-            <div class="text-base font-bold text-foreground mt-0.5">{{ datasets?.length || 0 }} Datasets Registered</div>
+            <div class="text-[11px] font-medium text-muted-foreground">Datasets & Batches</div>
+            <div class="text-sm font-semibold text-foreground mt-1">{{ datasets?.length || 0 }} Registered</div>
+          </div>
+          <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+            <Database class="size-4" :stroke-width="1.6" />
           </div>
         </CardContent>
       </Card>
 
-      <Card class="bg-card/90 shadow-sm">
-        <CardContent class="p-5 flex items-center gap-4">
-          <div class="flex size-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-            <Calendar class="size-6" />
-          </div>
+      <Card class="hover:border-foreground/30 transition-all">
+        <CardContent class="p-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status & Priority</span>
-            <div class="text-base font-bold text-foreground mt-0.5">{{ project?.status }} • {{ project?.priority }}</div>
+            <div class="text-[11px] font-medium text-muted-foreground">Status & Priority</div>
+            <div class="text-sm font-semibold text-foreground mt-1 capitalize">
+              {{ (project?.status || 'Active').toLowerCase() }} • {{ (project?.priority || 'Normal').toLowerCase() }}
+            </div>
+          </div>
+          <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+            <Calendar class="size-4" :stroke-width="1.6" />
           </div>
         </CardContent>
       </Card>

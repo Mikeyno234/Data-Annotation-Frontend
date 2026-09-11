@@ -43,54 +43,53 @@ function navigateToProject() {
 
 <template>
   <div
-    class="group relative flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-md hover:shadow-primary/5 cursor-pointer"
+    class="group relative flex flex-col justify-between rounded-lg border border-border bg-card p-4 transition-all duration-150 hover:border-foreground/30 cursor-pointer shadow-2xs"
     @click="navigateToProject"
   >
     <!-- Top Row: Modality Indicator + Code + Status -->
-    <div class="space-y-3.5">
+    <div class="space-y-3">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <!-- Modality Icon Badge -->
           <div
-            class="flex size-7 items-center justify-center rounded-md border border-border/50 bg-muted/50 text-foreground transition-colors group-hover:border-primary/30 group-hover:bg-primary/5"
+            class="flex size-6.5 items-center justify-center rounded-md border border-border bg-muted text-foreground"
           >
-            <Headphones v-if="project.modality === 'AUDIO'" class="size-3.5 text-indigo-400" />
-            <ImageIcon v-else-if="project.modality === 'IMAGE'" class="size-3.5 text-sky-400" />
-            <FileText v-else-if="project.modality === 'TEXT'" class="size-3.5 text-emerald-400" />
-            <VideoIcon v-else-if="project.modality === 'VIDEO'" class="size-3.5 text-amber-400" />
-            <Layers v-else class="size-3.5 text-primary" />
+            <Headphones v-if="project.modality === 'AUDIO'" class="size-3.5 text-foreground" :stroke-width="1.6" />
+            <ImageIcon v-else-if="project.modality === 'IMAGE'" class="size-3.5 text-foreground" :stroke-width="1.6" />
+            <FileText v-else-if="project.modality === 'TEXT'" class="size-3.5 text-foreground" :stroke-width="1.6" />
+            <VideoIcon v-else-if="project.modality === 'VIDEO'" class="size-3.5 text-foreground" :stroke-width="1.6" />
+            <Layers v-else class="size-3.5 text-foreground" :stroke-width="1.6" />
           </div>
 
           <!-- Modality Tag & Project Code -->
-          <span class="text-xs font-semibold uppercase tracking-wider text-foreground/90">
-            {{ project.modality }}
+          <span class="text-xs font-medium text-foreground capitalize">
+            {{ project.modality.toLowerCase() }}
           </span>
           <span class="text-border text-xs">/</span>
-          <span class="text-xs text-muted-foreground/80 font-mono tracking-normal">
+          <span class="text-xs text-muted-foreground font-mono">
             {{ project.code }}
           </span>
         </div>
-
       </div>
 
       <!-- Project Title & Description -->
-      <div class="space-y-1.5">
+      <div class="space-y-1">
         <div class="flex items-start justify-between gap-2">
-          <h3 class="text-base font-semibold text-foreground tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
+          <h3 class="text-sm font-semibold text-foreground tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
             {{ project.name }}
           </h3>
-          <ArrowUpRight class="size-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+          <ArrowUpRight class="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" :stroke-width="1.6" />
         </div>
-        <p class="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed font-normal min-h-[2.25rem]">
+        <p class="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[2.25rem]">
           {{ project.description || 'No description provided for this annotation pipeline.' }}
         </p>
       </div>
 
       <!-- Engine & Metadata Spec -->
-      <div class="pt-2">
-        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-muted/40 border border-border/50 text-[11px] text-foreground/85 transition-colors group-hover:bg-muted/60">
-          <Cpu class="size-3 text-muted-foreground/70 shrink-0" />
-          <span class="truncate font-medium" :title="project.annotation_type">
+      <div class="pt-1">
+        <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-border bg-muted/40 text-[11px] text-muted-foreground">
+          <Cpu class="size-3 text-muted-foreground shrink-0" :stroke-width="1.6" />
+          <span class="truncate font-medium text-foreground/90" :title="project.annotation_type">
             {{ formatAnnotationEngine(project.annotation_type) }}
           </span>
         </div>
@@ -99,12 +98,12 @@ function navigateToProject() {
 
     <!-- Bottom Actions Bar -->
     <div
-      class="mt-5 flex items-center justify-between border-t border-border/50 pt-3 text-xs"
+      class="mt-4 flex items-center justify-between border-t border-border pt-2.5 text-xs"
       @click.stop
     >
       <!-- Dataset Count or Fallback Info -->
-      <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground/80 font-mono">
-        <Database class="size-3.5 text-muted-foreground/60" />
+      <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Database class="size-3 text-muted-foreground" :stroke-width="1.6" />
         <span>{{ project.datasets?.length || 0 }} datasets</span>
       </div>
 
@@ -113,23 +112,23 @@ function navigateToProject() {
         <button
           v-if="canUploadDataset"
           type="button"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-medium text-muted-foreground transition-all hover:text-foreground hover:bg-muted/70 cursor-pointer border border-transparent hover:border-border/50"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-muted-foreground transition-all hover:text-foreground hover:bg-muted cursor-pointer border border-transparent hover:border-border"
           title="Upload dataset"
           @click="emit('upload', project.id, project.modality)"
         >
-          <UploadCloud class="size-3.5" />
+          <UploadCloud class="size-3" :stroke-width="1.6" />
           <span>Upload</span>
         </button>
 
         <button
           v-if="canEditProject"
           type="button"
-          class="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground/70 transition-all hover:text-foreground hover:bg-muted/70 cursor-pointer border border-transparent hover:border-border/50"
+          class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-all hover:text-foreground hover:bg-muted cursor-pointer border border-transparent hover:border-border"
           title="Configure project"
           aria-label="Edit project configuration"
           @click="emit('edit', project)"
         >
-          <Settings2 class="size-3.5" />
+          <Settings2 class="size-3.5" :stroke-width="1.6" />
         </button>
       </div>
     </div>

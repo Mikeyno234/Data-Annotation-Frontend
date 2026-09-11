@@ -218,10 +218,10 @@ function addNewLabel() {
           <div class="rounded-xl border border-border/60 bg-card/60 p-3.5 space-y-3 shadow-2xs">
             <div class="flex items-center justify-between">
               <div>
-                <span class="text-[11px] font-mono uppercase tracking-wider font-bold text-foreground">
+                <span class="text-xs font-semibold text-foreground">
                   Project Classes & Labels ({{ projectLabels.length }})
                 </span>
-                <p class="text-[10.5px] text-muted-foreground mt-0.5">
+                <p class="text-[11px] text-muted-foreground mt-0.5">
                   Customize classes specifically for this project (catalog template remains clean).
                 </p>
               </div>
