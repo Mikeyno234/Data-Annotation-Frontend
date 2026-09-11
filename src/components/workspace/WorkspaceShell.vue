@@ -128,7 +128,7 @@ function handleSelectLabel(name: string) {
       class="flex flex-wrap items-center justify-between gap-4 bg-card/90 p-3.5 rounded-2xl shadow-sm"
     >
       <div class="flex items-center gap-3 flex-wrap">
-        <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
+        <span class="text-xs font-medium text-muted-foreground">
           {{ classLabelTitle }}
         </span>
         <div class="flex items-center gap-2 flex-wrap">

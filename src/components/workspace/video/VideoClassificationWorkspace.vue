@@ -407,7 +407,7 @@ watch(() => props.item.id, () => {
                 No label selected yet. Press a hotkey (1-9) or click a category.
               </span>
             </div>
-            <div class="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+            <div class="text-[11px] text-muted-foreground tabular-nums">
               Item #{{ item.id }}
             </div>
           </div>
@@ -420,10 +420,10 @@ watch(() => props.item.id, () => {
         <!-- Category Selector Panel -->
         <div class="rounded-2xl p-4 border border-border/70 bg-card/95 shadow-sm space-y-3">
           <div class="flex items-center justify-between border-b border-border/40 pb-2.5">
-            <span class="text-xs font-bold text-foreground font-mono uppercase tracking-wider">
+            <span class="text-xs font-semibold text-foreground">
               Annotation Classes
             </span>
-            <span class="text-[10px] font-mono text-muted-foreground">
+            <span class="text-[11px] text-muted-foreground">
               Hotkeys: 1-{{ availableLabels.length }}
             </span>
           </div>

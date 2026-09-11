@@ -352,7 +352,7 @@ onMounted(() => {
     :modality-title="modalityHeaderTitle"
     modality-type="Image"
     :show-class-selector="detectedSubtype !== 'classification'"
-    class-label-title="Active Class:"
+    class-label-title="Active class"
     :hotkey-hints="hotkeyHints"
   >
     <!-- Floating Studio Toolbar Dock -->
@@ -415,10 +415,10 @@ onMounted(() => {
         <!-- 1. Classification Cards Sidebar -->
         <div v-if="detectedSubtype === 'classification'" class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono flex items-center gap-1.5">
-              <Tag class="size-3.5 text-primary" /> Image Categories
+            <h3 class="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Tag class="size-3.5 text-muted-foreground" /> Image Categories
             </h3>
-            <Badge variant="outline" class="font-mono text-[10px]">
+            <Badge variant="secondary" class="text-[11px] font-medium">
               {{ selectedClasses.length }} selected
             </Badge>
           </div>

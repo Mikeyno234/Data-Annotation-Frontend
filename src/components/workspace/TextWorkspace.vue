@@ -208,7 +208,7 @@ onMounted(() => {
       <!-- Tagged Entities Inspector -->
       <div class="lg:col-span-1 flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
+          <h3 class="text-xs font-semibold text-foreground">
             Tagged Entities ({{ (session.payload.value?.entities || []).length }})
           </h3>
           <Badge v-if="session.hasPrelabel.value" variant="secondary" class="gap-1 text-[10px]">

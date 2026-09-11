@@ -19,8 +19,8 @@ const emit = defineEmits<{
 <template>
   <div class="flex flex-col gap-3">
     <div class="flex items-center justify-between">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono flex items-center gap-1.5">
-        <Scissors class="size-3.5 text-primary" /> Polygons ({{ polygons.length }})
+      <h3 class="text-xs font-semibold text-foreground flex items-center gap-1.5">
+        <Scissors class="size-3.5 text-muted-foreground" /> Polygons ({{ polygons.length }})
       </h3>
       <Badge v-if="hasPrelabel" variant="secondary" class="gap-1 text-[10px]">
         <Sparkles class="size-3 text-primary" /> Pre-annotated

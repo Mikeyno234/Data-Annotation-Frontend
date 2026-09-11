@@ -23,7 +23,7 @@ const emit = defineEmits<{
   <div class="flex flex-col gap-4">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-muted-foreground font-mono">
+        <h3 class="text-sm font-semibold text-foreground">
           Diarization Segments & Transcripts ({{ segments.length }})
         </h3>
         <Badge v-if="hasPrelabel" variant="secondary" class="gap-1 text-[10px]">

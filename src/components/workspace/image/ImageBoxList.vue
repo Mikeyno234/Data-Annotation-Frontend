@@ -21,7 +21,7 @@ const emit = defineEmits<{
 <template>
   <div class="flex flex-col gap-3">
     <div class="flex items-center justify-between">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
+      <h3 class="text-xs font-semibold text-foreground">
         Bounding Boxes ({{ boxes.length }})
       </h3>
       <Badge v-if="hasPrelabel" variant="secondary" class="gap-1 text-[10px]">
