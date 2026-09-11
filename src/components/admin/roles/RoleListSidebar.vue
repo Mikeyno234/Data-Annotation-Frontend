@@ -24,26 +24,26 @@ const emit = defineEmits<{
   <div class="flex flex-col gap-3 w-full">
     <!-- Search Bar & Counter Header -->
     <div class="relative">
-      <Search class="pointer-events-none absolute left-3.5 top-3 size-4 text-muted-foreground" />
+      <Search class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" :stroke-width="1.6" />
       <Input
         :model-value="searchQuery"
         placeholder="Search roles or tenant..."
-        class="h-10 pl-10 pr-8 text-xs rounded-xl font-sans border border-border/50 bg-card/70 focus-visible:bg-card focus-visible:ring-1 focus-visible:ring-primary/30 shadow-2xs"
+        class="h-8 pl-8 pr-8 text-xs rounded-md border border-border bg-card shadow-2xs"
         @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       />
       <button
         v-if="searchQuery"
         type="button"
-        class="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer"
+        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
         title="Clear search"
         @click="emit('update:searchQuery', '')"
       >
-        <X class="size-4" />
+        <X class="size-3.5" :stroke-width="1.6" />
       </button>
     </div>
 
     <!-- Role Profiles Container -->
-    <div class="flex flex-col gap-1.5 rounded-2xl bg-card/60 backdrop-blur-md border border-border/50 p-2 shadow-2xs max-h-[calc(100vh-250px)] min-h-[300px] overflow-y-auto">
+    <div class="flex flex-col gap-1 rounded-lg bg-card border border-border p-1.5 shadow-2xs max-h-[calc(100vh-250px)] min-h-[300px] overflow-y-auto">
       <!-- Loading Skeleton State -->
       <div v-if="isLoading" class="p-2 space-y-2">
         <div

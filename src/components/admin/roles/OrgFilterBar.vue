@@ -14,20 +14,20 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-card/60 backdrop-blur-md border border-border/50 shadow-2xs">
-    <div class="flex items-center gap-2 px-3 py-1.5 text-muted-foreground shrink-0 border-r border-border/40 pr-3.5 mr-0.5">
-      <Building2 class="size-3.5 text-primary" />
-      <span class="text-[11px] font-semibold tracking-wide uppercase font-sans">Tenant Scope</span>
+  <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-lg bg-card border border-border shadow-2xs">
+    <div class="flex items-center gap-2 px-3 py-1.5 text-muted-foreground shrink-0 border-r border-border pr-3 mr-0.5">
+      <Building2 class="size-3.5 text-muted-foreground" :stroke-width="1.6" />
+      <span class="text-[11px] font-medium text-foreground">Tenant Scope</span>
     </div>
 
     <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
       <button
         type="button"
-        class="group flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer font-sans btn-tactile"
+        class="group flex items-center gap-2 rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 cursor-pointer btn-tactile border"
         :class="
           selectedOrgFilter === 'ALL'
-            ? 'bg-card text-foreground font-semibold shadow-xs border border-border/70 ring-1 ring-primary/20'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-transparent'
+            ? 'bg-muted text-foreground border-border/80 shadow-2xs'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
         "
         @click="emit('selectOrg', 'ALL')"
       >
