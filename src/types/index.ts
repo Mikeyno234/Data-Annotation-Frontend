@@ -93,6 +93,23 @@ export interface User {
   organizations?: Organization[]
 }
 
+export interface CreateUserPayload {
+  full_name: string
+  email: string
+  password: string
+  role_id: number
+  organization_id?: number | null
+}
+
+export interface UpdateUserPayload {
+  full_name?: string
+  email?: string
+  role_id?: number
+  organization_id?: number | null
+  status?: string
+  password?: string
+}
+
 export interface Project {
   id: number
   organization_id: number

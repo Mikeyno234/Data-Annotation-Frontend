@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { User, Role, Permission, AuditLog, AnalyticsOverview, Menu, Pagination, Organization } from '@/types'
+import type { User, Role, Permission, AuditLog, AnalyticsOverview, Menu, Pagination, Organization, CreateUserPayload, UpdateUserPayload } from '@/types'
 
 export const adminApi = {
   getUsers(params?: {
@@ -10,6 +10,12 @@ export const adminApi = {
     status?: string
   }) {
     return apiClient.get<{ success: boolean; data: User[]; pagination: Pagination }>('/users', { params })
+  },
+  createUser(payload: CreateUserPayload) {
+    return apiClient.post<{ success: boolean; data: User; message: string }>('/users', payload)
+  },
+  updateUser(id: number, payload: UpdateUserPayload) {
+    return apiClient.put<{ success: boolean; data: User; message: string }>(`/users/${id}`, payload)
   },
   getRoles() {
     return apiClient.get<{ success: boolean; data: Role[] }>('/roles')
