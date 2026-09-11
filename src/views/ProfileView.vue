@@ -35,52 +35,52 @@ function setTab(tab: 'profile' | 'preferences' | 'security' | 'shortcuts') {
     <!-- Header -->
     <div class="flex flex-wrap items-start justify-between gap-4 pb-2">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-foreground">Account & Preferences</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-foreground">Account & Preferences</h1>
         <p class="text-xs text-muted-foreground mt-1">
-          Manage your personal profile, MinIO avatar storage, workspace configurations, and security.
+          Manage your personal profile, workspace configurations, and security settings.
         </p>
       </div>
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-card/90 p-1.5 text-xs shadow-sm border border-border/40 scrollbar-none">
+    <div class="flex items-center gap-1 overflow-x-auto rounded-lg bg-muted/60 p-1 text-xs border border-border/50 scrollbar-none">
       <button
         type="button"
-        class="flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'profile' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'profile' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
         @click="setTab('profile')"
       >
-        <User class="size-4" />
+        <User class="size-3.5" />
         <span>Profile & Avatar</span>
       </button>
 
       <button
         type="button"
-        class="flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'preferences' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'preferences' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
         @click="setTab('preferences')"
       >
-        <Sliders class="size-4" />
+        <Sliders class="size-3.5" />
         <span>Workspace Preferences</span>
       </button>
 
       <button
         type="button"
-        class="flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'security' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'security' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
         @click="setTab('security')"
       >
-        <Lock class="size-4" />
+        <Lock class="size-3.5" />
         <span>Security & Password</span>
       </button>
 
       <button
         type="button"
-        class="flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'shortcuts' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'shortcuts' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
         @click="setTab('shortcuts')"
       >
-        <Keyboard class="size-4" />
+        <Keyboard class="size-3.5" />
         <span>Keyboard Shortcuts</span>
       </button>
     </div>
