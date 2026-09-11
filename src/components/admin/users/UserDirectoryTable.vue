@@ -2,12 +2,11 @@
 import type { User, Role } from '@/types'
 import { getAvatarUrl } from '@/api/auth'
 import Card from '@/components/ui/Card.vue'
-import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Pagination from '@/components/ui/Pagination.vue'
-import { RefreshCw, Mail, Building2 } from 'lucide-vue-next'
+import { RefreshCw, Mail, Building2, Pencil } from 'lucide-vue-next'
 
-defineProps<{
+const props = defineProps<{
   users: User[]
   roles: Role[]
   currentUserId?: number
@@ -19,7 +18,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'updateRole', user: User, roleId: number): void
+  (e: 'editUser', user: User): void
   (e: 'toggleStatus', user: User): void
   (e: 'pageChange', page: number): void
   (e: 'limitChange', limit: number): void
@@ -36,36 +35,36 @@ function getInitials(name: string) {
 </script>
 
 <template>
-  <Card class="bg-card/90 overflow-hidden shadow-sm">
+  <Card class="overflow-hidden shadow-2xs border border-border">
     <div v-if="isLoading" class="flex flex-col items-center justify-center p-16">
-      <RefreshCw class="size-6 animate-spin text-primary mb-2" />
-      <span class="text-xs text-muted-foreground">Loading directory...</span>
+      <RefreshCw class="size-5 animate-spin text-primary mb-2" />
+      <span class="text-xs text-muted-foreground font-medium">Loading directory...</span>
     </div>
 
     <div v-else-if="users.length === 0" class="flex flex-col items-center justify-center p-16 text-center">
-      <h3 class="text-base font-bold text-foreground">No users found</h3>
+      <h3 class="text-sm font-semibold text-foreground">No users found</h3>
       <p class="text-xs text-muted-foreground mt-1 max-w-sm">
         No team members match your active search or role criteria.
       </p>
     </div>
 
     <div v-else class="overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead class="bg-muted/50 text-xs uppercase font-semibold tracking-wider text-muted-foreground">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-muted/40 text-[11px] font-medium text-muted-foreground border-b border-border">
           <tr>
-            <th class="px-5 py-4">User</th>
-            <th class="px-5 py-4">Role Assignment</th>
-            <th class="px-5 py-4">Organization</th>
-            <th class="px-5 py-4">Status</th>
-            <th class="px-5 py-4 text-right">Actions</th>
+            <th class="px-5 py-3">User</th>
+            <th class="px-5 py-3">Role</th>
+            <th class="px-5 py-3">Organization</th>
+            <th class="px-5 py-3">Status</th>
+            <th class="px-5 py-3 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody class="text-xs">
-          <tr v-for="user in users" :key="user.id" class="transition-colors hover:bg-muted/40 odd:bg-muted/10">
+        <tbody class="divide-y divide-border/60">
+          <tr v-for="user in users" :key="user.id" class="transition-colors hover:bg-muted/30">
             <!-- User Profile & Avatar -->
-            <td class="px-5 py-4">
+            <td class="px-5 py-3.5">
               <div class="flex items-center gap-3">
-                <div class="size-10 rounded-2xl bg-primary/10 overflow-hidden shrink-0 flex items-center justify-center text-primary font-bold shadow-2xs">
+                <div class="size-8 rounded-full bg-muted border border-border/80 overflow-hidden shrink-0 flex items-center justify-center text-foreground font-semibold text-xs shadow-2xs">
                   <img
                     v-if="user.avatar"
                     :src="getAvatarUrl(user)"
@@ -75,61 +74,64 @@ function getInitials(name: string) {
                   <span v-else>{{ getInitials(user.full_name) }}</span>
                 </div>
                 <div class="min-w-0">
-                  <div class="font-bold text-foreground flex items-center gap-1.5 truncate">
+                  <div class="font-medium text-foreground flex items-center gap-1.5 truncate">
                     <span>{{ user.full_name }}</span>
-                    <span v-if="user.id === currentUserId" class="text-[10px] text-primary font-semibold">(You)</span>
+                    <span v-if="user.id === currentUserId" class="text-[10px] text-muted-foreground font-medium px-1.5 py-0.2 rounded bg-muted border border-border/60">You</span>
                   </div>
                   <div class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
-                    <Mail class="size-3 shrink-0" />
+                    <Mail class="size-3 shrink-0 opacity-70" />
                     <span>{{ user.email }}</span>
                   </div>
                 </div>
               </div>
             </td>
 
-            <!-- Role Selector -->
-            <td class="px-5 py-4">
-              <select
-                :value="user.role_id"
-                class="h-8 rounded-xl border border-border/50 bg-muted/60 px-2.5 text-xs font-semibold text-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-                @change="emit('updateRole', user, Number(($event.target as HTMLSelectElement).value))"
+            <!-- Role -->
+            <td class="px-5 py-3.5">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors"
+                :class="
+                  user.role?.name === 'Super Admin'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'bg-muted/60 text-foreground/80 border border-border/50'
+                "
               >
-                <option v-for="r in roles" :key="r.id" :value="r.id">
-                  {{ r.name }}
-                </option>
-              </select>
+                {{ user.role?.name || 'No Role' }}
+              </span>
             </td>
 
             <!-- Organization -->
-            <td class="px-5 py-4">
-              <div class="flex items-center gap-1.5 text-foreground font-semibold">
-                <Building2 class="size-3.5 text-muted-foreground" />
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-1.5 text-foreground font-medium">
+                <Building2 class="size-3.5 text-muted-foreground shrink-0" />
                 <span>{{ user.organization?.name || 'Global / Super' }}</span>
               </div>
             </td>
 
-            <!-- Status Badge -->
-            <td class="px-5 py-4">
-              <Badge
-                :variant="user.status === 'ACTIVE' ? 'success' : 'outline'"
-                :dot="user.status === 'ACTIVE'"
-                class="text-xs font-semibold"
+            <!-- Status -->
+            <td class="px-5 py-3.5">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium"
+                :class="
+                  user.status === 'ACTIVE'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-muted/60 text-muted-foreground border border-border/50'
+                "
               >
                 {{ user.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
-              </Badge>
+              </span>
             </td>
 
-            <!-- Action Button -->
-            <td class="px-5 py-4 text-right">
+            <!-- Actions -->
+            <td class="px-5 py-3.5 text-right">
               <Button
-                v-if="user.id !== currentUserId"
                 variant="outline"
                 size="sm"
-                class="h-8 px-3 text-xs rounded-xl font-semibold cursor-pointer"
-                :class="user.status === 'ACTIVE' ? 'text-destructive hover:bg-destructive/10' : 'text-emerald-500 hover:bg-emerald-500/10'"
-                @click="emit('toggleStatus', user)"
+                class-name="h-7 px-2.5 text-xs gap-1.5 rounded-md hover:bg-muted font-medium transition-colors shadow-2xs"
+                @click="emit('editUser', user)"
               >
-                {{ user.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}
+                <Pencil class="size-3 text-muted-foreground" />
+                <span>Edit</span>
               </Button>
             </td>
           </tr>

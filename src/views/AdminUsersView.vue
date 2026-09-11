@@ -1,21 +1,32 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { adminApi } from '@/api/admin'
-import type { User, Role } from '@/types'
+import type { User, Role, Organization } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from '@/utils/toast'
 import UserMetricsBar from '@/components/admin/users/UserMetricsBar.vue'
 import UserFilterBar from '@/components/admin/users/UserFilterBar.vue'
 import UserDirectoryTable from '@/components/admin/users/UserDirectoryTable.vue'
-import { Users } from 'lucide-vue-next'
+import CreateUserModal from '@/components/admin/users/CreateUserModal.vue'
+import EditUserModal from '@/components/admin/users/EditUserModal.vue'
+import Button from '@/components/ui/Button.vue'
+import { Users, UserPlus } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const users = ref<User[]>([])
 const roles = ref<Role[]>([])
+const organizations = ref<Organization[]>([])
 const isLoading = ref(true)
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const selectedUserForEdit = ref<User | null>(null)
 const searchQuery = ref('')
 const selectedRoleFilter = ref<string>('ALL')
 const selectedStatusFilter = ref<string>('ALL')
+
+const canCreateUser = computed(
+  () => authStore.isSuperAdmin || authStore.hasPermission('user.create')
+)
 
 const currentPage = ref(1)
 const pageLimit = ref(20)
@@ -55,6 +66,18 @@ async function fetchUsersData() {
     if (rolesRes.status === 'fulfilled' && rolesRes.value.data) {
       roles.value = rolesRes.value.data.data || rolesRes.value.data
     }
+
+    if (authStore.isSuperAdmin && organizations.value.length === 0) {
+      try {
+        const orgRes: any = await adminApi.getOrganizations()
+        const orgPayload = orgRes?.data?.data || orgRes?.data
+        if (Array.isArray(orgPayload)) {
+          organizations.value = orgPayload
+        }
+      } catch (err) {
+        console.error('Failed to load organizations', err)
+      }
+    }
   } catch (err: any) {
     toast.error('Failed to load user directory', err?.message)
   } finally {
@@ -89,15 +112,9 @@ function handleLimitChange(limit: number) {
 
 const activeUsersCount = computed(() => users.value.filter((u) => u.status === 'ACTIVE').length)
 
-async function updateUserRole(user: User, roleId: number) {
-  try {
-    await adminApi.updateUserAccess(user.id, { role_id: roleId })
-    user.role_id = roleId
-    user.role = roles.value.find((r) => r.id === roleId)
-    toast.success('User role updated', `${user.full_name} is now assigned to ${user.role?.name}`)
-  } catch (err: any) {
-    toast.error('Failed to update user role', err?.message)
-  }
+function handleEditUser(user: User) {
+  selectedUserForEdit.value = user
+  showEditModal.value = true
 }
 
 async function toggleUserStatus(user: User) {
@@ -126,6 +143,19 @@ onMounted(fetchUsersData)
         <p class="text-sm text-muted-foreground mt-1">
           Manage enterprise workforce accounts, assign operational roles, and monitor account activity.
         </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <Button
+          v-if="canCreateUser"
+          variant="default"
+          size="sm"
+          class-name="gap-1.5 rounded-lg text-xs shadow-xs"
+          @click="showCreateModal = true"
+        >
+          <UserPlus class="size-3.5" :stroke-width="1.8" />
+          <span>Add User</span>
+        </Button>
       </div>
     </div>
 
@@ -158,10 +188,30 @@ onMounted(fetchUsersData)
       :total-users="totalUsers"
       :total-pages="totalPages"
       :is-loading="isLoading"
-      @update-role="updateUserRole"
+      @edit-user="handleEditUser"
       @toggle-status="toggleUserStatus"
       @page-change="handlePageChange"
       @limit-change="handleLimitChange"
+    />
+
+    <!-- Create User Modal -->
+    <CreateUserModal
+      v-model:open="showCreateModal"
+      :roles="roles"
+      :organizations="organizations"
+      :is-super-admin="authStore.isSuperAdmin"
+      :default-organization-id="authStore.user?.organization_id"
+      @created="fetchUsersData"
+    />
+
+    <!-- Edit User Modal -->
+    <EditUserModal
+      v-model:open="showEditModal"
+      :user="selectedUserForEdit"
+      :roles="roles"
+      :organizations="organizations"
+      :is-super-admin="authStore.isSuperAdmin"
+      @updated="fetchUsersData"
     />
   </div>
 </template>

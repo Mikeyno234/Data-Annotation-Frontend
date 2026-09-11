@@ -11,39 +11,39 @@ defineProps<{
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-    <Card class="bg-card/90 shadow-sm">
-      <CardContent class="p-5 flex items-center gap-4">
-        <div class="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Users class="size-6" />
-        </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+    <Card class="hover:border-foreground/30 transition-all">
+      <CardContent class="p-4 flex items-center justify-between">
         <div>
-          <div class="text-3xl font-extrabold text-foreground tracking-tight">{{ totalCount }}</div>
-          <div class="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">Total Registered</div>
+          <div class="text-[11px] font-medium text-muted-foreground">Total Registered</div>
+          <div class="text-2xl font-semibold text-foreground tracking-tight mt-1">{{ totalCount }}</div>
+        </div>
+        <div class="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+          <Users class="size-4" :stroke-width="1.6" />
         </div>
       </CardContent>
     </Card>
 
-    <Card class="bg-card/90 shadow-sm">
-      <CardContent class="p-5 flex items-center gap-4">
-        <div class="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500">
-          <UserCheck class="size-6" />
-        </div>
+    <Card class="hover:border-foreground/30 transition-all">
+      <CardContent class="p-4 flex items-center justify-between">
         <div>
-          <div class="text-3xl font-extrabold text-emerald-500 tracking-tight">{{ activeCount }}</div>
-          <div class="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">Active</div>
+          <div class="text-[11px] font-medium text-muted-foreground">Active Operators</div>
+          <div class="text-2xl font-semibold text-foreground tracking-tight mt-1">{{ activeCount }}</div>
+        </div>
+        <div class="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+          <UserCheck class="size-4" :stroke-width="1.6" />
         </div>
       </CardContent>
     </Card>
 
-    <Card class="bg-card/90 shadow-sm">
-      <CardContent class="p-5 flex items-center gap-4">
-        <div class="flex size-12 items-center justify-center rounded-2xl bg-info/15 text-info">
-          <Shield class="size-6" />
-        </div>
+    <Card class="hover:border-foreground/30 transition-all">
+      <CardContent class="p-4 flex items-center justify-between">
         <div>
-          <div class="text-3xl font-extrabold text-info tracking-tight">{{ rolesCount }}</div>
-          <div class="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">Configured Roles</div>
+          <div class="text-[11px] font-medium text-muted-foreground">Configured Roles</div>
+          <div class="text-2xl font-semibold text-foreground tracking-tight mt-1">{{ rolesCount }}</div>
+        </div>
+        <div class="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
+          <Shield class="size-4" :stroke-width="1.6" />
         </div>
       </CardContent>
     </Card>
