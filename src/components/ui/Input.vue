@@ -30,7 +30,7 @@ defineEmits<{
     :disabled="disabled"
     :class="
       cn(
-        'flex h-10 w-full rounded-xl border border-border/60 bg-muted/40 px-3.5 py-2 text-sm transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground/60 focus-visible:bg-card focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-50 text-foreground shadow-2xs',
+        'flex h-9 w-full rounded-lg border border-border bg-card px-3 py-1.5 text-xs transition-all file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground/50 focus-visible:border-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 disabled:cursor-not-allowed disabled:opacity-40 text-foreground',
         className
       )
     "

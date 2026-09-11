@@ -19,22 +19,22 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const buttonClasses = computed(() => {
-  const base = 'btn-tactile inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-45 select-none cursor-pointer tracking-tight'
+  const base = 'btn-tactile inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/20 disabled:pointer-events-none disabled:opacity-40 select-none cursor-pointer tracking-normal'
 
   const variants = {
-    default: 'bg-primary text-primary-foreground border border-primary/30 shadow-xs shadow-primary/25 hover:bg-primary/95 hover:shadow-sm hover:shadow-primary/30',
-    secondary: 'bg-muted/70 text-secondary-foreground border border-border/50 hover:bg-muted hover:text-foreground shadow-2xs',
-    outline: 'border border-border/70 bg-card/70 text-foreground hover:bg-muted/80 hover:border-border shadow-2xs',
+    default: 'bg-primary text-primary-foreground border border-primary/40 hover:bg-primary/90 shadow-2xs',
+    secondary: 'bg-muted/80 text-foreground border border-border/80 hover:bg-muted shadow-2xs',
+    outline: 'border border-border bg-card text-foreground hover:bg-muted/60 shadow-2xs',
     ghost: 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-    destructive: 'bg-destructive text-destructive-foreground border border-destructive/30 shadow-xs hover:bg-destructive/90',
+    destructive: 'bg-destructive text-destructive-foreground border border-destructive/40 hover:bg-destructive/90 shadow-2xs',
     link: 'text-primary underline-offset-4 hover:underline',
   }
 
   const sizes = {
-    default: 'h-10 px-4 py-2',
-    sm: 'h-8 rounded-lg px-3 text-xs',
-    lg: 'h-11 rounded-2xl px-6 text-base',
-    icon: 'size-10 p-0',
+    default: 'h-9 px-3.5 py-1.5',
+    sm: 'h-7 rounded-md px-2.5 text-[11px]',
+    lg: 'h-10 rounded-lg px-5 text-sm',
+    icon: 'size-8.5 p-0 rounded-lg',
   }
 
   return cn(base, variants[props.variant], sizes[props.size], props.className)

@@ -9,7 +9,7 @@ defineProps<Props>()
 </script>
 
 <template>
-  <div :class="cn('card-depth rounded-2xl bg-card text-card-foreground border border-border/60 transition-all duration-200', className)">
+  <div :class="cn('card-depth rounded-lg bg-card text-card-foreground border border-border transition-all duration-150', className)">
     <slot />
   </div>
 </template>
