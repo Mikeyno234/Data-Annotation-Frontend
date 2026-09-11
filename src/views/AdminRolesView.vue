@@ -51,10 +51,11 @@ onMounted(fetchRolesData)
 
       <Button
         variant="default"
-        class="gap-1.5 text-xs font-semibold rounded-xl h-9 px-4 cursor-pointer btn-tactile shadow-xs"
+        size="sm"
+        class="gap-1.5 text-xs font-medium rounded-md h-8 px-3 cursor-pointer shadow-2xs"
         @click="openCreateRole"
       >
-        <Plus class="size-4" />
+        <Plus class="size-3.5" :stroke-width="1.6" />
         <span>Create Role</span>
       </Button>
     </div>
