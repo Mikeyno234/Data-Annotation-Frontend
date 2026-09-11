@@ -5,6 +5,7 @@ import type { Menu, MenuLevel } from '@/types'
 import { toast } from '@/utils/toast'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import Input from '@/components/ui/Input.vue'
 import { Plus, Pencil, Trash2, Menu as MenuIcon } from 'lucide-vue-next'
 
 const menus = ref<Menu[]>([])
@@ -38,48 +39,63 @@ onMounted(loadMenus)
   <div class="mx-auto flex max-w-7xl flex-col gap-6">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-foreground">Menus & Submenus</h1>
-        <p class="mt-1 text-xs text-muted-foreground">Create the navigation hierarchy and define action levels for each menu.</p>
+        <h1 class="text-xl font-bold tracking-tight text-foreground">Menus & Submenus</h1>
+        <p class="mt-0.5 text-xs text-muted-foreground">Create the navigation hierarchy and define action levels for each menu.</p>
       </div>
-      <Button class="gap-2 font-semibold shadow-md rounded-xl h-10 px-4" @click="resetForm"><Plus class="size-4" />New Menu</Button>
+      <Button size="sm" class="gap-1.5 font-medium rounded-md h-8 px-3" @click="resetForm"><Plus class="size-3.5" :stroke-width="1.6" />New Menu</Button>
     </div>
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <Card class="overflow-hidden bg-card/90 shadow-sm">
-        <div class="bg-muted/30 px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Navigation Tree</div>
+      <Card class="overflow-hidden shadow-2xs border border-border">
+        <div class="bg-muted/40 px-5 py-3 text-xs font-medium text-muted-foreground border-b border-border">Navigation Tree</div>
         <div class="p-5">
           <div v-for="menu in roots" :key="menu.id" class="mb-3">
-            <div class="flex items-center gap-3 rounded-2xl bg-muted/50 px-4 py-3 text-sm text-foreground shadow-xs">
-              <MenuIcon class="size-4 text-primary" />
-              <span class="font-bold">{{ menu.name }}</span>
-              <code class="ml-auto text-[10px] text-muted-foreground font-mono bg-card px-2 py-0.5 rounded-lg shadow-xs">{{ menu.code }}</code>
-              <button class="text-muted-foreground hover:text-primary p-1 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer" @click="editMenu(menu)"><Pencil class="size-3.5" /></button>
-              <button class="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer" @click="deleteMenu(menu)"><Trash2 class="size-3.5" /></button>
+            <div class="flex items-center gap-3 rounded-lg bg-muted/40 px-3.5 py-2.5 text-xs text-foreground border border-border/60">
+              <MenuIcon class="size-4 text-primary shrink-0" :stroke-width="1.6" />
+              <span class="font-medium">{{ menu.name }}</span>
+              <code class="ml-auto text-[10px] text-muted-foreground font-mono bg-card px-1.5 py-0.5 rounded border border-border/50">{{ menu.code }}</code>
+              <button class="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted transition-colors cursor-pointer" @click="editMenu(menu)"><Pencil class="size-3" :stroke-width="1.6" /></button>
+              <button class="text-muted-foreground hover:text-destructive p-1 rounded hover:bg-destructive/10 transition-colors cursor-pointer" @click="deleteMenu(menu)"><Trash2 class="size-3" :stroke-width="1.6" /></button>
             </div>
-            <div v-for="child in childrenOf(menu.id)" :key="child.id" class="ml-8 mt-2 flex items-center gap-3 rounded-xl bg-card px-4 py-2.5 text-xs text-muted-foreground shadow-xs">
-              <span class="font-semibold text-foreground">{{ child.name }}</span>
-              <code class="ml-auto text-[10px] font-mono bg-muted/60 px-2 py-0.5 rounded">{{ child.code }}</code>
-              <button class="text-muted-foreground hover:text-primary p-1 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer" @click="editMenu(child)"><Pencil class="size-3.5" /></button>
-              <button class="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer" @click="deleteMenu(child)"><Trash2 class="size-3.5" /></button>
+            <div v-for="child in childrenOf(menu.id)" :key="child.id" class="ml-6 mt-1.5 flex items-center gap-2.5 rounded-md bg-card px-3 py-2 text-xs text-muted-foreground border border-border/40">
+              <span class="font-medium text-foreground">{{ child.name }}</span>
+              <code class="ml-auto text-[10px] font-mono bg-muted/60 px-1.5 py-0.5 rounded">{{ child.code }}</code>
+              <button class="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted transition-colors cursor-pointer" @click="editMenu(child)"><Pencil class="size-3" :stroke-width="1.6" /></button>
+              <button class="text-muted-foreground hover:text-destructive p-1 rounded hover:bg-destructive/10 transition-colors cursor-pointer" @click="deleteMenu(child)"><Trash2 class="size-3" :stroke-width="1.6" /></button>
             </div>
           </div>
           <p v-if="!menus.length" class="p-8 text-center text-xs text-muted-foreground">No menus yet.</p>
         </div>
       </Card>
-      <Card class="p-6 bg-card/90 shadow-sm">
-        <h2 class="text-base font-bold text-foreground">{{ editingId ? 'Edit Menu' : 'Add Menu or Submenu' }}</h2>
-        <div class="mt-4 flex flex-col gap-3.5">
-          <input v-model="form.name" class="h-10 rounded-xl border-0 bg-muted/60 px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner" placeholder="Menu name" />
-          <input v-model="form.code" class="h-10 rounded-xl border-0 bg-muted/60 px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner font-mono" placeholder="Unique code, e.g. reports" />
-          <select v-model="form.parent_id" class="h-10 rounded-xl border-0 bg-muted/60 px-3.5 text-xs text-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner cursor-pointer">
-            <option value="">Top-level menu</option>
-            <option v-for="menu in roots" :key="menu.id" :value="menu.id">Submenu of {{ menu.name }}</option>
-          </select>
-          <input v-model="form.path" class="h-10 rounded-xl border-0 bg-muted/60 px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner font-mono" placeholder="Route path, e.g. /reports" />
-          <textarea v-model="form.levels" rows="3" class="rounded-xl border-0 bg-muted/60 p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none shadow-inner font-mono" placeholder="Permission:Label, one per line" />
-          <p class="text-[10px] leading-relaxed text-muted-foreground">Levels format: `read:Read`, `write:Write`, `create:Create`, `delete:Delete`. Permission codes are generated from the menu code.</p>
-          <div class="flex gap-2.5 pt-2">
-            <Button class="rounded-xl font-semibold h-10 px-5" @click="saveMenu">Save menu</Button>
-            <Button v-if="editingId" variant="outline" class="rounded-xl h-10" @click="resetForm">Cancel</Button>
+      <Card class="p-5 shadow-2xs border border-border">
+        <h2 class="text-sm font-semibold text-foreground">{{ editingId ? 'Edit Menu' : 'Add Menu or Submenu' }}</h2>
+        <div class="mt-4 flex flex-col gap-3">
+          <div class="space-y-1">
+            <label class="text-[11px] font-medium text-muted-foreground">Menu Name</label>
+            <Input v-model="form.name" placeholder="e.g. Analytics" class="h-8 text-xs rounded-md" />
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-medium text-muted-foreground">Unique Code</label>
+            <Input v-model="form.code" placeholder="e.g. analytics" class="h-8 text-xs rounded-md font-mono" />
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-medium text-muted-foreground">Parent Hierarchy</label>
+            <select v-model="form.parent_id" class="h-8 w-full rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/15 cursor-pointer">
+              <option value="">Top-level menu</option>
+              <option v-for="menu in roots" :key="menu.id" :value="menu.id">Submenu of {{ menu.name }}</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-medium text-muted-foreground">Route Path</label>
+            <Input v-model="form.path" placeholder="/analytics" class="h-8 text-xs rounded-md font-mono" />
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-medium text-muted-foreground">Permissions (Levels)</label>
+            <textarea v-model="form.levels" rows="3" class="w-full rounded-md border border-border bg-card p-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus-visible:border-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15 resize-none font-mono" placeholder="read:Read&#10;write:Write" />
+            <p class="text-[10px] leading-relaxed text-muted-foreground">Format: `read:Read`, `write:Write`, `create:Create`, `delete:Delete`.</p>
+          </div>
+          <div class="flex gap-2 pt-2 border-t border-border">
+            <Button size="sm" class="rounded-md font-medium h-8 px-4" @click="saveMenu">Save menu</Button>
+            <Button v-if="editingId" size="sm" variant="outline" class="rounded-md h-8" @click="resetForm">Cancel</Button>
           </div>
         </div>
       </Card>
