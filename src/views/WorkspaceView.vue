@@ -102,7 +102,7 @@ async function fetchTasks() {
 
       if (candidate.status === 'IN_PROGRESS' && myId && candidate.locked_by_id === myId) {
         activeItem.value = candidate
-        toast.info('Resuming task', `Continuing task #${candidate.id} — your draft will be restored.`)
+        toast.info('Resuming task', `Continuing task #${candidate.id}. Your draft will be restored.`)
       } else if (candidate.status === 'UNASSIGNED') {
         try {
           const checkout: any = await workflowApi.checkoutTask(candidate.project_id)
@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
           <Button variant="ghost" size="icon" class="size-7 rounded" :disabled="currentIndex <= 0" @click="prevTask">
             <ChevronLeft class="size-3.5" :stroke-width="1.6" />
           </Button>
-          <span class="text-[11px] text-muted-foreground px-1.5 font-mono">
+          <span class="text-[11px] text-muted-foreground px-1.5 tabular-nums font-medium">
             Task <strong class="text-foreground font-semibold">{{ dataItems.length ? currentIndex + 1 : 0 }}</strong>/{{ dataItems.length }}
           </span>
           <Button variant="ghost" size="icon" class="size-7 rounded" :disabled="currentIndex >= dataItems.length - 1" @click="nextTask">
@@ -195,10 +195,10 @@ onBeforeUnmount(() => {
         <div class="hidden min-w-0 items-center gap-3 sm:flex pl-1">
           <div class="min-w-0">
             <div class="max-w-[22rem] truncate text-xs font-semibold text-foreground tracking-tight">{{ activeItem?.file_name || 'Preparing next task...' }}</div>
-            <div class="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
-              <span>#{{ activeItem?.id || '—' }}</span>
-              <span v-if="projectAnnotationType" class="text-border">•</span>
-              <span v-if="projectAnnotationType" class="max-w-[16rem] truncate font-sans font-medium text-foreground/80">{{ projectAnnotationType }}</span>
+            <div class="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span class="tabular-nums font-medium">#{{ activeItem?.id || '-' }}</span>
+              <span v-if="projectAnnotationType" class="text-border/70">/</span>
+              <span v-if="projectAnnotationType" class="max-w-[16rem] truncate font-medium text-foreground/80">{{ projectAnnotationType }}</span>
             </div>
           </div>
         </div>
@@ -208,7 +208,7 @@ onBeforeUnmount(() => {
         <Badge variant="outline">
           {{ effectiveModality }}
         </Badge>
-        <Button variant="outline" size="sm" class="h-7 px-2 text-[11px] gap-1.5 font-mono" @click="fetchTasks">
+        <Button variant="outline" size="sm" class="h-7 px-2 text-[11px] gap-1.5 font-medium" @click="fetchTasks">
           <RefreshCw class="size-3" :stroke-width="1.6" :class="{ 'animate-spin': isLoading }" />
           <span class="hidden sm:inline">Refresh</span>
         </Button>

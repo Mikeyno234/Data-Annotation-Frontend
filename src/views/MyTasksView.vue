@@ -208,8 +208,8 @@ onMounted(fetchMyTasks)
 
             <!-- File Name & ID -->
             <p class="truncate text-xs font-semibold text-foreground group-hover:text-primary transition-colors">{{ item.file_name }}</p>
-            <p class="mt-0.5 text-[11px] text-muted-foreground font-mono">
-              #{{ item.id }}<span v-if="item.external_id"> • {{ item.external_id }}</span>
+            <p class="mt-0.5 text-[11px] text-muted-foreground tabular-nums font-medium">
+              #{{ item.id }}<span v-if="item.external_id"> / {{ item.external_id }}</span>
             </p>
           </div>
 

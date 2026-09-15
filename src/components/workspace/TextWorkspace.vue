@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Card from '@/components/ui/Card.vue'
 import CardContent from '@/components/ui/CardContent.vue'
-import { Trash2, Sparkles } from 'lucide-vue-next'
+import { Trash2 } from 'lucide-vue-next'
 
 export interface TextAnnotationPayload {
   entities: TextEntity[]
@@ -112,7 +112,8 @@ function handleTextSelection() {
   }
 
   const currentPayload = session.payload.value || { entities: [], sentiment: 'NEUTRAL' }
-  const updatedEntities = [...currentPayload.entities, newEntity]
+  const existingEntities = Array.isArray(currentPayload) ? currentPayload : (currentPayload.entities || [])
+  const updatedEntities = [...existingEntities, newEntity]
   const updatedPayload = { ...currentPayload, entities: updatedEntities }
 
   session.payload.value = updatedPayload
@@ -129,7 +130,8 @@ function handleTextSelection() {
 
 function deleteEntity(id: string) {
   const currentPayload = session.payload.value || { entities: [], sentiment: 'NEUTRAL' }
-  const updatedEntities = currentPayload.entities.filter((e) => e.id !== id)
+  const existingEntities = Array.isArray(currentPayload) ? currentPayload : (currentPayload.entities || [])
+  const updatedEntities = existingEntities.filter((e) => e.id !== id)
   const updatedPayload = { ...currentPayload, entities: updatedEntities }
 
   session.payload.value = updatedPayload
@@ -137,6 +139,87 @@ function deleteEntity(id: string) {
   session.pushState(updatedPayload)
   toast.info('Entity deleted')
 }
+
+const currentEntities = computed<TextEntity[]>(() => {
+  const current = session.payload.value
+  if (current && typeof current === 'object' && !Array.isArray(current) && Array.isArray(current.entities)) {
+    return current.entities
+  }
+  if (Array.isArray(current)) return current
+  return []
+})
+
+const currentSentiment = computed<string>(() => {
+  const current = session.payload.value
+  if (current && typeof current === 'object' && !Array.isArray(current) && current.sentiment) {
+    return current.sentiment
+  }
+  return 'NEUTRAL'
+})
+
+function setSentiment(sentiment: string) {
+  const current = session.payload.value || { entities: [], sentiment: 'NEUTRAL' }
+  const entities = Array.isArray(current) ? current : (current.entities || [])
+  const updated = { entities, sentiment }
+  session.payload.value = updated
+  session.pushState(updated)
+}
+
+interface TextSegment {
+  type: 'text' | 'entity'
+  text: string
+  entity?: TextEntity
+}
+
+const renderedSegments = computed<TextSegment[]>(() => {
+  const text = textContent.value
+  if (!text) return []
+
+  const entities = currentEntities.value
+  if (entities.length === 0) {
+    return [{ type: 'text', text }]
+  }
+
+  // Sort entities by start offset ascending, filter valid ranges
+  const sorted = [...entities]
+    .filter((e) => Number.isFinite(e.start) && Number.isFinite(e.end) && e.end > e.start)
+    .sort((a, b) => a.start - b.start)
+
+  const segments: TextSegment[] = []
+  let cursor = 0
+
+  for (const ent of sorted) {
+    if (ent.start < cursor) continue // Skip overlapping entities to protect layout integrity
+
+    const start = Math.max(cursor, Math.min(ent.start, text.length))
+    const end = Math.max(start, Math.min(ent.end, text.length))
+
+    if (start > cursor) {
+      segments.push({
+        type: 'text',
+        text: text.slice(cursor, start),
+      })
+    }
+
+    if (end > start) {
+      segments.push({
+        type: 'entity',
+        text: text.slice(start, end),
+        entity: ent,
+      })
+      cursor = end
+    }
+  }
+
+  if (cursor < text.length) {
+    segments.push({
+      type: 'text',
+      text: text.slice(cursor),
+    })
+  }
+
+  return segments
+})
 
 const hotkeyHints = [
   { key: '1-9', label: 'choose entity' },
@@ -160,85 +243,126 @@ onMounted(() => {
     class-label-title="Entity type:"
     :hotkey-hints="hotkeyHints"
   >
-    <!-- Extra Controls Slot for Sentiment Selector -->
+    <!-- Extra Controls Slot for Sentiment Segmented Toggle -->
     <template #controls>
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-muted-foreground font-medium font-mono">Sentiment:</span>
-        <select
-          v-model="session.payload.value.sentiment"
-          class="h-9 rounded-xl border-0 bg-muted/60 px-3 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner"
-          @change="session.pushState()"
+      <div class="flex items-center gap-1.5 bg-muted/40 p-1 rounded-xl border border-border/60">
+        <span class="text-xs text-muted-foreground font-medium px-1.5">Sentiment:</span>
+        <button
+          v-for="s in [
+            { val: 'POSITIVE', label: 'Positive' },
+            { val: 'NEUTRAL', label: 'Neutral' },
+            { val: 'NEGATIVE', label: 'Negative' }
+          ]"
+          :key="s.val"
+          type="button"
+          class="px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer"
+          :class="[
+            currentSentiment === s.val
+              ? (s.val === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/40 shadow-2xs'
+                : s.val === 'NEGATIVE' ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/40 shadow-2xs'
+                : 'bg-card text-foreground font-bold border border-border shadow-2xs')
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+          ]"
+          @click="setSentiment(s.val)"
         >
-          <option value="POSITIVE">POSITIVE</option>
-          <option value="NEUTRAL">NEUTRAL</option>
-          <option value="NEGATIVE">NEGATIVE</option>
-        </select>
+          {{ s.label }}
+        </button>
       </div>
     </template>
 
     <!-- Text Corpus Annotation Viewport -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <!-- Document Reading and Annotation Card -->
       <div class="lg:col-span-2">
-        <Card class="bg-card/90 shadow-sm">
-          <CardContent class="p-6">
+        <Card class="bg-card border border-border shadow-2xs">
+          <CardContent class="p-5">
             <div class="text-xs text-muted-foreground mb-3 font-medium">
-              Highlight words with cursor to tag entity:
+              Select text with cursor to label entity:
             </div>
-            <div v-if="isLoadingContent" class="rounded-2xl bg-muted/40 p-8 text-sm text-muted-foreground">
+            <div v-if="isLoadingContent" class="rounded-xl bg-muted/40 p-8 text-sm text-muted-foreground text-center">
               Loading text content…
             </div>
             <div
               v-else-if="contentError"
-              class="rounded-2xl bg-destructive/10 p-8 text-sm text-destructive-foreground"
+              class="rounded-xl bg-destructive/10 p-8 text-sm text-destructive-foreground text-center"
             >
               Failed to load text source: {{ item.source_url }}
             </div>
             <div
               v-else
               ref="textContainerRef"
-              class="rounded-2xl bg-muted/30 p-8 text-base leading-relaxed text-foreground select-text whitespace-pre-wrap shadow-inner"
+              class="rounded-xl bg-muted/20 p-6 text-sm sm:text-base leading-relaxed text-foreground select-text whitespace-pre-wrap border border-border/40 font-sans max-h-[60vh] overflow-y-auto pr-1"
               @mouseup="handleTextSelection"
             >
-              {{ textContent }}
+              <template v-for="(seg, idx) in renderedSegments" :key="idx">
+                <span v-if="seg.type === 'text'">{{ seg.text }}</span>
+                <mark
+                  v-else-if="seg.entity"
+                  class="entity-mark inline rounded px-1 py-0.5 font-medium transition-all cursor-pointer border select-text mx-0.5"
+                  :data-label="seg.entity.label"
+                  :style="{
+                    '--entity-color': seg.entity.color || '#8b5cf6',
+                    backgroundColor: `${seg.entity.color || '#8b5cf6'}20`,
+                    borderColor: seg.entity.color || '#8b5cf6',
+                    color: 'var(--foreground)',
+                  }"
+                  :class="[
+                    selectedEntityId === seg.entity.id ? 'ring-2 ring-primary font-bold shadow-xs' : 'hover:brightness-105'
+                  ]"
+                  @click.stop="selectedEntityId = seg.entity.id"
+                >{{ seg.text }}</mark>
+              </template>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <!-- Tagged Entities Inspector -->
-      <div class="lg:col-span-1 flex flex-col gap-3">
+      <div class="lg:col-span-1 flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-1">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-semibold text-foreground">
-            Tagged Entities ({{ (session.payload.value?.entities || []).length }})
+            Tagged Entities ({{ currentEntities.length }})
           </h3>
-          <Badge v-if="session.hasPrelabel.value" variant="secondary" class="gap-1 text-[10px]">
-            <Sparkles class="size-3" /> Pre-annotated
+          <Badge v-if="session.hasPrelabel.value" variant="secondary" class="text-[10px]">
+            Pre-annotated
           </Badge>
         </div>
 
-        <div class="space-y-2.5">
+        <!-- Empty State -->
+        <div
+          v-if="currentEntities.length === 0"
+          class="rounded-xl border border-border/50 bg-muted/20 p-4 text-center text-xs text-muted-foreground"
+        >
+          Highlight text in the document to tag entities.
+        </div>
+
+        <div v-else class="space-y-2">
           <div
-            v-for="ent in session.payload.value?.entities || []"
+            v-for="ent in currentEntities"
             :key="ent.id"
-            class="flex items-center justify-between p-3.5 rounded-2xl border-0 transition-all cursor-pointer shadow-xs"
+            class="flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer shadow-2xs"
+            :style="selectedEntityId === ent.id ? {
+              borderColor: ent.color || 'var(--primary)',
+              backgroundColor: `${ent.color || '#8b5cf6'}18`,
+            } : {}"
             :class="[
               selectedEntityId === ent.id
-                ? 'bg-primary/10 ring-2 ring-primary/40'
-                : 'bg-card/90 hover:bg-card hover:shadow-md',
+                ? 'ring-1 font-semibold'
+                : 'bg-card border-border/60 hover:bg-muted/40 hover:border-border hover:shadow-xs',
             ]"
             @click="selectedEntityId = ent.id"
           >
-            <div>
+            <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-foreground">"{{ ent.text }}"</span>
+                <span class="text-xs font-semibold text-foreground truncate max-w-[140px]">"{{ ent.text }}"</span>
                 <span
-                  class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold"
-                  :style="{ color: ent.color, backgroundColor: `${ent.color}22` }"
+                  class="text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0"
+                  :style="{ color: ent.color, backgroundColor: `${ent.color}18` }"
                 >
                   {{ ent.label }}
                 </span>
               </div>
-              <div class="text-[10px] text-muted-foreground font-mono mt-1">
+              <div class="text-[10px] text-muted-foreground tabular-nums font-medium mt-0.5">
                 Range: [{{ ent.start }} - {{ ent.end }}]
               </div>
             </div>
@@ -246,7 +370,8 @@ onMounted(() => {
             <Button
               variant="ghost"
               size="icon"
-              class="size-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              class="size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+              title="Delete Entity [Delete]"
               @click.stop="deleteEntity(ent.id)"
             >
               <Trash2 class="size-3.5" />
@@ -257,3 +382,23 @@ onMounted(() => {
     </div>
   </WorkspaceShell>
 </template>
+
+<style scoped>
+.entity-mark::after {
+  content: ' ' attr(data-label);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  background-color: var(--entity-color, #8b5cf6);
+  color: #ffffff;
+  margin-left: 0.25rem;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: middle;
+  pointer-events: none;
+  user-select: none;
+}
+</style>

@@ -11,6 +11,7 @@ import VideoPlayerCanvas from './video/VideoPlayerCanvas.vue'
 import VideoTimelineScrubber from './video/VideoTimelineScrubber.vue'
 import VideoSegmentList from './video/VideoSegmentList.vue'
 import VideoClassificationWorkspace from './video/VideoClassificationWorkspace.vue'
+import { Tag, Scissors } from 'lucide-vue-next'
 
 const props = defineProps<{
   item: DataItem
@@ -26,17 +27,57 @@ const emit = defineEmits<{
   prev: []
 }>()
 
-// Detect whether this project is clip-level classification vs frame/second timeline intervals
-const isClassificationMode = computed(() => {
+// 1. Robust Detection: Distinguish Whole-Video Classification from Timeline Intervals (with split)
+const isTimelineType = computed(() => {
+  const t = (props.annotationType || '').toUpperCase()
+  return (
+    t.includes('TIMELINE') ||
+    t.includes('INTERVAL') ||
+    t.includes('PER_DETIK') ||
+    t.includes('PER-DETIK') ||
+    t.includes('TEMPORAL') ||
+    t.includes('SEGMENT') ||
+    t.includes('TRACK')
+  )
+})
+
+const isClassificationType = computed(() => {
   const t = (props.annotationType || '').toUpperCase()
   return (
     t.includes('CLASSIF') ||
+    t.includes('GLOBAL') ||
+    t.includes('WHOLE') ||
     t.includes('CHOICE') ||
     t.includes('TAG') ||
     t.includes('SCENE') ||
+    t.includes('MODERAT') ||
+    t.includes('SAFETY') ||
+    t.includes('RATING') ||
+    t.includes('SENTIMENT') ||
+    t.includes('CATEGOR') ||
+    t.includes('CLIP') ||
     t.includes('ACTION_RECOGNITION')
   )
 })
+
+const autoDetectedMode = computed<'classification' | 'timeline'>(() => {
+  if (isTimelineType.value) return 'timeline'
+  if (isClassificationType.value) return 'classification'
+  // Default to whole video classification: clean, fast, zero split clutter
+  return 'classification'
+})
+
+// Allow manual mode switching override so annotators are never trapped
+const modeOverride = ref<'auto' | 'classification' | 'timeline'>('auto')
+
+const activeMode = computed<'classification' | 'timeline'>(() => {
+  if (modeOverride.value !== 'auto') {
+    return modeOverride.value
+  }
+  return autoDetectedMode.value
+})
+
+const isClassificationMode = computed(() => activeMode.value === 'classification')
 
 const playerRef = ref<InstanceType<typeof VideoPlayerCanvas> | null>(null)
 const mediaUrl = ref('')
@@ -182,7 +223,7 @@ const hotkeyHints = [
   { key: '← →', label: 'step frame' },
 ]
 
-watch(() => props.item.id, () => {
+watch([() => props.item.id, isClassificationMode], () => {
   if (mediaUrl.value) {
     URL.revokeObjectURL(mediaUrl.value)
     mediaUrl.value = ''
@@ -206,72 +247,106 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <!-- 1. Dedicated Video Clip Classification Mode -->
-  <VideoClassificationWorkspace
-    v-if="isClassificationMode"
-    :item="item"
-    :labels="labels"
-    :annotation-type="annotationType"
-    :has-next="hasNext"
-    :has-prev="hasPrev"
-    @submitted="emit('submitted')"
-    @next="emit('next')"
-    @prev="emit('prev')"
-  />
+  <div class="space-y-3">
+    <!-- Compact Mode Switcher -->
+    <div class="flex items-center justify-between px-1 text-xs">
+      <div class="inline-flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/70 text-xs">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-all cursor-pointer font-medium"
+          :class="isClassificationMode 
+            ? 'bg-background text-foreground shadow-2xs font-semibold' 
+            : 'text-muted-foreground hover:text-foreground'"
+          @click="modeOverride = 'classification'"
+        >
+          <Tag class="size-3 text-primary" />
+          <span>Classification</span>
+        </button>
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-all cursor-pointer font-medium"
+          :class="!isClassificationMode 
+            ? 'bg-background text-foreground shadow-2xs font-semibold' 
+            : 'text-muted-foreground hover:text-foreground'"
+          @click="modeOverride = 'timeline'"
+        >
+          <Scissors class="size-3 text-muted-foreground" />
+          <span>Timeline</span>
+        </button>
+      </div>
 
-  <!-- 2. Temporal Intervals / Action Timeline Mode -->
-  <WorkspaceShell
-    v-else
-    :item="item"
-    :session="session"
-    :labels="labels"
-    v-model:current-label="currentLabel"
-    modality-title="Video Temporal Intervals"
-    modality-type="Video"
-    class-label-title="Action label:"
-    :hotkey-hints="hotkeyHints"
-  >
-    <Card class="overflow-hidden bg-card/90 shadow-sm">
-      <CardContent class="p-5">
-        <VideoPlayerCanvas
-          ref="playerRef"
-          :media-url="mediaUrl"
-          :media-error="mediaError"
-          v-model:duration="duration"
-          v-model:current-time="now"
-          :frame-rate="frameRate"
-        />
+      <span class="text-[11px] text-muted-foreground">
+        {{ isClassificationMode ? 'Whole-video classification' : 'Temporal intervals' }}
+      </span>
+    </div>
 
-        <VideoTimelineScrubber
-          :duration="duration"
-          :current-time="now"
-          :frame-rate="frameRate"
-          :frame-duration="frameDuration"
-          :tracks="tracks"
-          :active-track="activeTrack"
-          :selected-id="selected"
-          :intervals="intervals"
-          v-model:draft-range="draftRange"
-          :current-label="currentLabel"
-          :active-label-color="activeLabelColor"
-          @select-track="activeTrack = $event"
-          @select-interval="selected = $event"
-          @seek="playerRef?.seek($event)"
-        />
+    <!-- 1. Dedicated Video Clip Classification Mode -->
+    <VideoClassificationWorkspace
+      v-if="isClassificationMode"
+      :item="item"
+      :labels="labels"
+      :annotation-type="annotationType"
+      :has-next="hasNext"
+      :has-prev="hasPrev"
+      @submitted="emit('submitted')"
+      @next="emit('next')"
+      @prev="emit('prev')"
+    />
 
-        <VideoSegmentList
-          :intervals="intervals"
-          :selected-id="selected"
-          :current-time="now"
-          :frame-rate="frameRate"
-          @add-interval="addInterval"
-          @split-selected="splitSelected"
-          @add-track="addTrack"
-          @select-interval="selected = $event"
-          @remove-interval="removeInterval"
-          @seek="playerRef?.seek($event)"
-        />
-      </CardContent>
-    </Card>
-  </WorkspaceShell>
+    <!-- 2. Temporal Intervals / Action Timeline Mode -->
+    <WorkspaceShell
+      v-else
+      :item="item"
+      :session="session"
+      :labels="labels"
+      v-model:current-label="currentLabel"
+      modality-title="Video Temporal Intervals"
+      modality-type="Video"
+      class-label-title="Action label:"
+      :hotkey-hints="hotkeyHints"
+    >
+      <Card class="overflow-hidden bg-card/90 shadow-sm">
+        <CardContent class="p-5">
+          <VideoPlayerCanvas
+            ref="playerRef"
+            :media-url="mediaUrl"
+            :media-error="mediaError"
+            v-model:duration="duration"
+            v-model:current-time="now"
+            :frame-rate="frameRate"
+          />
+
+          <VideoTimelineScrubber
+            :duration="duration"
+            :current-time="now"
+            :frame-rate="frameRate"
+            :frame-duration="frameDuration"
+            :tracks="tracks"
+            :active-track="activeTrack"
+            :selected-id="selected"
+            :intervals="intervals"
+            v-model:draft-range="draftRange"
+            :current-label="currentLabel"
+            :active-label-color="activeLabelColor"
+            @select-track="activeTrack = $event"
+            @select-interval="selected = $event"
+            @seek="playerRef?.seek($event)"
+          />
+
+          <VideoSegmentList
+            :intervals="intervals"
+            :selected-id="selected"
+            :current-time="now"
+            :frame-rate="frameRate"
+            @add-interval="addInterval"
+            @split-selected="splitSelected"
+            @add-track="addTrack"
+            @select-interval="selected = $event"
+            @remove-interval="removeInterval"
+            @seek="playerRef?.seek($event)"
+          />
+        </CardContent>
+      </Card>
+    </WorkspaceShell>
+  </div>
 </template>

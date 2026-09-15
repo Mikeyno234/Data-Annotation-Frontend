@@ -93,7 +93,8 @@ function drawWaveform() {
   const height = canvas.height
   ctx.clearRect(0, 0, width, height)
 
-  ctx.fillStyle = '#090d16'
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  ctx.fillStyle = isDark ? '#0b0f19' : '#f8fafc'
   ctx.fillRect(0, 0, width, height)
 
   const segs = props.segments || []
@@ -106,12 +107,12 @@ function drawWaveform() {
 
     const isSelected = seg.id === props.selectedSegmentId
     const speakerObj = props.availableSpeakers.find((s) => s.name === seg.speaker)
-    const color = speakerObj?.color || '#a855f7'
+    const color = speakerObj?.color || '#8b5cf6'
 
     ctx.fillStyle = isSelected ? `${color}44` : `${color}22`
     ctx.fillRect(xStart, 0, segWidth, height)
 
-    ctx.strokeStyle = isSelected ? '#ffffff' : color
+    ctx.strokeStyle = isSelected ? (isDark ? '#ffffff' : '#0f172a') : color
     ctx.lineWidth = isSelected ? 2 : 1
     ctx.strokeRect(xStart, 0, segWidth, height)
 
@@ -135,20 +136,20 @@ function drawWaveform() {
     const val = inSegment ? Math.min(base + 0.45, 1) : base * 0.5
     const barHeight = Math.max(val * (height - 30), 3)
 
-    ctx.fillStyle = isPast ? '#a855f7' : '#334155'
+    ctx.fillStyle = isPast ? '#8b5cf6' : (isDark ? '#1e293b' : '#cbd5e1')
     ctx.fillRect(x, (height - barHeight) / 2 + 8, barWidth, barHeight)
   }
 
   // Playhead line
   const playheadX = (props.currentTime / (props.duration || 1)) * width
-  ctx.strokeStyle = '#a855f7'
+  ctx.strokeStyle = '#8b5cf6'
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.moveTo(playheadX, 0)
   ctx.lineTo(playheadX, height)
   ctx.stroke()
 
-  ctx.fillStyle = '#a855f7'
+  ctx.fillStyle = '#8b5cf6'
   ctx.beginPath()
   ctx.arc(playheadX, 6, 5, 0, Math.PI * 2)
   ctx.fill()
@@ -215,17 +216,30 @@ defineExpose({
 watch(() => props.segments, () => drawWaveform(), { deep: true })
 watch(() => props.selectedSegmentId, () => drawWaveform())
 
+let resizeObserver: ResizeObserver | null = null
+
 onMounted(() => {
   const canvas = audioCanvas.value
   if (canvas) {
-    canvas.width = canvas.offsetWidth
+    canvas.width = canvas.offsetWidth || 800
     canvas.height = 140
     drawWaveform()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        if (canvas && canvas.offsetWidth && canvas.width !== canvas.offsetWidth) {
+          canvas.width = canvas.offsetWidth
+          drawWaveform()
+        }
+      })
+      resizeObserver.observe(canvas)
+    }
   }
 })
 
 onUnmounted(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId)
+  if (resizeObserver) resizeObserver.disconnect()
 })
 </script>
 
@@ -250,7 +264,7 @@ onUnmounted(() => {
 
     <canvas
       ref="audioCanvas"
-      class="h-[140px] w-full rounded-2xl cursor-pointer block shadow-inner bg-[#090d16]"
+      class="h-[140px] w-full rounded-2xl cursor-pointer block shadow-inner bg-slate-50 dark:bg-[#0b0f19] border border-border/50 transition-colors"
       @click="handleCanvasClick"
       @mousedown="handleCanvasMouseDown"
       @mousemove="handleCanvasMouseMove"

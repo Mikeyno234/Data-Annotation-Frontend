@@ -107,6 +107,18 @@ export function usePolygonDrawing(options: UsePolygonDrawingOptions) {
     toast.info('Annotation item deleted')
   }
 
+  function updatePolygonLabel(id: string, newLabel: string, newColor: string) {
+    const updated = currentPolygons.value.map((p) => {
+      if (p.id === id) {
+        return { ...p, label: newLabel, color: newColor }
+      }
+      return p
+    })
+    onCommit(updated)
+    onRedraw()
+    toast.success('Label updated', `Polygon assigned to [${newLabel}]`)
+  }
+
   return {
     currentPolyPoints,
     hoverPolyPoint,
@@ -116,5 +128,6 @@ export function usePolygonDrawing(options: UsePolygonDrawingOptions) {
     popLastPoint,
     cancelPolygon,
     deletePolygon,
+    updatePolygonLabel,
   }
 }

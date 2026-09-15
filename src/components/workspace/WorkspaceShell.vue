@@ -56,34 +56,33 @@ function handleSelectLabel(name: string) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <!-- Top Action Bar -->
-    <div v-if="showHeader" class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-card/90 p-4 shadow-sm backdrop-blur">
-      <!-- Task & Modality Info -->
-      <div class="flex items-center gap-3">
-        <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-base font-bold text-foreground">{{ item.file_name }}</h2>
-            <Badge v-if="modalityTitle">{{ modalityTitle }}</Badge>
-          </div>
-          <div class="flex items-center gap-2 text-xs text-muted-foreground font-mono mt-0.5">
-            <span>Task ID: #{{ item.id }}</span>
-            <span v-if="modalityType">• {{ modalityType }} Modality</span>
-            <span v-if="session.isDraftRestored" class="text-amber-500 font-semibold flex items-center gap-1">
-              • <RotateCcw class="size-3 inline" /> Draft Restored
-            </span>
-          </div>
-        </div>
+  <div class="flex flex-col gap-4">
+    <!-- Top Action Bar (Compact, Non-redundant) -->
+    <div v-if="showHeader" class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card border border-border px-4 py-2.5 shadow-2xs">
+      <!-- Modality & Status Info -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span v-if="modalityTitle" class="text-xs font-semibold text-foreground">
+          {{ modalityTitle }}
+        </span>
+        <Badge v-if="modalityType" variant="outline" class="text-[10px]">
+          {{ modalityType }}
+        </Badge>
+        <template v-if="session.isDraftRestored">
+          <span class="text-border/70 text-xs">/</span>
+          <span class="text-amber-500 text-xs font-medium flex items-center gap-1">
+            <RotateCcw class="size-3" /> Draft restored
+          </span>
+        </template>
       </div>
 
       <!-- Session Actions & Status -->
       <div class="flex items-center gap-3">
         <!-- History Controls -->
-        <div class="hidden sm:flex items-center gap-1 bg-muted/60 p-1 rounded-xl shadow-inner">
+        <div class="hidden sm:flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/60">
           <Button
             variant="ghost"
             size="icon"
-            class="size-7 rounded-lg"
+            class="size-6 rounded"
             :disabled="!session.canUndo.value"
             title="Undo (Ctrl+Z)"
             @click="session.undo()"
@@ -93,7 +92,7 @@ function handleSelectLabel(name: string) {
           <Button
             variant="ghost"
             size="icon"
-            class="size-7 rounded-lg"
+            class="size-6 rounded"
             :disabled="!session.canRedo.value"
             title="Redo (Ctrl+Y)"
             @click="session.redo()"
@@ -102,30 +101,30 @@ function handleSelectLabel(name: string) {
           </Button>
         </div>
 
-        <!-- Timer Indicator -->
-        <div class="flex items-center gap-2 rounded-xl bg-muted/60 px-3.5 py-2 text-xs font-mono text-muted-foreground shadow-inner">
-          <Clock class="size-3.5 text-primary animate-pulse" />
-          <span>Elapsed:</span>
-          <span class="font-bold text-foreground">{{ session.elapsedTimeSeconds }}s</span>
+        <!-- Timer Indicator (No distracting pulse) -->
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/50 border border-border/60 text-xs text-muted-foreground">
+          <Clock class="size-3 text-muted-foreground" />
+          <span class="tabular-nums font-medium text-foreground">{{ session.elapsedTimeSeconds }}s</span>
         </div>
 
         <!-- Submit Button -->
         <Button
+          size="sm"
           :disabled="session.isSaving.value"
-          class="gap-2 font-semibold shadow-md min-w-[150px]"
+          class="h-8 gap-1.5 font-semibold shadow-xs min-w-[130px] text-xs cursor-pointer"
           @click="session.submit()"
         >
-          <Loader2 v-if="session.isSaving.value" class="size-4 animate-spin" />
-          <CheckCircle2 v-else class="size-4" />
-          <span>{{ session.isSaving.value ? 'Submitting...' : 'Submit Annotation' }}</span>
+          <Loader2 v-if="session.isSaving.value" class="size-3.5 animate-spin" />
+          <CheckCircle2 v-else class="size-3.5" />
+          <span>{{ session.isSaving.value ? 'Submitting...' : 'Submit Task' }}</span>
         </Button>
       </div>
     </div>
 
-    <!-- Active Class Selector Palette (if enabled) -->
+    <!-- Active Class Selector Palette (Respecting actual label color) -->
     <div
       v-if="showClassSelector && availableLabels.length > 0"
-      class="flex flex-wrap items-center justify-between gap-4 bg-card/90 p-3.5 rounded-2xl shadow-sm"
+      class="flex flex-wrap items-center justify-between gap-3 bg-card px-4 py-2.5 rounded-xl border border-border shadow-2xs"
     >
       <div class="flex items-center gap-3 flex-wrap">
         <span class="text-xs font-medium text-muted-foreground">
@@ -135,19 +134,24 @@ function handleSelectLabel(name: string) {
           <button
             v-for="lbl in availableLabels"
             :key="lbl.name"
-            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border-0 transition-all cursor-pointer shadow-xs active:scale-95"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-2xs active:scale-[0.98]"
+            :style="currentLabel === lbl.name ? {
+              borderColor: lbl.color || 'var(--primary)',
+              backgroundColor: `${lbl.color || '#3b82f6'}18`,
+              color: 'var(--foreground)'
+            } : {}"
             :class="[
               currentLabel === lbl.name
-                ? 'bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 font-bold'
-                : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+                ? 'font-semibold ring-1'
+                : 'border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground',
             ]"
             @click="handleSelectLabel(lbl.name)"
           >
             <span
-              class="size-2 rounded-full"
-              :style="{ backgroundColor: currentLabel === lbl.name ? '#ffffff' : lbl.color || '#38bdf8' }"
-            ></span>
-            {{ lbl.name }}
+              class="size-2 rounded-full shrink-0 shadow-2xs"
+              :style="{ backgroundColor: lbl.color || '#38bdf8' }"
+            />
+            <span>{{ lbl.name }}</span>
           </button>
         </div>
       </div>
@@ -159,24 +163,24 @@ function handleSelectLabel(name: string) {
     <!-- Dedicated Floating Toolbar Slot (Above viewport) -->
     <slot name="toolbar"></slot>
 
-    <!-- Quick Controls & Hotkey Hints Bar (Optional / Minimal) -->
+    <!-- Quick Controls & Hotkey Hints Bar -->
     <div
       v-if="hotkeyHints && hotkeyHints.length > 0 && showHotkeys"
-      class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-muted/30 px-4 py-2 text-[11px] text-muted-foreground shadow-inner"
+      class="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg bg-muted/30 px-3.5 py-1.5 text-[11px] text-muted-foreground border border-border/50"
     >
       <span class="flex items-center gap-1.5 font-semibold text-foreground">
         <Keyboard class="size-3.5 text-primary" /> Shortcuts:
       </span>
       <span v-for="hint in hotkeyHints" :key="hint.key" class="flex items-center gap-1.5">
-        <kbd class="px-2 py-0.5 rounded-lg bg-card text-foreground font-mono shadow-xs">{{ hint.key }}</kbd>
+        <kbd class="px-1.5 py-0.2 rounded bg-card text-foreground font-mono text-[10px] border border-border/60 shadow-2xs">{{ hint.key }}</kbd>
         <span>{{ hint.label }}</span>
       </span>
       <span class="flex items-center gap-1.5">
-        <kbd class="px-2 py-0.5 rounded-lg bg-card text-foreground font-mono shadow-xs">Ctrl+Z / Y</kbd>
+        <kbd class="px-1.5 py-0.2 rounded bg-card text-foreground font-mono text-[10px] border border-border/60 shadow-2xs">Ctrl+Z / Y</kbd>
         <span>undo/redo</span>
       </span>
       <span class="flex items-center gap-1.5">
-        <kbd class="px-2 py-0.5 rounded-lg bg-card text-foreground font-mono shadow-xs">Ctrl+S</kbd>
+        <kbd class="px-1.5 py-0.2 rounded bg-card text-foreground font-mono text-[10px] border border-border/60 shadow-2xs">Ctrl+S</kbd>
         <span>save draft</span>
       </span>
     </div>

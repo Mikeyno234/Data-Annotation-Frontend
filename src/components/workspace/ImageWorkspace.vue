@@ -355,45 +355,36 @@ onMounted(() => {
     class-label-title="Active class"
     :hotkey-hints="hotkeyHints"
   >
-    <!-- Floating Studio Toolbar Dock -->
-    <template #toolbar>
-      <div class="w-full flex justify-center pb-2">
-        <WorkspaceFloatingToolbar
-          :subtype="detectedSubtype"
-          v-model:active-tool="activeTool"
-          :can-undo="session.canUndo.value"
-          :can-redo="session.canRedo.value"
-          :has-selection="!!selectedItemId || selectedClasses.length > 0"
-          :is-saving="session.isSaving.value"
-          :has-next="hasNext"
-          :has-prev="hasPrev"
-          :is-drawing-polygon="polygonDrawer.currentPolyPoints.value.length >= 3"
-          @undo="session.undo()"
-          @redo="session.redo()"
-          @delete-selected="selectedItemId ? deleteItem(selectedItemId) : null"
-          @reset-draft="resetDraft"
-          @auto-prelabel="autoPrelabel"
-          @save-draft="session.saveDraft()"
-          @submit="session.submit()"
-          @next="emit('next')"
-          @prev="emit('prev')"
-          @complete-polygon="polygonDrawer.completePolygon"
-          @zoom-in="viewport.applyZoom(viewport.zoomScale.value * 1.3)"
-          @zoom-out="viewport.applyZoom(viewport.zoomScale.value / 1.3)"
-          @reset-zoom="viewport.resetViewport()"
-        />
-      </div>
-    </template>
-
     <!-- Workspace Main Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      <!-- Canvas Viewport -->
-      <div class="lg:col-span-3">
+      <!-- Canvas Viewport with Floating Studio Toolbar -->
+      <div class="lg:col-span-3 relative">
+        <!-- Floating Canvas Toolbar Dock (Centered inside canvas viewport) -->
+        <div class="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+          <WorkspaceFloatingToolbar
+            :subtype="detectedSubtype"
+            v-model:active-tool="activeTool"
+            :can-undo="session.canUndo.value"
+            :can-redo="session.canRedo.value"
+            :has-selection="!!selectedItemId || selectedClasses.length > 0"
+            :is-saving="session.isSaving.value"
+            :is-drawing-polygon="polygonDrawer.currentPolyPoints.value.length >= 3"
+            @undo="session.undo()"
+            @redo="session.redo()"
+            @delete-selected="selectedItemId ? deleteItem(selectedItemId) : null"
+            @reset-draft="resetDraft"
+            @complete-polygon="polygonDrawer.completePolygon"
+            @zoom-in="viewport.applyZoom(viewport.zoomScale.value * 1.3)"
+            @zoom-out="viewport.applyZoom(viewport.zoomScale.value / 1.3)"
+            @reset-zoom="viewport.resetViewport()"
+          />
+        </div>
+
         <Card class="overflow-hidden bg-card/90 shadow-sm relative group">
           <CardContent class="p-4">
             <canvas
               ref="canvasRef"
-              class="w-full h-[450px] rounded-2xl block shadow-inner bg-black/5 dark:bg-black/40 transition-colors"
+              class="w-full min-h-[420px] h-[58vh] max-h-[660px] rounded-2xl block shadow-inner bg-black/5 dark:bg-black/40 transition-colors"
               :class="[
                 activeTool === 'bbox' ? 'cursor-crosshair' : '',
                 activeTool === 'lasso' ? 'cursor-crosshair' : '',
@@ -411,7 +402,7 @@ onMounted(() => {
       </div>
 
       <!-- Inspector / Sidebar Area based on Subtype -->
-      <div class="lg:col-span-1">
+      <div class="lg:col-span-1 max-h-[62vh] overflow-y-auto pr-1">
         <!-- 1. Classification Cards Sidebar -->
         <div v-if="detectedSubtype === 'classification'" class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
@@ -424,35 +415,44 @@ onMounted(() => {
           </div>
 
           <p class="text-xs text-muted-foreground">
-            Press <kbd class="px-1 py-0.5 rounded bg-muted font-mono font-bold text-foreground">1-9</kbd> or click to assign categories:
+            Press <kbd class="px-1 py-0.2 rounded bg-muted font-mono font-semibold text-foreground text-[10px]">1-{{ Math.min(9, availableLabels.length) }}</kbd> or click to assign:
           </p>
 
-          <div class="space-y-2">
+          <div class="space-y-1.5">
             <button
               v-for="(lbl, idx) in availableLabels"
               :key="lbl.name"
               type="button"
-              class="w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer shadow-2xs active:scale-98 text-left"
+              class="w-full flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-[0.99] text-left"
+              :style="selectedClasses.includes(lbl.name) ? {
+                borderColor: lbl.color || 'var(--primary)',
+                backgroundColor: `${lbl.color || '#3b82f6'}18`,
+                color: 'var(--foreground)'
+              } : {}"
               :class="[
                 selectedClasses.includes(lbl.name)
-                  ? 'bg-primary/10 border-primary/60 ring-2 ring-primary/25 font-bold'
-                  : 'bg-card/95 border-border/60 hover:bg-card hover:border-border hover:shadow-xs'
+                  ? 'ring-1 font-semibold'
+                  : 'bg-card border-border/60 hover:bg-muted/40 hover:border-border hover:shadow-xs text-foreground/90'
               ]"
               @click="toggleClass(lbl.name)"
             >
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2.5 min-w-0">
                 <span
-                  class="size-3 rounded-full shrink-0 shadow-2xs"
+                  class="size-2.5 rounded-full shrink-0 shadow-2xs"
                   :style="{ backgroundColor: lbl.color || '#38bdf8' }"
-                ></span>
-                <span class="text-xs text-foreground">{{ lbl.name }}</span>
+                />
+                <span class="text-xs font-medium truncate">{{ lbl.name }}</span>
               </div>
 
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground font-bold">
+              <div class="flex items-center gap-2 shrink-0">
+                <kbd class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/80 text-foreground font-bold border border-border/70">
                   {{ idx + 1 }}
-                </span>
-                <Check v-if="selectedClasses.includes(lbl.name)" class="size-4 text-primary stroke-[2.5]" />
+                </kbd>
+                <Check
+                  v-if="selectedClasses.includes(lbl.name)"
+                  class="size-4 stroke-[2.5]"
+                  :style="{ color: lbl.color || 'var(--primary)' }"
+                />
               </div>
             </button>
           </div>
@@ -463,9 +463,11 @@ onMounted(() => {
           v-else-if="detectedSubtype === 'polygon'"
           :polygons="currentPolygons"
           :selected-polygon-id="selectedItemId"
+          :labels="labels"
           :has-prelabel="session.hasPrelabel.value"
           @select="selectedItemId = $event; drawCanvas()"
           @delete="deleteItem($event)"
+          @update-label="polygonDrawer.updatePolygonLabel"
         />
 
         <!-- 3. Bounding Boxes Inspector -->
