@@ -13,12 +13,15 @@ import {
 
 defineProps<{
   rev: Review
+  selectable?: boolean
+  selected?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'inspect', taskItemId: number | undefined): void
   (e: 'approve', rev: Review): void
   (e: 'reject', rev: Review): void
+  (e: 'update:selected', value: boolean): void
 }>()
 
 function getAnnotatorName(rev: Review): string {
@@ -36,14 +39,26 @@ function getAnnotatorName(rev: Review): string {
 </script>
 
 <template>
-  <div class="rounded-lg border border-border bg-card overflow-hidden transition-all hover:border-foreground/30 shadow-2xs">
+  <div
+    class="rounded-lg border bg-card overflow-hidden transition-all shadow-2xs"
+    :class="selected ? 'border-primary/60 ring-1 ring-primary/20' : 'border-border hover:border-foreground/30'"
+  >
     <!-- Slim Workstation Action Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3.5 py-2.5 bg-muted/30 border-b border-border gap-2.5">
       <!-- Left: Item Identity & Annotator Spec -->
       <div class="flex items-center gap-2.5 min-w-0">
+        <!-- Checkbox for batch select -->
+        <input
+          v-if="selectable"
+          type="checkbox"
+          :checked="selected"
+          @change="emit('update:selected', ($event.target as HTMLInputElement).checked)"
+          class="size-3.5 rounded border-border text-primary focus:ring-0 cursor-pointer shrink-0 accent-primary"
+        />
+
         <!-- Status Badge -->
         <span
-          class="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border select-none uppercase tracking-wider"
+          class="px-1.5 py-0.5 rounded text-[10px] font-semibold border select-none uppercase tracking-wider"
           :class="
             rev.status === 'APPROVED'
               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
@@ -57,15 +72,15 @@ function getAnnotatorName(rev: Review): string {
 
         <!-- File Name & Meta -->
         <div class="flex items-center gap-2 min-w-0 text-xs">
-          <span class="font-mono text-muted-foreground">#{{ rev.id }}</span>
-          <span class="text-border">•</span>
+          <span class="tabular-nums font-medium text-muted-foreground">#{{ rev.id }}</span>
+          <span class="text-border/70">/</span>
           <span class="font-medium text-foreground truncate max-w-[220px]" :title="rev.annotation?.data_item?.file_name">
             {{ rev.annotation?.data_item?.file_name || `Data Item #${rev.annotation?.data_item_id || '-'}` }}
           </span>
-          <span class="text-border hidden sm:inline">•</span>
-          <span class="hidden sm:inline-flex items-center gap-1 text-muted-foreground font-mono text-[11px]">
+          <span class="text-border/70 hidden sm:inline">/</span>
+          <span class="hidden sm:inline-flex items-center gap-1 text-muted-foreground text-[11px]">
             <UserIcon class="size-3 text-muted-foreground" :stroke-width="1.6" />
-            <span class="font-sans font-medium text-foreground/80">{{ getAnnotatorName(rev) }}</span>
+            <span class="font-medium text-foreground/80">{{ getAnnotatorName(rev) }}</span>
           </span>
         </div>
       </div>
