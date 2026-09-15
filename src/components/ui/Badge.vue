@@ -33,7 +33,6 @@ const badgeClasses = computed(() => {
 
 <template>
   <div :class="badgeClasses">
-    <span v-if="dot" class="beacon-dot shrink-0" />
     <slot />
   </div>
 </template>

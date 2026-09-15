@@ -12,7 +12,12 @@ export const toasts = ref<ToastItem[]>([])
 
 export function showToast(toast: Omit<ToastItem, 'id'>) {
   const id = Math.random().toString(36).substring(2, 9)
-  const newItem: ToastItem = { ...toast, id, duration: toast.duration || 4000 }
+  const newItem: ToastItem = { ...toast, id, duration: toast.duration || 3500 }
+
+  // Cap active toasts so memory and display stay bounded and compact
+  if (toasts.value.length >= 5) {
+    toasts.value = toasts.value.slice(toasts.value.length - 4)
+  }
   toasts.value.push(newItem)
 
   setTimeout(() => {
