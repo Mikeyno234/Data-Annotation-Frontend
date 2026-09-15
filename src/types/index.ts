@@ -269,6 +269,50 @@ export interface Review {
   reviewer?: User
 }
 
+export interface ReviewProjectSummary {
+  project_id: number
+  project_name: string
+  modality: ModalityType | string
+  annotation_type: string
+  pending_count: number
+  approved_count: number
+  rejected_count: number
+  total_reviews: number
+}
+
+export interface BatchReviewRequest {
+  project_id?: number
+  annotation_ids?: number[]
+  comment?: string
+}
+
+export interface QAProjectSummary {
+  project_id: number
+  project_name: string
+  modality: string
+  annotation_type: string
+  pending_count: number
+  passed_count: number
+  failed_count: number
+  total_tasks: number
+  avg_score: number
+}
+
+export interface BatchQAEvaluateRequest {
+  project_id?: number
+  task_ids?: number[]
+  score: number
+  passed: boolean
+  issue_type?: string
+  comment?: string
+}
+
+export interface QAIssueTypeOption {
+  value: string
+  label: string
+  description?: string
+}
+
 export interface QATask {
   id: number
   data_item_id: number
@@ -276,6 +320,8 @@ export interface QATask {
   status: string
   created_at: string
   results?: QAResult[]
+  data_item?: DataItem
+  assigned_to?: User
 }
 
 export interface QAResult {

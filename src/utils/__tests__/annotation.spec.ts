@@ -10,6 +10,7 @@ import {
   isPointInPolygon,
   computeColorLassoBounds,
   getSelectionCharacterOffsets,
+  parseLabelConfigXml,
 } from '../annotation'
 
 describe('Annotation Utilities', () => {
@@ -218,6 +219,32 @@ describe('Annotation Utilities', () => {
       selection.removeAllRanges()
       document.body.removeChild(container)
       document.body.removeChild(outsideContainer)
+    })
+  })
+
+  describe('parseLabelConfigXml', () => {
+    it('preserves exact custom background color on Choice elements', () => {
+      const xml = '<View><Choices name="action" toName="video"><Choice value="Unlabeled" background="#38bdf8"/><Choice value="Labeled" background="#10b981"/><Choice value="Sexual Harrastment" background="#ef4444"/></Choices></View>'
+      const labels = parseLabelConfigXml(xml)
+
+      expect(labels).toHaveLength(3)
+      expect(labels[0]).toEqual({ name: 'Unlabeled', color: '#38bdf8' })
+      expect(labels[1]).toEqual({ name: 'Labeled', color: '#10b981' })
+      expect(labels[2]).toEqual({ name: 'Sexual Harrastment', color: '#ef4444' })
+    })
+
+    it('preserves exact custom background color on Label elements', () => {
+      const xml = '<View><Labels name="label" toName="image"><Label value="Target" background="#f59e0b"/></Labels></View>'
+      const labels = parseLabelConfigXml(xml)
+
+      expect(labels).toEqual([{ name: 'Target', color: '#f59e0b' }])
+    })
+
+    it('falls back to palette when background attribute is omitted', () => {
+      const xml = '<View><Choices name="choice" toName="image"><Choice value="Category A"/></Choices></View>'
+      const labels = parseLabelConfigXml(xml)
+
+      expect(labels).toEqual([{ name: 'Category A', color: '#38bdf8' }])
     })
   })
 })

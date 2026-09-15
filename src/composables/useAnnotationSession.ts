@@ -185,9 +185,10 @@ export function useAnnotationSession<T>(
       }
     }
 
-    if (/^Digit[1-9]$/.test(event.code)) {
+    const numMatch = event.code.match(/^(Digit|Numpad)([1-9])$/)
+    if (numMatch) {
       if (onSelectLabelIndex) {
-        const index = Number(event.code.replace('Digit', '')) - 1
+        const index = Number(numMatch[2]) - 1
         onSelectLabelIndex(index)
         return
       }
