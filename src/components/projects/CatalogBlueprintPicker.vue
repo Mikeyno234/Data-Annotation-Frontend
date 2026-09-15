@@ -137,7 +137,7 @@ function parseBadges(badges?: any): string[] {
     <!-- Empty Catalog Result -->
     <div
       v-else-if="filteredOptions.length === 0"
-      class="py-14 text-center rounded-2xl border border-dashed border-border/70 bg-card/30 flex flex-col items-center justify-center space-y-2"
+      class="py-14 text-center rounded-2xl border border-border/50 bg-card/30 flex flex-col items-center justify-center space-y-2"
     >
       <div class="flex size-10 items-center justify-center rounded-xl bg-muted/40 text-muted-foreground border border-border/40">
         <Layers class="size-5" />

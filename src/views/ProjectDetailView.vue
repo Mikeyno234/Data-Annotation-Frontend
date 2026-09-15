@@ -80,12 +80,12 @@ async function handleUploadDataset() {
       formData.append('modality', project.value.modality)
     }
 
-    if (selectedUploadFiles.value.length === 1 && selectedUploadFiles.value[0].name.toLowerCase().endsWith('.zip')) {
+    // Append all selected files to 'files' key, and also attach 'file' for singular/archive compatibility
+    selectedUploadFiles.value.forEach((file) => {
+      formData.append('files', file)
+    })
+    if (selectedUploadFiles.value.length === 1) {
       formData.append('file', selectedUploadFiles.value[0])
-    } else {
-      selectedUploadFiles.value.forEach((file) => {
-        formData.append('files', file)
-      })
     }
 
     await projectsApi.uploadDataset(formData)
@@ -335,6 +335,7 @@ onMounted(fetchProjectData)
       @modality-change="projectForm.onModalityChange"
       @select-task="projectForm.handleSelectTask"
       @add-label="projectForm.handleAddProjectLabel"
+      @update-label-color="projectForm.handleUpdateProjectLabelColor"
       @remove-label="projectForm.handleRemoveProjectLabel"
       @submit="projectForm.handleCreateProject"
     />

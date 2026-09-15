@@ -50,7 +50,7 @@ const router = useRouter()
               {{ project.modality.toLowerCase() }}
             </Badge>
           </div>
-          <span class="text-xs text-muted-foreground">{{ project?.code }} • Organization #{{ project?.organization_id }}</span>
+          <span class="text-xs text-muted-foreground">{{ project?.code }} / Organization #{{ project?.organization_id }}</span>
         </div>
       </div>
 
@@ -121,7 +121,7 @@ const router = useRouter()
           <div>
             <div class="text-[11px] font-medium text-muted-foreground">Status & Priority</div>
             <div class="text-sm font-semibold text-foreground mt-1 capitalize">
-              {{ (project?.status || 'Active').toLowerCase() }} • {{ (project?.priority || 'Normal').toLowerCase() }}
+              {{ (project?.status || 'Active').toLowerCase() }} / {{ (project?.priority || 'Normal').toLowerCase() }}
             </div>
           </div>
           <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">

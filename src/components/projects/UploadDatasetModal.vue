@@ -91,7 +91,7 @@ function handleDragLeave() {
 
       <!-- Dropzone Area -->
       <div
-        class="relative border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center cursor-pointer flex flex-col items-center justify-center gap-3"
+        class="relative border border-dashed border-border/80 rounded-2xl p-6 transition-all duration-200 text-center cursor-pointer flex flex-col items-center justify-center gap-3"
         :class="[
           isDragging
             ? 'border-primary bg-primary/10 scale-[0.99]'
@@ -160,7 +160,7 @@ function handleDragLeave() {
               :key="idx"
               class="flex items-center justify-between text-muted-foreground truncate"
             >
-              <span class="truncate pr-2">• {{ f.name }}</span>
+              <span class="truncate pr-2">{{ f.name }}</span>
               <span class="text-[10px] text-muted-foreground/70 shrink-0 font-mono">
                 {{ (f.size / 1024).toFixed(0) }} KB
               </span>

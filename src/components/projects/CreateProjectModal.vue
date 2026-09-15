@@ -43,6 +43,7 @@ const emit = defineEmits<{
   (e: 'modalityChange', val: string): void
   (e: 'selectTask', opt: MetadataOption): void
   (e: 'addLabel', name: string, color: string): void
+  (e: 'updateLabelColor', index: number, color: string): void
   (e: 'removeLabel', index: number): void
   (e: 'submit'): void
 }>()
@@ -71,16 +72,47 @@ function handleBlueprintSelect(opt: MetadataOption) {
 }
 
 const newLabelName = ref('')
-const newLabelColor = ref('#38bdf8')
+const newLabelColor = ref('#ef4444')
 const palette = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#38bdf8', '#8b5cf6', '#ec4899', '#64748b']
+const selectedLabelIndex = ref<number | null>(null)
+
+function selectLabel(idx: number) {
+  if (selectedLabelIndex.value === idx) {
+    selectedLabelIndex.value = null
+    newLabelName.value = ''
+    return
+  }
+  selectedLabelIndex.value = idx
+  const l = props.projectLabels[idx]
+  if (l) {
+    newLabelName.value = l.name
+    newLabelColor.value = l.color
+  }
+}
+
+function handleColorInput(newColor: string) {
+  newLabelColor.value = newColor
+  // If an existing label is selected, update its color immediately in real-time
+  if (selectedLabelIndex.value !== null && props.projectLabels[selectedLabelIndex.value]) {
+    emit('updateLabelColor', selectedLabelIndex.value, newColor)
+  }
+}
+
+function handleDirectLabelColorChange(idx: number, newColor: string) {
+  emit('updateLabelColor', idx, newColor)
+  if (selectedLabelIndex.value === idx) {
+    newLabelColor.value = newColor
+  }
+}
 
 function addNewLabel() {
   const name = newLabelName.value.trim()
   if (!name) return
   emit('addLabel', name, newLabelColor.value)
+  selectedLabelIndex.value = null
   newLabelName.value = ''
   // pick next color from palette
-  const currIdx = palette.indexOf(newLabelColor.value)
+  const currIdx = palette.findIndex((c) => c.toLowerCase() === newLabelColor.value.toLowerCase())
   newLabelColor.value = palette[(currIdx + 1) % palette.length]
 }
 </script>
@@ -227,20 +259,36 @@ function addNewLabel() {
               </div>
             </div>
 
-            <!-- Crisp Class Pills with Delete button -->
+            <!-- Crisp Class Pills with Delete button & Interactive Color Dot -->
             <div v-if="projectLabels.length > 0" class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
               <div
                 v-for="(label, lIdx) in projectLabels"
                 :key="label.name"
-                class="group inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background/90 px-2 py-0.5 text-[11px] font-mono text-foreground select-none hover:border-border"
+                class="group inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-mono text-foreground select-none transition-all cursor-pointer"
+                :class="selectedLabelIndex === lIdx ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary/40 font-semibold' : 'border-border/70 bg-background/90 hover:border-border'"
+                @click="selectLabel(lIdx)"
+                title="Click to select and edit this class"
               >
-                <span class="size-2.5 rounded-full shrink-0 shadow-2xs" :style="{ backgroundColor: label.color }"></span>
+                <!-- Direct color picker dot on the pill -->
+                <label
+                  class="relative flex size-3 rounded-full shrink-0 shadow-2xs cursor-pointer overflow-hidden transition-transform hover:scale-125 ring-1 ring-black/20 dark:ring-white/20"
+                  :style="{ backgroundColor: label.color }"
+                  title="Click to pick color for this label"
+                  @click.stop
+                >
+                  <input
+                    type="color"
+                    :value="label.color"
+                    class="absolute inset-0 size-full opacity-0 cursor-pointer"
+                    @input="handleDirectLabelColorChange(lIdx, ($event.target as HTMLInputElement).value)"
+                  />
+                </label>
                 <span>{{ label.name }}</span>
                 <button
                   type="button"
                   class="ml-1 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
                   title="Remove label from project"
-                  @click="emit('removeLabel', lIdx)"
+                  @click.stop="if (selectedLabelIndex === lIdx) selectedLabelIndex = null; emit('removeLabel', lIdx)"
                 >
                   <X class="size-3" />
                 </button>
@@ -250,49 +298,69 @@ function addNewLabel() {
               No classes defined yet. Add custom labels below or submit to allow freeform input.
             </div>
 
-            <!-- Quick Add Label Input Bar -->
-            <div class="flex items-center gap-2 pt-2 border-t border-border/40">
-              <!-- Free Color Picker (Native Popover + Preview) -->
-              <label
-                class="relative flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 shadow-2xs cursor-pointer overflow-hidden transition-transform hover:scale-105 active:scale-95"
-                :style="{ backgroundColor: newLabelColor }"
-                title="Click to pick any color freely"
-              >
+            <!-- Quick Add / Edit Label Input Bar -->
+            <div class="flex flex-col gap-2 pt-2 border-t border-border/40">
+              <div class="flex items-center gap-2">
+                <!-- Free Color Picker (Native Popover + Preview) -->
+                <label
+                  class="relative flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 shadow-2xs cursor-pointer overflow-hidden transition-transform hover:scale-105 active:scale-95"
+                  :style="{ backgroundColor: newLabelColor }"
+                  :title="selectedLabelIndex !== null ? 'Change color of selected class' : 'Click to pick any color freely'"
+                >
+                  <input
+                    type="color"
+                    :value="newLabelColor"
+                    class="absolute inset-0 size-full opacity-0 cursor-pointer"
+                    @input="handleColorInput(($event.target as HTMLInputElement).value)"
+                  />
+                </label>
+
+                <!-- Optional Hex Display/Edit -->
                 <input
-                  v-model="newLabelColor"
-                  type="color"
-                  class="absolute inset-0 size-full opacity-0 cursor-pointer"
+                  :value="newLabelColor"
+                  type="text"
+                  maxlength="7"
+                  class="w-20 rounded-lg border border-border/60 bg-background px-2 py-1 text-center font-mono text-[11px] text-foreground uppercase focus:outline-none focus:ring-1 focus:ring-primary/40 shrink-0"
+                  placeholder="#38BDF8"
+                  @input="handleColorInput(($event.target as HTMLInputElement).value)"
                 />
-              </label>
 
-              <!-- Optional Hex Display/Edit -->
-              <input
-                v-model="newLabelColor"
-                type="text"
-                maxlength="7"
-                class="w-16 rounded-lg border border-border/60 bg-background px-2 py-1 text-center font-mono text-[11px] text-foreground uppercase focus:outline-none focus:ring-1 focus:ring-primary/40 shrink-0"
-                placeholder="#38BDF8"
-              />
+                <!-- Class Name Input -->
+                <input
+                  v-model="newLabelName"
+                  type="text"
+                  placeholder="Class name (e.g. Car, Person, Helmet)..."
+                  class="flex-1 rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 font-sans"
+                  @keydown.enter.prevent="addNewLabel"
+                />
 
-              <!-- Class Name Input -->
-              <input
-                v-model="newLabelName"
-                type="text"
-                placeholder="Class name (e.g. Car, Person, Helmet)..."
-                class="flex-1 rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 font-sans"
-                @keydown.enter.prevent="addNewLabel"
-              />
+                <Button
+                  size="sm"
+                  type="button"
+                  class="h-7.5 px-3 rounded-lg text-xs gap-1 cursor-pointer shrink-0 font-semibold"
+                  :disabled="!newLabelName.trim()"
+                  @click="addNewLabel"
+                >
+                  <Plus v-if="selectedLabelIndex === null" class="size-3" />
+                  <CheckCircle2 v-else class="size-3" />
+                  <span>{{ selectedLabelIndex !== null ? 'Update' : 'Add Class' }}</span>
+                </Button>
+              </div>
 
-              <Button
-                size="sm"
-                type="button"
-                class="h-7.5 px-3 rounded-lg text-xs gap-1 cursor-pointer shrink-0 font-semibold"
-                :disabled="!newLabelName.trim()"
-                @click="addNewLabel"
-              >
-                <Plus class="size-3" />
-                <span>Add Class</span>
-              </Button>
+              <!-- Quick Palette Swatches -->
+              <div class="flex items-center gap-1.5 pl-0.5">
+                <span class="text-[10.5px] text-muted-foreground mr-1">Quick colors:</span>
+                <button
+                  v-for="c in palette"
+                  :key="c"
+                  type="button"
+                  class="size-4.5 rounded-full border border-black/10 dark:border-white/20 transition-all hover:scale-125 cursor-pointer"
+                  :class="newLabelColor.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-primary ring-offset-1 ring-offset-background scale-110' : ''"
+                  :style="{ backgroundColor: c }"
+                  :title="`Set color to ${c}`"
+                  @click="handleColorInput(c)"
+                />
+              </div>
             </div>
           </div>
 

@@ -93,7 +93,7 @@ function formatStatus(status: string): string {
           </thead>
           <tbody class="divide-y divide-border/60">
             <tr v-for="item in dataItems" :key="item.id" class="transition-colors hover:bg-muted/30">
-              <td class="px-5 py-3.5 font-mono font-medium text-muted-foreground">#{{ item.id }}</td>
+              <td class="px-5 py-3.5 tabular-nums font-medium text-muted-foreground">#{{ item.id }}</td>
               <td class="px-5 py-3.5 text-foreground font-medium">{{ item.file_name }}</td>
               <td class="px-5 py-3.5">
                 <Badge variant="outline" class="capitalize">{{ item.modality.toLowerCase() }}</Badge>

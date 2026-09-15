@@ -44,7 +44,9 @@ export function useProjectForm(onSuccess: () => void) {
     const isChoice = annotType.includes('CHOICE') || annotType.includes('CLASSIF') || annotType.includes('TAG')
 
     if (isChoice) {
-      const choicesXml = labels.map((l) => `<Choice value="${escapeXml(l.name.trim())}"/>`).join('')
+      const choicesXml = labels
+        .map((l) => `<Choice value="${escapeXml(l.name.trim())}" background="${l.color || '#38bdf8'}"/>`)
+        .join('')
       const controlName = modality === 'VIDEO' ? 'action' : modality === 'TEXT' ? 'sentiment' : 'choice'
       return `<View><Choices name="${controlName}" toName="${target}">${choicesXml}</Choices></View>`
     }
@@ -155,9 +157,25 @@ export function useProjectForm(onSuccess: () => void) {
   }
 
   function handleAddProjectLabel(name: string, color: string) {
-    if (projectLabels.value.some((l) => l.name.toLowerCase() === name.toLowerCase())) return
-    projectLabels.value.push({ name, color })
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const existingIndex = projectLabels.value.findIndex(
+      (l) => l.name.toLowerCase() === trimmed.toLowerCase()
+    )
+    if (existingIndex >= 0) {
+      projectLabels.value[existingIndex].name = trimmed
+      projectLabels.value[existingIndex].color = color
+    } else {
+      projectLabels.value.push({ name: trimmed, color })
+    }
     newProject.value.label_config = buildLabelConfig()
+  }
+
+  function handleUpdateProjectLabelColor(index: number, color: string) {
+    if (projectLabels.value[index]) {
+      projectLabels.value[index].color = color
+      newProject.value.label_config = buildLabelConfig()
+    }
   }
 
   function handleRemoveProjectLabel(index: number) {
@@ -244,9 +262,7 @@ export function useProjectForm(onSuccess: () => void) {
       toast.error('Validation Error', 'Project name and code are required')
       return
     }
-    if (!newProject.value.label_config) {
-      applyTemplateLabels(newProject.value.annotation_type)
-    }
+    newProject.value.label_config = buildLabelConfig()
 
     try {
       if (editingProjectId.value) {
@@ -276,6 +292,7 @@ export function useProjectForm(onSuccess: () => void) {
     handleSelectTask,
     handleAiPromptSubmit,
     handleAddProjectLabel,
+    handleUpdateProjectLabelColor,
     handleRemoveProjectLabel,
     fetchMetadata,
     openCreateModal,
