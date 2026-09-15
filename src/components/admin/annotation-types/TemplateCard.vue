@@ -76,7 +76,6 @@ function formatTemplateName(name: string) {
         <div class="absolute top-2 right-2">
           <Badge
             :variant="item.status === 'ACTIVE' ? 'success' : 'secondary'"
-            :dot="item.status === 'ACTIVE'"
             class="bg-card/90 backdrop-blur-xs shadow-2xs"
           >
             {{ item.status === 'ACTIVE' ? 'Active' : 'Inactive' }}

@@ -75,7 +75,7 @@ const emit = defineEmits<{
           :model-value="searchQuery"
           placeholder="Search template name or code..."
           class="pl-9 h-9 text-xs rounded-xl"
-          @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+          @update:model-value="emit('update:searchQuery', String($event))"
         />
       </div>
     </div>

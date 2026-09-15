@@ -198,7 +198,6 @@ const displayInstructions = computed(() => {
         </template>
 
         <span class="flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-          <span class="size-1.5 rounded-full bg-emerald-500"></span>
           Live Preview
         </span>
       </div>

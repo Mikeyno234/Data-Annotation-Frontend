@@ -68,7 +68,7 @@ const livePreviewItem = computed(() => {
     description: props.form.description,
     preview_image_url: props.form.preview_image_url,
     preview_data: parsedPreview,
-    badges: props.form.badgesText ? props.form.badgesText.split(',').map((s) => s.trim()) : [],
+    badges: props.form.badgesText ? props.form.badgesText.split(',').map((s) => s.trim()).filter(Boolean) : [],
     status: props.form.status,
   }
 })
@@ -125,7 +125,7 @@ const livePreviewItem = computed(() => {
               @click="form.modality = m.value as ModalityType; emit('modalityChange')"
             >
               <component :is="m.icon" class="size-4" />
-              <span>{{ m.label.split(' ')[0] }}</span>
+              <span>{{ m.label ? m.label.split(' ')[0] : m.value }}</span>
             </button>
           </div>
         </div>

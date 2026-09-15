@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { annotationTypesApi } from '@/api/annotationTypes'
 import { toast } from '@/utils/toast'
 import type { AnnotationType } from '@/types'
 import Pagination from '@/components/ui/Pagination.vue'
+import Button from '@/components/ui/Button.vue'
+import Modal from '@/components/ui/Modal.vue'
 import TemplateCard from '@/components/admin/annotation-types/TemplateCard.vue'
 import TemplateFilterBar from '@/components/admin/annotation-types/TemplateFilterBar.vue'
 import TemplateEditorModal from '@/components/admin/annotation-types/TemplateEditorModal.vue'
@@ -14,6 +17,7 @@ import {
   toolsByModality,
 } from '@/components/admin/annotation-types/templateConstants'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 // Permissions
@@ -24,6 +28,8 @@ const canDelete = computed(() => authStore.isSuperAdmin || authStore.hasPermissi
 // Filter & Pagination State
 const items = ref<AnnotationType[]>([])
 const isLoading = ref(true)
+const isDeleting = ref(false)
+const schemaToDelete = ref<AnnotationType | null>(null)
 const searchQuery = ref('')
 const selectedModality = ref<string>('ALL')
 const currentPage = ref(1)
@@ -71,19 +77,24 @@ function handleModalitySelect(val: string) {
   loadItems()
 }
 
-async function deleteItem(item: AnnotationType) {
-  if (!confirm(`Are you sure you want to delete "${item.name}"?`)) return
-  try {
-    await annotationTypesApi.deleteAnnotationType(item.id)
-    toast.success('Schema Deleted', `${item.name} removed.`)
-    loadItems()
-  } catch (err: any) {
-    toast.error('Delete Failed', err?.message || 'Could not delete schema.')
-  }
+function promptDeleteItem(item: AnnotationType) {
+  schemaToDelete.value = item
 }
 
-import { useRouter } from 'vue-router'
-const router = useRouter()
+async function confirmDeleteItem() {
+  if (!schemaToDelete.value) return
+  isDeleting.value = true
+  try {
+    await annotationTypesApi.deleteAnnotationType(schemaToDelete.value.id)
+    toast.success('Schema Deleted', `${schemaToDelete.value.name} removed.`)
+    schemaToDelete.value = null
+    await loadItems()
+  } catch (err: any) {
+    toast.error('Delete Failed', err?.message || 'Could not delete schema.')
+  } finally {
+    isDeleting.value = false
+  }
+}
 
 function handleCreateProjectWithTemplate(item: AnnotationType) {
   router.push({ path: '/projects', query: { new: 'true', template: item.code } })
@@ -118,12 +129,12 @@ onMounted(() => loadItems())
         :can-update="canUpdate"
         :can-delete="canDelete"
         @edit="templateForm.openEditModal"
-        @delete="deleteItem"
+        @delete="promptDeleteItem"
         @create-project="handleCreateProjectWithTemplate"
       />
     </div>
 
-    <div v-else class="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/60 p-12 text-center bg-card/40">
+    <div v-else class="flex flex-col items-center justify-center rounded-2xl border border-border/50 p-12 text-center bg-card/30">
       <p class="text-sm font-bold text-foreground">No schema templates found</p>
       <p class="mt-1 text-xs text-muted-foreground">Try clearing your filters or create a new template.</p>
     </div>
@@ -163,5 +174,26 @@ onMounted(() => loadItems())
       @apply-preset="templateForm.handleApplyPreset"
       @save="templateForm.saveItem"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <Modal
+      :open="!!schemaToDelete"
+      title="Delete Task Schema"
+      description="This will permanently remove this annotation schema template."
+      max-width="max-w-md"
+      @close="schemaToDelete = null"
+    >
+      <p class="text-xs text-muted-foreground leading-relaxed">
+        Are you sure you want to delete <span class="font-semibold text-foreground">{{ schemaToDelete?.name }}</span>? Existing annotations will not be affected, but this template cannot be assigned to new projects.
+      </p>
+      <template #footer>
+        <Button variant="outline" size="sm" class="rounded-md h-8" :disabled="isDeleting" @click="schemaToDelete = null">
+          Cancel
+        </Button>
+        <Button variant="destructive" size="sm" class="rounded-md h-8 px-4" :disabled="isDeleting" @click="confirmDeleteItem">
+          {{ isDeleting ? 'Deleting...' : 'Delete Schema' }}
+        </Button>
+      </template>
+    </Modal>
   </div>
 </template>

@@ -29,7 +29,7 @@ defineProps<{
       </div>
       <div class="flex items-center gap-2">
         <span class="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-          <span class="size-2 rounded-full bg-primary animate-pulse"></span> Custom Sample Text Loaded
+          Custom Sample Text Loaded
         </span>
       </div>
     </div>

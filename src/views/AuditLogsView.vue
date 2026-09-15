@@ -80,6 +80,13 @@ function formatAction(action: string): string {
     .join(' ')
 }
 
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return dateStr
+  return date.toLocaleString()
+}
+
 onMounted(() => {
   fetchLogs()
 })
@@ -158,7 +165,7 @@ onMounted(() => {
             </tr>
 
             <tr v-for="log in auditLogs" :key="log.id" class="transition-colors hover:bg-muted/30">
-              <td class="px-4 py-3 text-muted-foreground tabular-nums whitespace-nowrap">{{ new Date(log.created_at).toLocaleString() }}</td>
+              <td class="px-4 py-3 text-muted-foreground tabular-nums whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
               <td class="px-4 py-3 text-foreground font-medium">{{ log.user_email || 'System' }}</td>
               <td class="px-4 py-3 text-foreground">
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-foreground border border-border/60">
