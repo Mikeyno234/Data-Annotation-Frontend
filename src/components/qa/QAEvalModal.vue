@@ -1,105 +1,157 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import Modal from '@/components/ui/Modal.vue'
-import Button from '@/components/ui/Button.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { Plus, Minus } from 'lucide-vue-next'
+import AnnotationVisualizer from '@/components/annotation/AnnotationVisualizer.vue'
+import type { QATask, QAIssueTypeOption } from '@/types'
+import { Eye, SlidersHorizontal } from 'lucide-vue-next'
 
-const props = defineProps<{
-  showModal: boolean
-  evalScore: number
-  evalPassed: boolean
-  evalIssueType: string
-  evalComment: string
-  scorePresets: Array<{ label: string; value: number }>
-}>()
+const props = withDefaults(
+  defineProps<{
+    showModal: boolean
+    task?: QATask | null
+    evalScore: number
+    evalPassed: boolean
+    evalIssueType: string
+    customIssueReason?: string
+    evalComment: string
+    scorePresets: Array<{ label: string; value: number }>
+    issueOptions?: QAIssueTypeOption[]
+  }>(),
+  {
+    task: null,
+    customIssueReason: '',
+    issueOptions: () => [],
+  }
+)
 
 const emit = defineEmits<{
   (e: 'update:showModal', val: boolean): void
   (e: 'update:evalScore', val: number): void
   (e: 'update:evalPassed', val: boolean): void
   (e: 'update:evalIssueType', val: string): void
+  (e: 'update:customIssueReason', val: string): void
   (e: 'update:evalComment', val: string): void
   (e: 'adjustScore', delta: number): void
   (e: 'setPreset', val: number): void
   (e: 'submit'): void
 }>()
 
-const scoreGrade = computed(() => {
-  const score = props.evalScore
-  if (score >= 90) return { label: 'Excellent Consensus', variant: 'success' as const, color: 'text-emerald-500' }
-  if (score >= 75) return { label: 'Good Consensus', variant: 'info' as const, color: 'text-sky-500' }
-  if (score >= 60) return { label: 'Marginal Consensus', variant: 'warning' as const, color: 'text-amber-500' }
-  return { label: 'Substandard / Fail', variant: 'destructive' as const, color: 'text-rose-500' }
+const latestAnnotation = computed(() => {
+  const anns = props.task?.data_item?.annotations
+  if (anns && anns.length > 0) {
+    return anns[0]
+  }
+  return null
+})
+
+const effectiveIssueOptions = computed<QAIssueTypeOption[]>(() => {
+  if (props.issueOptions && props.issueOptions.length > 0) {
+    return props.issueOptions
+  }
+  return [
+    { value: 'NONE', label: 'None (High Quality & Agreement)', description: 'Full agreement across annotators' },
+    { value: 'BOUNDARY_MISMATCH', label: 'Boundary Mismatch (Spatial / Temporal)', description: 'IoU below threshold or boundary offset' },
+    { value: 'SPEAKER_CONFUSION', label: 'Speaker Label Confusion', description: 'Diarization misattribution' },
+    { value: 'TRANSCRIPT_TYPO', label: 'Transcript Typo / Hallucination', description: 'Spelling, omissions, or hallucinated words' },
+    { value: 'OTHER', label: 'Others (Specify Custom Reason)', description: 'Custom unlisted discrepancy' },
+  ]
 })
 </script>
 
 <template>
   <Modal
     :open="showModal"
-    title="Submit QA Consensus Evaluation"
-    description="Score inter-annotator agreement and boundary precision"
+    title="Consensus Evaluation"
+    description="Score agreement and boundary precision"
+    max-width="max-w-xl"
     @close="emit('update:showModal', false)"
   >
-    <form class="space-y-4" @submit.prevent="emit('submit')">
-      <!-- Consensus Score Input & Quick Presets -->
-      <div class="space-y-2.5">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+    <form class="space-y-3.5 py-1" @submit.prevent="emit('submit')">
+      <!-- Visual Preview of Data Item & Annotations (Compact) -->
+      <div v-if="task" class="rounded-lg border border-border/70 overflow-hidden bg-muted/15">
+        <div class="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-b border-border/60 text-xs">
+          <div class="flex items-center gap-1.5 truncate text-muted-foreground">
+            <Eye class="size-3 text-foreground shrink-0" />
+            <span class="font-medium text-foreground truncate text-[11px]">
+              {{ task.data_item?.file_name || `Item #${task.data_item_id}` }}
+            </span>
+            <span
+              v-if="task.data_item?.modality"
+              class="px-1 py-0.2 rounded text-[9px] font-medium bg-muted text-muted-foreground uppercase"
+            >
+              {{ task.data_item.modality }}
+            </span>
+          </div>
+          <RouterLink
+            v-if="task.data_item_id"
+            :to="`/workspace/${task.data_item_id}`"
+            target="_blank"
+            class="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0"
+          >
+            <span>Canvas</span>
+            <SlidersHorizontal class="size-2.5" />
+          </RouterLink>
+        </div>
+        <div class="p-2 max-h-56 overflow-y-auto">
+          <AnnotationVisualizer
+            :payload="latestAnnotation?.payload"
+            :data-item-id="task.data_item_id"
+            :file-name="task.data_item?.file_name"
+            :modality="task.data_item?.modality"
+            :annotation-type="latestAnnotation?.annotation_type"
+          />
+        </div>
+      </div>
+
+      <!-- Agreement Score & Presets -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <label class="font-medium text-foreground">
             Agreement Score (%)
           </label>
-          <Badge :variant="scoreGrade.variant" class="text-[11px] font-semibold py-0.5 px-2.5">
-            {{ scoreGrade.label }}
-          </Badge>
+          <span
+            class="text-[11px] font-medium"
+            :class="evalScore >= 75 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'"
+          >
+            {{ evalScore >= 75 ? 'Meets Threshold' : 'Discrepancy / Below Threshold' }}
+          </span>
         </div>
 
-        <!-- Stepper & Direct Precision Input Box -->
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="flex size-10 items-center justify-center rounded-xl bg-muted/70 hover:bg-muted text-foreground transition-all cursor-pointer active:scale-95 border border-border/40"
-            title="Decrease by 1%"
-            @click="emit('adjustScore', -1)"
-          >
-            <Minus class="size-4" />
-          </button>
-
-          <div class="relative flex-1">
+        <div class="flex items-center gap-3">
+          <input
+            :value="evalScore"
+            type="range"
+            min="0"
+            max="100"
+            step="0.5"
+            class="flex-1 accent-foreground h-1.5 bg-muted rounded-full cursor-pointer"
+            @input="emit('update:evalScore', Number(($event.target as HTMLInputElement).value))"
+          />
+          <div class="relative w-20">
             <input
               :value="evalScore"
               type="number"
               min="0"
               max="100"
-              step="0.1"
-              class="h-10 w-full rounded-xl border border-border/70 bg-card px-4 pr-9 text-base font-bold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner"
+              step="0.5"
+              class="h-8 w-full rounded-md border border-border bg-card px-2 text-right text-xs font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-foreground"
               @input="emit('update:evalScore', Number(($event.target as HTMLInputElement).value))"
             />
-            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
-              %
-            </span>
           </div>
-
-          <button
-            type="button"
-            class="flex size-10 items-center justify-center rounded-xl bg-muted/70 hover:bg-muted text-foreground transition-all cursor-pointer active:scale-95 border border-border/40"
-            title="Increase by 1%"
-            @click="emit('adjustScore', 1)"
-          >
-            <Plus class="size-4" />
-          </button>
         </div>
 
-        <!-- Quick Preset Chips -->
-        <div class="flex flex-wrap items-center gap-1.5 pt-1">
+        <!-- Preset Chips -->
+        <div class="flex items-center gap-1.5 pt-0.5">
           <button
             v-for="preset in scorePresets"
             :key="preset.value"
             type="button"
-            class="px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer select-none"
+            class="px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer"
             :class="
               evalScore === preset.value
-                ? 'border-primary bg-primary/10 text-primary font-bold shadow-2xs'
-                : 'border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'bg-foreground text-background font-semibold'
+                : 'bg-muted/60 text-muted-foreground hover:text-foreground'
             "
             @click="emit('setPreset', preset.value)"
           >
@@ -109,44 +161,69 @@ const scoreGrade = computed(() => {
       </div>
 
       <!-- Issue Category Dropdown -->
-      <div class="space-y-1.5">
-        <label class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <div class="space-y-1">
+        <label class="text-xs font-medium text-foreground">
           Issue Category
         </label>
         <select
           :value="evalIssueType"
-          class="h-10 w-full rounded-xl border border-border/60 bg-muted/40 px-3.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner"
+          class="h-8 w-full rounded-md border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
           @change="emit('update:evalIssueType', ($event.target as HTMLSelectElement).value)"
         >
-          <option value="NONE">None (High Quality & Agreement)</option>
-          <option value="BOUNDARY_MISMATCH">Boundary Mismatch (Time / Bounding Box Alignment)</option>
-          <option value="SPEAKER_CONFUSION">Speaker Label Confusion</option>
-          <option value="TRANSCRIPT_TYPO">Transcript Typo / Hallucination</option>
+          <option
+            v-for="opt in effectiveIssueOptions"
+            :key="opt.value"
+            :value="opt.value"
+          >
+            {{ opt.label }}
+          </option>
         </select>
       </div>
 
+      <!-- Custom Reason input when 'OTHER' is selected -->
+      <div v-if="evalIssueType === 'OTHER'" class="space-y-1 animate-in fade-in duration-150">
+        <label class="text-xs font-medium text-foreground">
+          Specify Custom Reason <span class="text-destructive">*</span>
+        </label>
+        <input
+          :value="customIssueReason"
+          type="text"
+          required
+          placeholder="e.g. Incomplete boundary coverage, ambiguous utterance..."
+          class="h-8 w-full rounded-md border border-border bg-card px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+          @input="emit('update:customIssueReason', ($event.target as HTMLInputElement).value)"
+        />
+      </div>
+
       <!-- Audit Notes Textarea -->
-      <div class="space-y-1.5">
-        <label class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Audit Notes
+      <div class="space-y-1">
+        <label class="text-xs font-medium text-foreground">
+          Audit Notes (Optional)
         </label>
         <textarea
           :value="evalComment"
           rows="2"
-          placeholder="Consensus notes and feedback..."
-          class="w-full rounded-xl border border-border/60 bg-muted/40 p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none shadow-inner"
+          placeholder="Consensus notes..."
+          class="w-full rounded-md border border-border bg-card p-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
           @input="emit('update:evalComment', ($event.target as HTMLTextAreaElement).value)"
         ></textarea>
       </div>
 
       <!-- Modal Actions -->
-      <div class="flex items-center justify-end gap-2.5 pt-2">
-        <Button variant="ghost" type="button" class="rounded-xl text-xs h-9 cursor-pointer" @click="emit('update:showModal', false)">
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+        <button
+          type="button"
+          class="h-8 px-3 rounded text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          @click="emit('update:showModal', false)"
+        >
           Cancel
-        </Button>
-        <Button type="submit" class="rounded-xl text-xs h-9 font-semibold shadow-md cursor-pointer">
+        </button>
+        <button
+          type="submit"
+          class="h-8 px-3.5 rounded text-xs font-medium bg-foreground text-background hover:bg-foreground/90 transition-all cursor-pointer active:scale-[0.98]"
+        >
           Submit Evaluation
-        </Button>
+        </button>
       </div>
     </form>
   </Modal>
