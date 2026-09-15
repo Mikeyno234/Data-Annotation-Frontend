@@ -15,7 +15,7 @@ import { Layers } from 'lucide-vue-next'
         <span class="truncate text-xs font-semibold tracking-tight text-sidebar-foreground">
           Data Annotation
         </span>
-        <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-sidebar-accent text-sidebar-muted-foreground border border-sidebar-border">
+        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-muted-foreground border border-sidebar-border">
           AI
         </span>
       </div>

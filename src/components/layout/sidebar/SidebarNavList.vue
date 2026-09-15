@@ -205,7 +205,7 @@ function isNodeActive(node: NavigationNode): boolean {
     <nav class="space-y-4">
       <!-- Standalone Workspace Items -->
       <div v-if="dynamicTree.filter((n) => n.children.length === 0).length > 0">
-        <div class="mb-1 px-2.5 text-[10px] font-mono font-medium uppercase tracking-wider text-sidebar-muted/70">
+        <div class="mb-1.5 px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-sidebar-muted/80">
           Workspace
         </div>
         <RouterLink
@@ -234,7 +234,7 @@ function isNodeActive(node: NavigationNode): boolean {
 
       <!-- Hierarchical Parent Items with Submenus -->
       <div v-for="parent in dynamicTree.filter((n) => n.children.length > 0)" :key="parent.id">
-        <div class="mb-1 px-2.5 text-[10px] font-mono font-medium uppercase tracking-wider text-sidebar-muted/70">
+        <div class="mb-1.5 px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-sidebar-muted/80">
           {{ parent.name }}
         </div>
 

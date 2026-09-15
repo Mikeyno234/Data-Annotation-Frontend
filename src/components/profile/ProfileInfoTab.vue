@@ -264,7 +264,6 @@ function formatDate(dateStr?: string) {
           <div class="mt-1.5">
             <Badge
               :variant="authStore.user?.status === 'ACTIVE' ? 'success' : 'outline'"
-              :dot="authStore.user?.status === 'ACTIVE'"
               class="text-xs font-medium capitalize"
             >
               {{ authStore.user?.status === 'ACTIVE' ? 'Active' : (authStore.user?.status?.toLowerCase() || 'active') }}

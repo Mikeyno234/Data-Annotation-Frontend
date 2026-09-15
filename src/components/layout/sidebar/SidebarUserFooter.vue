@@ -123,7 +123,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeProfileMenu))
                 {{ organizationName }}
               </span>
             </span>
-            <span class="text-sidebar-border shrink-0">•</span>
+            <span class="text-sidebar-border shrink-0">/</span>
             <span class="truncate text-sidebar-muted/80 text-[10.5px] shrink-0 font-medium">
               {{ authStore.currentRole }}
             </span>
