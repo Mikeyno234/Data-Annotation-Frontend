@@ -296,6 +296,7 @@ export type AnnotationPayload =
   | TextEntity[]
   | VideoInterval[]
   | AudioSegment[]
+  | Array<Record<string, unknown>>
   | Record<string, unknown>
 
 export interface TextEntity {
