@@ -63,12 +63,6 @@ async function fetchTasks() {
 
     const myId = authStore.user?.id
 
-    // 1. Load project tasks queue (or task by ID).
-    //    REWORK items are fetched alongside IN_PROGRESS/UNASSIGNED because the
-    //    backend leases a rejected item back to its original annotator
-    //    (Backend/internal/annotation/repository CheckoutTask) rather than
-    //    dropping it into the shared pool; the annotator must see it here to
-    //    close the review feedback loop.
     const [mineRes, reworkRes, queueRes, allRes]: any = await Promise.all([
       annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100, status: 'IN_PROGRESS' }),
       annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100, status: 'REWORK' }),
@@ -80,8 +74,6 @@ async function fetchTasks() {
       (item: DataItem) => !myId || item.locked_by_id === myId
     )
 
-    // Rework leased to me surfaces first (closing feedback loops takes
-    // priority); rework still unclaimed joins the shared queue like UNASSIGNED.
     const myRework = (reworkRes.data || []).filter(
       (item: DataItem) => myId && item.locked_by_id === myId
     )
@@ -208,7 +200,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="mx-auto flex max-w-7xl flex-col gap-5">
-    <!-- Task Queue Navigator Bar -->
     <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-2xs">
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border">
@@ -250,8 +241,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Rework Feedback Banner: surfaces the reviewer/QA rejection reason so
-         the annotator knows what to fix without leaving the workspace. -->
     <div
       v-if="activeItem?.status === 'REWORK'"
       class="flex items-start gap-2.5 rounded-lg border border-orange-500/25 bg-orange-500/10 p-3 text-orange-700 dark:text-orange-400"
@@ -265,7 +254,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Active Modality Workspace Switcher -->
     <div v-if="isLoading" class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
       <div class="h-72 animate-pulse rounded-2xl bg-card/60 border border-border/40"></div>
       <div class="hidden h-72 animate-pulse rounded-2xl bg-card/40 border border-border/40 lg:block"></div>

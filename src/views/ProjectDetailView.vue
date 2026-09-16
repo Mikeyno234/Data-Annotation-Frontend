@@ -110,9 +110,6 @@ const showExportModal = ref(false)
 const exportFormat = ref('yolo')
 const isExporting = ref(false)
 
-// Export is only meaningful once at least one item has fully cleared the
-// pipeline (review, then QA when the project requires it). Backend/pkg/db
-// InitDatabaseViews treats COMPLETED as the sole terminal success state.
 const completedItems = computed(() =>
   dataItems.value.filter((i) => i.status === 'COMPLETED')
 )

@@ -26,25 +26,6 @@ const DEFAULT_LABEL_PALETTE = [
   '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6'
 ]
 
-// ---------------------------------------------------------------------------
-// Workspace editor resolution
-//
-// A project's annotation_type is a free-text task name (e.g. "2D Bounding
-// Box", "Whole-Video Classification") chosen by whoever set up the task
-// catalog. Matching keywords in that string to decide which editor to render
-// is fragile: a catalog entry named without an expected keyword (e.g. "Video
-// Review") silently falls through to a default editor with no warning.
-//
-// tool_type (Backend/model/entity/project.go AnnotationTypeDefinition.ToolType)
-// is the structured value the catalog author actually picked from a fixed set
-// (BBOX, POLYGON, SPAN, RADIO, CHOICE, TIMELINE, TRANSCRIPT, OBB) and is copied
-// onto the project at creation. Resolving against it first is deterministic;
-// the keyword-matching functions below remain as a fallback only for projects
-// created before tool_type existed, or when a catalog entry was created
-// without picking a structured tool_type.
-// ---------------------------------------------------------------------------
-
-/** Structured tool_type values assigned by the annotation type catalog. */
 export type ToolType = 'BBOX' | 'OBB' | 'POLYGON' | 'CHOICE' | 'RADIO' | 'SPAN' | 'TIMELINE' | 'TRANSCRIPT'
 
 function normalizeToolType(toolType?: string): ToolType | null {

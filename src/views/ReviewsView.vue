@@ -483,11 +483,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- ================================================================= -->
-    <!-- VIEW MODE 1: BY PROJECT (Dashboard & Project Cards)               -->
-    <!-- ================================================================= -->
     <template v-if="!selectedProject && viewMode === 'PROJECTS'">
-      <!-- Summary Metric Cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div class="p-3.5 rounded-lg border border-border bg-card shadow-2xs">
           <div class="flex items-center justify-between text-xs text-muted-foreground">
@@ -620,13 +616,8 @@ onMounted(async () => {
       </div>
     </template>
 
-    <!-- ================================================================= -->
-    <!-- VIEW MODE 2: PROJECT REVIEW QUEUE OR ALL ITEMS                    -->
-    <!-- ================================================================= -->
     <template v-else>
-      <!-- Filter Tabs & Queue Controls -->
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <!-- Segmented Tab Controls -->
         <div class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs self-start sm:self-auto">
           <button
             v-for="tab in statusTabs"
@@ -770,11 +761,6 @@ onMounted(async () => {
       </div>
     </template>
 
-    <!-- ================================================================= -->
-    <!-- MODALS: REJECT & APPROVE ALL CONFIRMATION                         -->
-    <!-- ================================================================= -->
-
-    <!-- Reject Feedback Modal (Single & Batch) -->
     <ReviewRejectModal
       :open="showRejectModal"
       v-model:comment="rejectComment"

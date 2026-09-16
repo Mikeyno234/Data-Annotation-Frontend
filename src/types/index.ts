@@ -1,10 +1,5 @@
 export type ModalityType = string
 
-// Mirrors the DataItem lifecycle in Backend/pkg/constant/constant.go.
-// UNASSIGNED -> IN_PROGRESS -> ANNOTATED -> QA_PENDING -> COMPLETED
-//   REWORK loops back to IN_PROGRESS after a reviewer or QA rejection.
-//   ESCALATED is reached once the project's rework round cap is exceeded.
-//   EXCLUDED is a terminal removal from the pipeline (reject behavior REMOVE).
 export type TaskStatus =
   | 'UNASSIGNED'
   | 'IN_PROGRESS'

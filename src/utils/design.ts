@@ -97,18 +97,9 @@ export interface StatusMeta {
   label: string
   icon: LucideIcon
   badgeClass: string
-  // badgeVariant maps onto components/ui/Badge.vue's variant prop, so status
-  // badges across the app share one visual mapping instead of each component
-  // re-deriving its own ternary chain from raw status strings.
   badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning' | 'info'
 }
 
-// Single source of truth for both DataItem and Annotation/Review lifecycle
-// labels. Mirrors the state machine in Backend/pkg/constant/constant.go:
-//   UNASSIGNED -> IN_PROGRESS -> ANNOTATED -> QA_PENDING -> COMPLETED
-//   REWORK loops back after a reviewer or QA rejection.
-//   ESCALATED is reached once the project's rework round cap is exceeded.
-//   EXCLUDED is a terminal removal (reject behavior REMOVE).
 export const STATUS_CONFIG: Record<string, StatusMeta> = {
   DRAFT: {
     label: 'Draft',
