@@ -1,14 +1,65 @@
-export type ModalityType = string
+export const MODALITY_TYPES = ['IMAGE', 'VIDEO', 'TEXT', 'AUDIO'] as const
+export type ModalityType = (typeof MODALITY_TYPES)[number]
 
-export type TaskStatus =
-  | 'UNASSIGNED'
-  | 'IN_PROGRESS'
-  | 'ANNOTATED'
-  | 'QA_PENDING'
-  | 'REWORK'
-  | 'COMPLETED'
-  | 'ESCALATED'
-  | 'EXCLUDED'
+export const ANNOTATION_TYPE_LEVELS = ['CATEGORY', 'SUB_TYPE'] as const
+export type AnnotationTypeLevel = (typeof ANNOTATION_TYPE_LEVELS)[number]
+
+export const TOOL_TYPES = ['BBOX', 'OBB', 'POLYGON', 'CHOICE', 'RADIO', 'SPAN', 'TIMELINE', 'TRANSCRIPT'] as const
+export type ToolType = (typeof TOOL_TYPES)[number]
+
+export const GENERAL_STATUSES = ['ACTIVE', 'INACTIVE'] as const
+export type GeneralStatus = (typeof GENERAL_STATUSES)[number]
+
+export const PROJECT_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const
+export type ProjectPriority = (typeof PROJECT_PRIORITIES)[number]
+
+export const TASK_STATUSES = [
+  'UNASSIGNED',
+  'IN_PROGRESS',
+  'ANNOTATED',
+  'QA_PENDING',
+  'REWORK',
+  'COMPLETED',
+  'ESCALATED',
+  'EXCLUDED',
+] as const
+export type TaskStatus = (typeof TASK_STATUSES)[number]
+
+export const REVIEW_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'FIXED_ACCEPTED',
+  'REJECTED',
+] as const
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number]
+
+export const ANNOTATION_STATUSES = [
+  'SUBMITTED',
+  'ACCEPTED',
+  'FIXED_ACCEPTED',
+  'REJECTED',
+] as const
+export type AnnotationStatus = (typeof ANNOTATION_STATUSES)[number]
+
+export const QA_STATUSES = [
+  'PENDING',
+  'PASSED',
+  'FAILED',
+] as const
+export type QAStatus = (typeof QA_STATUSES)[number]
+
+export const REJECT_BEHAVIORS = [
+  'REQUEUE_TO_ANNOTATOR',
+  'REQUEUE_TO_POOL',
+  'REMOVE',
+] as const
+export type RejectBehavior = (typeof REJECT_BEHAVIORS)[number]
+
+export const REJECT_ACTIONS = [
+  'REQUEUE',
+  'REMOVE',
+] as const
+export type RejectAction = (typeof REJECT_ACTIONS)[number]
 
 export interface Organization {
   id: number
@@ -29,8 +80,8 @@ export interface Permission {
 export interface AnnotationType {
   id: number
   parent_id?: number
-  level?: 'CATEGORY' | 'SUB_TYPE'
-  tool_type?: string
+  level?: AnnotationTypeLevel
+  tool_type?: ToolType | string
   code: string
   name: string
   modality: ModalityType
@@ -38,10 +89,10 @@ export interface AnnotationType {
   instructions?: string
   badges?: string[] | string
   preview_image_url?: string
-  preview_data?: any
-  sub_options?: any
+  preview_data?: Record<string, unknown> | null
+  sub_options?: Record<string, unknown> | Array<Record<string, unknown>> | null
   label_config?: string
-  status: 'ACTIVE' | 'INACTIVE'
+  status: GeneralStatus
   children?: AnnotationType[]
   created_at?: string
   updated_at?: string
@@ -132,7 +183,7 @@ export interface Project {
   // pattern-matching annotation_type, which is a free-text task name.
   tool_type?: string
   status: string
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+  priority: ProjectPriority
   label_config?: string
   start_date?: string
   due_date?: string
@@ -189,11 +240,11 @@ export interface DataItem {
   file_name: string
   source_url: string
   storage_key?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown> | null
   status: TaskStatus
   locked_by_id?: number
   locked_until?: string
-  draft_payload?: any
+  draft_payload?: AnnotationPayload | null
   draft_saved_at?: string
   // review_round counts completed rework cycles; last_rejection_reason carries
   // the most recent reviewer or QA feedback so the annotator sees why the item
@@ -240,6 +291,13 @@ export interface ImageClassificationPayload {
 
 export type ImageAnnotationPayload = ImageBox[] | ImagePolygon[] | ImageClassificationPayload
 
+export type AnnotationPayload =
+  | ImageAnnotationPayload
+  | TextEntity[]
+  | VideoInterval[]
+  | AudioSegment[]
+  | Record<string, unknown>
+
 export interface TextEntity {
   id: string
   start: number
@@ -263,11 +321,11 @@ export interface Annotation {
   data_item_id: number
   annotator_id: number
   annotation_type: string
-  payload: any
+  payload: AnnotationPayload
   version: number
   lead_time_seconds: number
   is_ground_truth: boolean
-  status: string
+  status: AnnotationStatus | string
   submitted_at?: string
   reviews?: Review[]
 	created_at: string
@@ -279,7 +337,7 @@ export interface Review {
   id: number
   annotation_id: number
   reviewer_id: number
-  status: 'PENDING' | 'APPROVED' | 'FIXED_ACCEPTED' | 'REJECTED' | string
+  status: ReviewStatus | string
   comment: string
   reviewed_at?: string
   created_at: string
@@ -335,7 +393,7 @@ export interface QATask {
   id: number
   data_item_id: number
   assigned_to_id?: number
-  status: string
+  status: QAStatus | string
   created_at: string
   results?: QAResult[]
   data_item?: DataItem
@@ -363,7 +421,7 @@ export interface AuditLog {
   resource_type: string
   resource_id: string
   details: string
-  metadata?: any
+  metadata?: Record<string, unknown> | null
   ip_address: string
   user_agent: string
   status: string

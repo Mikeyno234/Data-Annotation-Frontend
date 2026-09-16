@@ -1,3 +1,4 @@
+import type { Component } from 'vue'
 import type { ModalityType } from '@/types'
 import {
   Box,
@@ -14,12 +15,12 @@ import {
 export interface ToolOption {
   code: string
   label: string
-  icon: any
+  icon: Component
   desc: string
   defaultXml: (labels: Array<{ name: string; color: string }>) => string
   defaultInstructions: string
   defaultBadges: string[]
-  defaultPreviewData: any
+  defaultPreviewData: Record<string, unknown>
   defaultPreviewUrl: string
 }
 

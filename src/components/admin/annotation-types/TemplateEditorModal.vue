@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { ModalityType } from '@/types'
+import type { Component } from 'vue'
+import type { ModalityType, AnnotationTypeLevel, GeneralStatus } from '@/types'
 import Modal from '@/components/ui/Modal.vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import AnnotationTypePreview from '@/components/annotation/AnnotationTypePreview.vue'
 import TemplateSchemaEditor from './TemplateSchemaEditor.vue'
+import type { ToolOption } from './templateConstants'
 import { Wand2, Lock, Eye, SlidersHorizontal } from 'lucide-vue-next'
 
 const activeMobileTab = ref<'editor' | 'preview'>('editor')
@@ -19,7 +21,7 @@ const props = defineProps<{
     code: string
     name: string
     modality: ModalityType
-    level: 'CATEGORY' | 'SUB_TYPE'
+    level: AnnotationTypeLevel
     parent_id: number | null
     tool_type: string
     description: string
@@ -28,14 +30,14 @@ const props = defineProps<{
     preview_image_url: string
     previewDataJson: string
     label_config: string
-    status: 'ACTIVE' | 'INACTIVE'
+    status: GeneralStatus
   }
   isXmlMode: boolean
   visualLabels: Array<{ name: string; color: string }>
   newLabelName: string
   newLabelColor: string
-  modalityList: Array<{ value: string; label: string; icon: any; color: string }>
-  toolsByModality: Record<ModalityType, Array<any>>
+  modalityList: Array<{ value: string; label: string; icon: Component; color: string }>
+  toolsByModality: Record<ModalityType, ToolOption[]>
   activeLabelPresets: Array<{ label: string; items: Array<{ name: string; color: string }> }>
 }>()
 
@@ -44,7 +46,7 @@ const emit = defineEmits<{
   (e: 'update:isXmlMode', val: boolean): void
   (e: 'nameInput'): void
   (e: 'modalityChange'): void
-  (e: 'selectTool', tool: any): void
+  (e: 'selectTool', tool: ToolOption): void
   (e: 'insertGuidelines'): void
   (e: 'addLabel', label: { name: string; color: string }): void
   (e: 'removeLabel', index: number): void

@@ -1,5 +1,5 @@
 import { ref, reactive, computed } from 'vue'
-import type { AnnotationType, ModalityType } from '@/types'
+import type { AnnotationType, ModalityType, AnnotationTypeLevel, GeneralStatus } from '@/types'
 import { annotationTypesApi, type CreateAnnotationTypePayload } from '@/api/annotationTypes'
 import { toast } from '@/utils/toast'
 import { toolsByModality, labelPresetsByModality, type ToolOption } from './templateConstants'
@@ -16,7 +16,7 @@ export function useTemplateForm(onSuccess: () => void) {
     code: string
     name: string
     modality: ModalityType
-    level: 'CATEGORY' | 'SUB_TYPE'
+    level: AnnotationTypeLevel
     parent_id: number | null
     tool_type: string
     description: string
@@ -25,7 +25,7 @@ export function useTemplateForm(onSuccess: () => void) {
     preview_image_url: string
     previewDataJson: string
     label_config: string
-    status: 'ACTIVE' | 'INACTIVE'
+    status: GeneralStatus
   }>({
     code: '',
     name: '',

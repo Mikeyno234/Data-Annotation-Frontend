@@ -66,10 +66,15 @@ export function useProjectForm(onSuccess: () => void) {
       const doc = new DOMParser().parseFromString(config, 'application/xml')
       const nodes = Array.from(doc.querySelectorAll('Label, Choice'))
       if (nodes.length > 0) {
-        return nodes.map((l, index) => ({
-          name: l.getAttribute('value')?.trim() || l.getAttribute('alias')?.trim() || '',
-          color: l.getAttribute('background') || l.getAttribute('predicted_values') || colors[index % colors.length],
-        })).filter((l) => l.name)
+        return nodes.map((l, index) => {
+          const val = l.getAttribute('value')?.trim()
+          const alias = l.getAttribute('alias')?.trim()
+          const name = val || alias || ''
+          return {
+            name,
+            color: l.getAttribute('background') || l.getAttribute('predicted_values') || colors[index % colors.length],
+          }
+        }).filter((l) => l.name)
       }
     } catch {
       // Regex fallback

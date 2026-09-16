@@ -3,16 +3,20 @@
  * Pure functions designed for maximum testability and reuse across all workspace modalities.
  */
 
-import type {
-  LabelOption,
-  AudioSegment,
-  ImageBox,
-  ImagePolygon,
-  ImageClassificationPayload,
-  ImageAnnotationPayload,
-  TextEntity,
-  VideoInterval,
+import {
+  TOOL_TYPES,
+  type ToolType,
+  type LabelOption,
+  type AudioSegment,
+  type ImageBox,
+  type ImagePolygon,
+  type ImageClassificationPayload,
+  type ImageAnnotationPayload,
+  type TextEntity,
+  type VideoInterval,
 } from '@/types'
+
+export type { ToolType }
 
 export interface BoxCoords {
   x: number
@@ -26,12 +30,9 @@ const DEFAULT_LABEL_PALETTE = [
   '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6'
 ]
 
-export type ToolType = 'BBOX' | 'OBB' | 'POLYGON' | 'CHOICE' | 'RADIO' | 'SPAN' | 'TIMELINE' | 'TRANSCRIPT'
-
 function normalizeToolType(toolType?: string): ToolType | null {
-  const t = (toolType || '').trim().toUpperCase()
-  const known: ToolType[] = ['BBOX', 'OBB', 'POLYGON', 'CHOICE', 'RADIO', 'SPAN', 'TIMELINE', 'TRANSCRIPT']
-  return (known as string[]).includes(t) ? (t as ToolType) : null
+  const t = (toolType || '').trim().toUpperCase() as ToolType
+  return (TOOL_TYPES as readonly string[]).includes(t) ? t : null
 }
 
 /**
@@ -98,10 +99,15 @@ export function parseLabelConfigXml(config?: string, fallbackPalette = DEFAULT_L
     const doc = new DOMParser().parseFromString(config, 'application/xml')
     const nodes = Array.from(doc.querySelectorAll('Label, Choice'))
     if (nodes.length > 0) {
-      return nodes.map((label, index) => ({
-        name: label.getAttribute('value')?.trim() || label.getAttribute('alias')?.trim() || '',
-        color: label.getAttribute('background') || fallbackPalette[index % fallbackPalette.length],
-      })).filter((l) => l.name)
+      return nodes.map((label, index) => {
+        const val = label.getAttribute('value')?.trim()
+        const alias = label.getAttribute('alias')?.trim()
+        const name = val || alias || ''
+        return {
+          name,
+          color: label.getAttribute('background') || fallbackPalette[index % fallbackPalette.length],
+        }
+      }).filter((l) => l.name)
     }
   } catch {}
 
@@ -385,28 +391,33 @@ export interface VideoClassificationPayload {
  * Normalizes any incoming audio payload (whether direct array or wrapped in {segments})
  * into a well-typed AudioSegment array with direct canonical fields.
  */
-export function normalizeAudioPayload(raw: any, fallbackSpeaker = 'Speaker 1'): AudioSegment[] {
+export function normalizeAudioPayload(raw: unknown, fallbackSpeaker = 'Speaker 1'): AudioSegment[] {
   if (!raw) return []
 
-  const list: any[] = Array.isArray(raw)
-    ? raw
-    : (typeof raw === 'object' && Array.isArray(raw.segments) ? raw.segments : [])
+  const rawObj = raw as Record<string, unknown>
+  const list: Array<Record<string, unknown>> = Array.isArray(raw)
+    ? (raw as Array<Record<string, unknown>>)
+    : (typeof raw === 'object' && Array.isArray(rawObj.segments) ? (rawObj.segments as Array<Record<string, unknown>>) : [])
 
-  return list.map((item, idx) => ({
-    id: String(item.id || `seg-${Date.now()}-${idx}`),
-    start: Number(item.start || 0),
-    end: Number(item.end || 0),
-    speaker: item.speaker || fallbackSpeaker,
-    label: item.speaker || fallbackSpeaker,
-    transcript: item.transcript || item.text || '',
-    confidence: typeof item.confidence === 'number' ? item.confidence : 1.0,
-  }))
+  return list.map((item, idx) => {
+    const speaker = typeof item.speaker === 'string' && item.speaker ? item.speaker : fallbackSpeaker
+    const transcript = typeof item.transcript === 'string' ? item.transcript : (typeof item.text === 'string' ? item.text : '')
+    return {
+      id: String(item.id || `seg-${Date.now()}-${idx}`),
+      start: Number(item.start || 0),
+      end: Number(item.end || 0),
+      speaker,
+      label: speaker,
+      transcript,
+      confidence: typeof item.confidence === 'number' ? item.confidence : 1.0,
+    }
+  })
 }
 
 /**
  * Serializes AudioSegments into canonical database payload structure.
  */
-export function serializeAudioPayload(segments: AudioSegment[]): { segments: any[] } {
+export function serializeAudioPayload(segments: AudioSegment[]): { segments: Array<Omit<AudioSegment, 'label'>> } {
   return {
     segments: (segments || []).map((seg) => ({
       id: seg.id,
@@ -424,7 +435,7 @@ export function serializeAudioPayload(segments: AudioSegment[]): { segments: any
  * into typed ImageBox[], ImagePolygon[], or ImageClassificationPayload with guaranteed IDs.
  */
 export function normalizeImagePayload(
-  raw: any,
+  raw: unknown,
   subtype: 'bbox' | 'polygon' | 'classification'
 ): ImageAnnotationPayload {
   if (!raw) {
@@ -433,42 +444,45 @@ export function normalizeImagePayload(
 
   if (subtype === 'classification') {
     if (Array.isArray(raw)) {
-      const labels = raw.map((item) => (typeof item === 'string' ? item : item.label || '')).filter(Boolean)
+      const labels = raw.map((item) => (typeof item === 'string' ? item : (item as Record<string, unknown>)?.label || '')).filter(Boolean) as string[]
       return { selectedLabels: labels }
     }
-    if (typeof raw === 'object') {
-      if (Array.isArray(raw.selectedLabels)) {
-        return { selectedLabels: raw.selectedLabels }
+    if (typeof raw === 'object' && raw !== null) {
+      const rawObj = raw as Record<string, unknown>
+      if (Array.isArray(rawObj.selectedLabels)) {
+        return { selectedLabels: rawObj.selectedLabels as string[] }
       }
-      if (raw.label) {
-        return { selectedLabels: [String(raw.label)] }
+      if (rawObj.label) {
+        return { selectedLabels: [String(rawObj.label)] }
       }
     }
     return { selectedLabels: [] }
   }
 
   if (subtype === 'polygon') {
-    const list: any[] = Array.isArray(raw)
-      ? raw
-      : (typeof raw === 'object' && Array.isArray(raw.polygons) ? raw.polygons : [])
+    const rawObj = raw as Record<string, unknown>
+    const list: Array<Record<string, unknown>> = Array.isArray(raw)
+      ? (raw as Array<Record<string, unknown>>)
+      : (typeof raw === 'object' && Array.isArray(rawObj.polygons) ? (rawObj.polygons as Array<Record<string, unknown>>) : [])
 
     return list.map((item, idx): ImagePolygon => ({
       id: String(item.id || `poly-${Date.now()}-${idx}`),
       points: Array.isArray(item.points)
-        ? item.points.map((p: any) => ({ x: Number(p.x || 0), y: Number(p.y || 0) }))
+        ? (item.points as Array<Record<string, unknown>>).map((p) => ({ x: Number(p?.x || 0), y: Number(p?.y || 0) }))
         : [],
-      label: item.label || '',
+      label: typeof item.label === 'string' ? item.label : '',
       confidence: typeof item.confidence === 'number' ? item.confidence : 1.0,
-      color: item.color,
+      color: typeof item.color === 'string' ? item.color : undefined,
     }))
   }
 
   // Default: bbox
-  const list: any[] = Array.isArray(raw)
-    ? raw
-    : (typeof raw === 'object' && Array.isArray(raw.regions)
-        ? raw.regions
-        : (typeof raw === 'object' && Array.isArray(raw.boxes) ? raw.boxes : []))
+  const rawObj = raw as Record<string, unknown>
+  const list: Array<Record<string, unknown>> = Array.isArray(raw)
+    ? (raw as Array<Record<string, unknown>>)
+    : (typeof raw === 'object' && Array.isArray(rawObj.regions)
+        ? (rawObj.regions as Array<Record<string, unknown>>)
+        : (typeof raw === 'object' && Array.isArray(rawObj.boxes) ? (rawObj.boxes as Array<Record<string, unknown>>) : []))
 
   return list.map((item, idx): ImageBox => ({
     id: String(item.id || `box-${Date.now()}-${idx}`),
@@ -476,52 +490,53 @@ export function normalizeImagePayload(
     y: Number(item.y || 0),
     width: Number(item.width || 0),
     height: Number(item.height || 0),
-    label: item.label || '',
+    label: typeof item.label === 'string' ? item.label : '',
     confidence: typeof item.confidence === 'number' ? item.confidence : 1.0,
-    color: item.color,
+    color: typeof item.color === 'string' ? item.color : undefined,
   }))
 }
 
 /**
  * Normalizes text annotation payload to support both span tagging (NER) and text classification.
  */
-export function normalizeTextPayload(raw: any): TextAnnotationPayload {
+export function normalizeTextPayload(raw: unknown): TextAnnotationPayload {
   if (!raw) {
     return { entities: [], sentiment: 'NEUTRAL', selectedLabels: [] }
   }
 
   if (Array.isArray(raw)) {
     return {
-      entities: raw.map((item, idx) => ({
+      entities: (raw as Array<Record<string, unknown>>).map((item, idx) => ({
         id: String(item.id || `ent-${Date.now()}-${idx}`),
         start: Number(item.start || 0),
         end: Number(item.end || 0),
         text: String(item.text || ''),
         label: String(item.label || ''),
-        color: item.color,
+        color: typeof item.color === 'string' ? item.color : undefined,
       })),
       sentiment: 'NEUTRAL',
       selectedLabels: [],
     }
   }
 
-  if (typeof raw === 'object') {
-    const rawEntities = Array.isArray(raw.entities) ? raw.entities : []
-    const entities = rawEntities.map((item: any, idx: number) => ({
+  if (typeof raw === 'object' && raw !== null) {
+    const rawObj = raw as Record<string, unknown>
+    const rawEntities = Array.isArray(rawObj.entities) ? (rawObj.entities as Array<Record<string, unknown>>) : []
+    const entities = rawEntities.map((item, idx) => ({
       id: String(item.id || `ent-${Date.now()}-${idx}`),
       start: Number(item.start || 0),
       end: Number(item.end || 0),
       text: String(item.text || ''),
       label: String(item.label || ''),
-      color: item.color,
+      color: typeof item.color === 'string' ? item.color : undefined,
     }))
 
-    const sentiment = String(raw.sentiment || 'NEUTRAL')
+    const sentiment = String(rawObj.sentiment || 'NEUTRAL')
     let selectedLabels: string[] = []
-    if (Array.isArray(raw.selectedLabels)) {
-      selectedLabels = raw.selectedLabels.map(String)
-    } else if (raw.label) {
-      selectedLabels = [String(raw.label)]
+    if (Array.isArray(rawObj.selectedLabels)) {
+      selectedLabels = (rawObj.selectedLabels as unknown[]).map(String)
+    } else if (rawObj.label) {
+      selectedLabels = [String(rawObj.label)]
     }
 
     return { entities, sentiment, selectedLabels }
@@ -534,7 +549,7 @@ export function normalizeTextPayload(raw: any): TextAnnotationPayload {
  * Normalizes video annotation payloads for timeline intervals and video-level classification.
  */
 export function normalizeVideoPayload(
-  raw: any,
+  raw: unknown,
   mode: 'timeline' | 'classification'
 ): VideoInterval[] | VideoClassificationPayload {
   if (!raw) {
@@ -545,36 +560,40 @@ export function normalizeVideoPayload(
     if (typeof raw === 'string') {
       return { label: raw, notes: '', tags: [] }
     }
-    if (typeof raw === 'object' && !Array.isArray(raw)) {
-      const label = raw.label || (Array.isArray(raw.selectedLabels) ? raw.selectedLabels[0] : '') || ''
+    if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+      const rawObj = raw as Record<string, unknown>
+      const selectedLabel = Array.isArray(rawObj.selectedLabels) ? String(rawObj.selectedLabels[0] || '') : ''
+      const label = rawObj.label ? String(rawObj.label) : selectedLabel
       return {
-        label: String(label),
-        notes: String(raw.notes || ''),
-        tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
+        label,
+        notes: String(rawObj.notes || ''),
+        tags: Array.isArray(rawObj.tags) ? (rawObj.tags as unknown[]).map(String) : [],
       }
     }
     if (Array.isArray(raw) && raw.length > 0) {
-      const first = raw[0]
+      const first = raw[0] as unknown
+      const firstLabel = typeof first === 'string' ? first : ((first as Record<string, unknown>)?.label || '')
       return {
-        label: typeof first === 'string' ? first : first.label || '',
+        label: String(firstLabel),
         notes: '',
-        tags: raw.map((r) => (typeof r === 'string' ? r : r.label || '')).filter(Boolean),
+        tags: (raw as unknown[]).map((r) => (typeof r === 'string' ? r : String((r as Record<string, unknown>)?.label || ''))).filter(Boolean),
       }
     }
     return { label: '', notes: '', tags: [] }
   }
 
   // Timeline mode
-  const list: any[] = Array.isArray(raw)
-    ? raw
-    : (typeof raw === 'object' && Array.isArray(raw.intervals) ? raw.intervals : [])
+  const rawObj = raw as Record<string, unknown>
+  const list: Array<Record<string, unknown>> = Array.isArray(raw)
+    ? (raw as Array<Record<string, unknown>>)
+    : (typeof raw === 'object' && raw !== null && Array.isArray(rawObj.intervals) ? (rawObj.intervals as Array<Record<string, unknown>>) : [])
 
   return list.map((item, idx): VideoInterval => ({
     id: String(item.id || `interval-${Date.now()}-${idx}`),
     start: Number(item.start || 0),
     end: Number(item.end || 0),
     label: String(item.label || ''),
-    action: item.action,
+    action: typeof item.action === 'string' ? item.action : undefined,
     track: typeof item.track === 'number' ? item.track : 0,
   }))
 }
