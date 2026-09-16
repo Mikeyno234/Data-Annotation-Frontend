@@ -13,6 +13,8 @@ export interface UseAnnotationSessionOptions<T> {
   item: DataItem
   annotationType?: string
   initialPayload: T
+  /** Optional payload normalizer to coerce legacy/wrapped/raw data into well-typed structures */
+  normalizer?: (raw: any) => T
   /** Custom validation before submission. Return error message if invalid, or null if valid. */
   validatePayload?: (payload: T) => string | null
   /** Callback fired after submission successfully finishes */
@@ -68,6 +70,7 @@ export function useAnnotationSession<T>(
     item,
     annotationType = 'General Annotation',
     initialPayload,
+    normalizer,
     validatePayload,
     onSubmitted,
     customHotkeys,
@@ -79,7 +82,7 @@ export function useAnnotationSession<T>(
 
   // 1. Storage & draft resolution
   const draftStorage = useDraftStorage<T>(item)
-  const initialData = draftStorage.resolveInitialPayload(item, initialPayload)
+  const initialData = draftStorage.resolveInitialPayload(item, initialPayload, normalizer)
   const payload = ref<T>(initialData) as Ref<T>
 
   // 2. Linear History Stack (Undo / Redo)

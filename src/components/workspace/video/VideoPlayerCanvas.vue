@@ -90,7 +90,6 @@ onUnmounted(() => {
       />
     </div>
 
-    <!-- Transport Controls -->
     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
       <div>
         <p class="text-xs font-bold text-foreground">Mark a moment on the timeline</p>

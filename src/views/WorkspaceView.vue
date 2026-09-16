@@ -15,7 +15,8 @@ import TextWorkspace from '@/components/workspace/TextWorkspace.vue'
 import VideoWorkspace from '@/components/workspace/VideoWorkspace.vue'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
-import { ChevronLeft, ChevronRight, RefreshCw, SlidersHorizontal, ArrowLeft } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, RefreshCw, SlidersHorizontal, ArrowLeft, RotateCcw } from 'lucide-vue-next'
+import { getModalityConfig } from '@/utils/design'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,6 +28,7 @@ const activeItem = ref<DataItem | null>(null)
 const isLoading = ref(true)
 const projectLabels = ref<LabelOption[]>([])
 const projectAnnotationType = ref('')
+const projectToolType = ref('')
 const projectModality = ref('')
 const submittedIds = new Set<number>()
 
@@ -34,12 +36,15 @@ const effectiveModality = computed(() => {
   return (projectModality.value || activeItem.value?.modality || 'IMAGE').toUpperCase()
 })
 
+const modalityMeta = computed(() => getModalityConfig(effectiveModality.value))
+
 async function loadProjectConfig(projectId: number) {
   try {
     const projectRes: any = await projectsApi.getProject(projectId)
     const project = projectRes.data || projectRes
     projectLabels.value = parseLabelConfigXml(project.label_config)
     projectAnnotationType.value = project.annotation_type || ''
+    projectToolType.value = project.tool_type || ''
     projectModality.value = project.modality || ''
   } catch (e) {
     console.error('Failed to load project config', e)
@@ -58,9 +63,15 @@ async function fetchTasks() {
 
     const myId = authStore.user?.id
 
-    // 1. Load project tasks queue (or task by ID)
-    const [mineRes, queueRes, allRes]: any = await Promise.all([
+    // 1. Load project tasks queue (or task by ID).
+    //    REWORK items are fetched alongside IN_PROGRESS/UNASSIGNED because the
+    //    backend leases a rejected item back to its original annotator
+    //    (Backend/internal/annotation/repository CheckoutTask) rather than
+    //    dropping it into the shared pool; the annotator must see it here to
+    //    close the review feedback loop.
+    const [mineRes, reworkRes, queueRes, allRes]: any = await Promise.all([
       annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100, status: 'IN_PROGRESS' }),
+      annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100, status: 'REWORK' }),
       annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100, status: 'UNASSIGNED' }),
       taskIdQuery ? annotationsApi.getDataItems({ project_id: projectIdQuery, limit: 100 }) : Promise.resolve({ data: [] }),
     ])
@@ -68,9 +79,18 @@ async function fetchTasks() {
     const mine = (mineRes.data || []).filter(
       (item: DataItem) => !myId || item.locked_by_id === myId
     )
-    
+
+    // Rework leased to me surfaces first (closing feedback loops takes
+    // priority); rework still unclaimed joins the shared queue like UNASSIGNED.
+    const myRework = (reworkRes.data || []).filter(
+      (item: DataItem) => myId && item.locked_by_id === myId
+    )
+    const unclaimedRework = (reworkRes.data || []).filter(
+      (item: DataItem) => !myId || item.locked_by_id !== myId
+    )
+
     // Build the active working queue
-    let merged: DataItem[] = [...mine, ...(queueRes.data || [])]
+    let merged: DataItem[] = [...myRework, ...mine, ...unclaimedRework, ...(queueRes.data || [])]
 
     // If opening a specific task ID (e.g. from Project Table), ensure it's in dataItems and find its index
     if (taskIdQuery) {
@@ -100,10 +120,19 @@ async function fetchTasks() {
       const candidate = dataItems.value[currentIndex.value]
       await loadProjectConfig(candidate.project_id)
 
-      if (candidate.status === 'IN_PROGRESS' && myId && candidate.locked_by_id === myId) {
+      const isMine = myId && candidate.locked_by_id === myId
+
+      if ((candidate.status === 'IN_PROGRESS' || candidate.status === 'REWORK') && isMine) {
         activeItem.value = candidate
-        toast.info('Resuming task', `Continuing task #${candidate.id}. Your draft will be restored.`)
-      } else if (candidate.status === 'UNASSIGNED') {
+        if (candidate.status === 'REWORK') {
+          toast.info(
+            'Task returned for rework',
+            candidate.last_rejection_reason || 'A reviewer sent this task back. Your previous work has been restored as a draft.'
+          )
+        } else {
+          toast.info('Resuming task', `Continuing task #${candidate.id}. Your draft will be restored.`)
+        }
+      } else if (candidate.status === 'UNASSIGNED' || (candidate.status === 'REWORK' && !candidate.locked_by_id)) {
         try {
           const checkout: any = await workflowApi.checkoutTask(candidate.project_id)
           activeItem.value = checkout.data || checkout
@@ -111,7 +140,8 @@ async function fetchTasks() {
           activeItem.value = candidate
         }
       } else {
-        // ANNOTATED, COMPLETED, or ACCEPTED
+        // ANNOTATED, QA_PENDING, COMPLETED, ESCALATED, EXCLUDED, or leased to
+        // another annotator: nothing left for this user to do but view it.
         activeItem.value = candidate
       }
       return
@@ -169,7 +199,8 @@ onMounted(() => {
 // so the task returns to the queue instead of being stuck for 15 minutes.
 onBeforeUnmount(() => {
   const item = activeItem.value
-  if (item && item.status === 'IN_PROGRESS' && !submittedIds.has(item.id)) {
+  const isActiveLease = item?.status === 'IN_PROGRESS' || item?.status === 'REWORK'
+  if (item && isActiveLease && !submittedIds.has(item.id)) {
     workflowApi.releaseTask(item.id).catch(() => {})
   }
 })
@@ -205,13 +236,32 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex items-center gap-2">
-        <Badge variant="outline">
-          {{ effectiveModality }}
-        </Badge>
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border shadow-2xs"
+          :class="modalityMeta.badgeClass"
+        >
+          <component :is="modalityMeta.icon" class="size-3.5" :stroke-width="1.75" />
+          <span>{{ modalityMeta.shortLabel }}</span>
+        </span>
         <Button variant="outline" size="sm" class="h-7 px-2 text-[11px] gap-1.5 font-medium" @click="fetchTasks">
           <RefreshCw class="size-3" :stroke-width="1.6" :class="{ 'animate-spin': isLoading }" />
           <span class="hidden sm:inline">Refresh</span>
         </Button>
+      </div>
+    </div>
+
+    <!-- Rework Feedback Banner: surfaces the reviewer/QA rejection reason so
+         the annotator knows what to fix without leaving the workspace. -->
+    <div
+      v-if="activeItem?.status === 'REWORK'"
+      class="flex items-start gap-2.5 rounded-lg border border-orange-500/25 bg-orange-500/10 p-3 text-orange-700 dark:text-orange-400"
+    >
+      <RotateCcw class="mt-0.5 size-4 shrink-0" :stroke-width="1.8" />
+      <div class="min-w-0">
+        <p class="text-xs font-semibold">Returned for rework</p>
+        <p class="mt-0.5 text-xs leading-relaxed text-orange-700/90 dark:text-orange-400/90">
+          {{ activeItem.last_rejection_reason || 'A reviewer sent this task back without a specific comment.' }}
+        </p>
       </div>
     </div>
 
@@ -228,7 +278,11 @@ onBeforeUnmount(() => {
         :item="activeItem"
         :labels="projectLabels"
         :annotation-type="projectAnnotationType"
+        :has-next="currentIndex < dataItems.length - 1"
+        :has-prev="currentIndex > 0"
         @submitted="handleSubmitted"
+        @next="nextTask"
+        @prev="prevTask"
       />
       <ImageWorkspace
         v-else-if="effectiveModality === 'IMAGE'"
@@ -236,6 +290,7 @@ onBeforeUnmount(() => {
         :item="activeItem"
         :labels="projectLabels"
         :annotation-type="projectAnnotationType"
+        :tool-type="projectToolType"
         :has-next="currentIndex < dataItems.length - 1"
         :has-prev="currentIndex > 0"
         @submitted="handleSubmitted"
@@ -248,7 +303,12 @@ onBeforeUnmount(() => {
         :item="activeItem"
         :labels="projectLabels"
         :annotation-type="projectAnnotationType"
+        :tool-type="projectToolType"
+        :has-next="currentIndex < dataItems.length - 1"
+        :has-prev="currentIndex > 0"
         @submitted="handleSubmitted"
+        @next="nextTask"
+        @prev="prevTask"
       />
       <VideoWorkspace
         v-else-if="effectiveModality === 'VIDEO'"
@@ -256,6 +316,7 @@ onBeforeUnmount(() => {
         :item="activeItem"
         :labels="projectLabels"
         :annotation-type="projectAnnotationType"
+        :tool-type="projectToolType"
         :has-next="currentIndex < dataItems.length - 1"
         :has-prev="currentIndex > 0"
         @submitted="handleSubmitted"

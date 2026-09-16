@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { DataItem, AudioSegment, LabelOption } from '@/types'
 import { useMediaBlobUrl } from '@/composables/useMediaBlobUrl'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
+import { normalizeAudioPayload } from '@/utils/annotation'
 import { toast } from '@/utils/toast'
 import WorkspaceShell from '@/components/workspace/WorkspaceShell.vue'
 import Card from '@/components/ui/Card.vue'
@@ -15,10 +16,14 @@ const props = defineProps<{
   item: DataItem
   labels?: LabelOption[]
   annotationType?: string
+  hasNext?: boolean
+  hasPrev?: boolean
 }>()
 
 const emit = defineEmits<{
   submitted: []
+  next: []
+  prev: []
 }>()
 
 const playerRef = ref<InstanceType<typeof AudioWaveformPlayer> | null>(null)
@@ -35,17 +40,15 @@ const { mediaUrl, error: mediaUrlError } = useMediaBlobUrl(() => props.item.id, 
 })
 const mediaError = computed(() => !!mediaUrlError.value)
 
-const defaultSpeakers = [
-  { name: 'Default label', color: '#38bdf8', bg: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
-]
-const availableSpeakers = computed(() => (props.labels?.length ? props.labels : defaultSpeakers))
-const currentSpeaker = ref(props.labels?.[0]?.name || 'Default label')
+const availableSpeakers = computed(() => props.labels || [])
+const currentSpeaker = ref(props.labels?.[0]?.name || '')
 
 // Initialize deep session
 const session = useAnnotationSession<AudioSegment[]>({
   item: props.item,
   annotationType: props.annotationType || 'Audio Diarization & Transcription',
   initialPayload: [],
+  normalizer: (raw) => normalizeAudioPayload(raw, currentSpeaker.value),
   validatePayload: (segs) => {
     if (!segs || segs.length === 0) {
       return 'Annotation must contain at least 1 audio segment'
@@ -94,8 +97,8 @@ function addSegment() {
     id: `seg-${Date.now()}`,
     start: Number(start.toFixed(2)),
     end: Number(end.toFixed(2)),
-    speaker: currentSpeaker.value || availableSpeakers.value[0]?.name || 'Default label',
-    label: currentSpeaker.value || availableSpeakers.value[0]?.name || 'Default label',
+    speaker: currentSpeaker.value || availableSpeakers.value[0]?.name || '',
+    label: currentSpeaker.value || availableSpeakers.value[0]?.name || '',
     transcript: '',
     confidence: 1.0,
   }
@@ -192,6 +195,10 @@ const hotkeyHints = [
     modality-type="Audio"
     class-label-title="Speaker label:"
     :hotkey-hints="hotkeyHints"
+    :has-next="hasNext"
+    :has-prev="hasPrev"
+    @next="emit('next')"
+    @prev="emit('prev')"
   >
     <!-- Waveform & Player Card -->
     <Card class="overflow-hidden bg-card/90 shadow-sm">

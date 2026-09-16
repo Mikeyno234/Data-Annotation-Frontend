@@ -13,7 +13,7 @@ export interface UseDraftStorageReturn<T> {
   hasPrelabel: ComputedRef<boolean>
   isDraftSaving: Ref<boolean>
   lastDraftSavedAt: Ref<Date | null>
-  resolveInitialPayload: (item: DataItem, fallbackPayload: T) => T
+  resolveInitialPayload: (item: DataItem, fallbackPayload: T, normalizer?: (raw: any) => T) => T
   saveDraft: (itemId: string | number, data: T) => Promise<void>
   clearDraft: (itemId: string | number) => void
   startAutosave: (itemId: string | number, getPayload: () => T) => void
@@ -40,7 +40,16 @@ export function useDraftStorage<T>(item: DataItem): UseDraftStorageReturn<T> {
   const lastDraftSavedAt = ref<Date | null>(null)
   let autosaveInterval: ReturnType<typeof setInterval> | null = null
 
-  function resolveInitialPayload(currentItem: DataItem, fallbackPayload: T): T {
+  function resolveInitialPayload(
+    currentItem: DataItem,
+    fallbackPayload: T,
+    normalizer?: (raw: any) => T
+  ): T {
+    const applyNormalizer = (data: any): T => {
+      const cloned = cloneDeep(data)
+      return normalizer ? normalizer(cloned) : (cloned as T)
+    }
+
     // 1. Backend-persisted draft
     if (currentItem.draft_payload) {
       if (currentItem.draft_saved_at) {
@@ -48,7 +57,7 @@ export function useDraftStorage<T>(item: DataItem): UseDraftStorageReturn<T> {
       } else {
         draftRestoredAt.value = new Date()
       }
-      return cloneDeep(currentItem.draft_payload as T)
+      return applyNormalizer(currentItem.draft_payload)
     }
 
     // 2. localStorage cached draft
@@ -59,7 +68,7 @@ export function useDraftStorage<T>(item: DataItem): UseDraftStorageReturn<T> {
         const parsed = JSON.parse(raw) as AnnotationDraft<T>
         if (parsed?.payload !== undefined && parsed?.payload !== null) {
           draftRestoredAt.value = parsed.savedAt ? new Date(parsed.savedAt) : new Date()
-          return cloneDeep(parsed.payload)
+          return applyNormalizer(parsed.payload)
         }
       }
     } catch {
@@ -68,11 +77,11 @@ export function useDraftStorage<T>(item: DataItem): UseDraftStorageReturn<T> {
 
     // 3. Pre-existing latest annotation payload
     if (currentItem.annotations && currentItem.annotations.length > 0 && currentItem.annotations[0]?.payload) {
-      return cloneDeep(currentItem.annotations[0].payload as T)
+      return applyNormalizer(currentItem.annotations[0].payload)
     }
 
     // 4. Default fallback
-    return cloneDeep(fallbackPayload)
+    return applyNormalizer(fallbackPayload)
   }
 
   async function saveDraft(itemId: string | number, data: T): Promise<void> {
@@ -87,7 +96,7 @@ export function useDraftStorage<T>(item: DataItem): UseDraftStorageReturn<T> {
       await annotationsApi.saveDraft(itemId, data)
       lastDraftSavedAt.value = new Date()
     } catch {
-      // Silently ignore — local storage acts as safety net
+      // Silently ignore: local storage acts as safety net
     } finally {
       isDraftSaving.value = false
     }

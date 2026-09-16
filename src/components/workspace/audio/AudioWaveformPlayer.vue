@@ -99,7 +99,6 @@ function drawWaveform() {
 
   const segs = props.segments || []
 
-  // Draw Regions
   segs.forEach((seg) => {
     const xStart = (seg.start / (props.duration || 1)) * width
     const xEnd = (seg.end / (props.duration || 1)) * width
@@ -117,11 +116,10 @@ function drawWaveform() {
     ctx.strokeRect(xStart, 0, segWidth, height)
 
     ctx.fillStyle = color
-    ctx.font = '10px Inter, sans-serif'
+    ctx.font = '10px "Geist Sans", -apple-system, sans-serif'
     ctx.fillText(`${seg.speaker} (${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s)`, xStart + 4, 14)
   })
 
-  // Deterministic waveform bars
   const numBars = Math.floor(width / 3)
   const barWidth = 2
   const gap = 1
@@ -140,7 +138,6 @@ function drawWaveform() {
     ctx.fillRect(x, (height - barHeight) / 2 + 8, barWidth, barHeight)
   }
 
-  // Playhead line
   const playheadX = (props.currentTime / (props.duration || 1)) * width
   ctx.strokeStyle = '#8b5cf6'
   ctx.lineWidth = 2
@@ -155,9 +152,11 @@ function drawWaveform() {
   ctx.fill()
 }
 
+let dragMode: 'move' | 'resize-start' | 'resize-end' | null = null
+
 function handleCanvasClick(e: MouseEvent) {
   const canvas = audioCanvas.value
-  if (!canvas || !props.duration) return
+  if (!canvas || !props.duration || draggingSegment) return
   const rect = canvas.getBoundingClientRect()
   const clickX = e.clientX - rect.left
   const ratio = clickX / rect.width
@@ -176,31 +175,75 @@ function handleCanvasMouseDown(e: MouseEvent) {
   const canvas = audioCanvas.value
   if (!canvas || !props.duration) return
   const rect = canvas.getBoundingClientRect()
-  const timeAtPointer = ((e.clientX - rect.left) / rect.width) * props.duration
+  const clickX = e.clientX - rect.left
+  const timeAtPointer = (clickX / rect.width) * props.duration
   const segs = props.segments || []
   const segment = segs.find((item) => timeAtPointer >= item.start && timeAtPointer <= item.end)
-  if (!segment) return
+  if (!segment) {
+    draggingSegment = null
+    dragMode = null
+    return
+  }
+
   draggingSegment = segment
   dragStartX = e.clientX
   dragOriginalStart = segment.start
   dragOriginalEnd = segment.end
   emit('update:selectedSegmentId', segment.id)
+
+  const segStartX = (segment.start / props.duration) * rect.width
+  const segEndX = (segment.end / props.duration) * rect.width
+
+  if (Math.abs(clickX - segStartX) <= 8) {
+    dragMode = 'resize-start'
+  } else if (Math.abs(clickX - segEndX) <= 8) {
+    dragMode = 'resize-end'
+  } else {
+    dragMode = 'move'
+  }
 }
 
 function handleCanvasMouseMove(e: MouseEvent) {
-  if (!draggingSegment || !props.duration) return
   const canvas = audioCanvas.value
-  if (!canvas) return
-  const delta = ((e.clientX - dragStartX) / canvas.getBoundingClientRect().width) * props.duration
-  const length = dragOriginalEnd - dragOriginalStart
-  draggingSegment.start = Math.max(0, Math.min(props.duration - length, dragOriginalStart + delta))
-  draggingSegment.end = draggingSegment.start + length
+  if (!canvas || !props.duration) return
+  const rect = canvas.getBoundingClientRect()
+
+  if (!draggingSegment) {
+    const clickX = e.clientX - rect.left
+    const timeAtPointer = (clickX / rect.width) * props.duration
+    const segs = props.segments || []
+    const segment = segs.find((item) => timeAtPointer >= item.start && timeAtPointer <= item.end)
+    if (segment) {
+      const segStartX = (segment.start / props.duration) * rect.width
+      const segEndX = (segment.end / props.duration) * rect.width
+      if (Math.abs(clickX - segStartX) <= 8 || Math.abs(clickX - segEndX) <= 8) {
+        canvas.style.cursor = 'ew-resize'
+      } else {
+        canvas.style.cursor = 'grab'
+      }
+    } else {
+      canvas.style.cursor = 'pointer'
+    }
+    return
+  }
+
+  const delta = ((e.clientX - dragStartX) / rect.width) * props.duration
+  if (dragMode === 'resize-start') {
+    draggingSegment.start = Math.max(0, Math.min(dragOriginalEnd - 0.2, Number((dragOriginalStart + delta).toFixed(2))))
+  } else if (dragMode === 'resize-end') {
+    draggingSegment.end = Math.min(props.duration, Math.max(dragOriginalStart + 0.2, Number((dragOriginalEnd + delta).toFixed(2))))
+  } else if (dragMode === 'move') {
+    const length = dragOriginalEnd - dragOriginalStart
+    draggingSegment.start = Math.max(0, Math.min(props.duration - length, Number((dragOriginalStart + delta).toFixed(2))))
+    draggingSegment.end = Number((draggingSegment.start + length).toFixed(2))
+  }
   drawWaveform()
 }
 
 function handleCanvasMouseUp() {
   if (!draggingSegment) return
   draggingSegment = null
+  dragMode = null
   emit('segmentModified')
 }
 

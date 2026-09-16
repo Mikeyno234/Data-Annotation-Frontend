@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { DataItem, LabelOption } from '@/types'
 import { createDataItemMediaUrl } from '@/api/media'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
+import { normalizeVideoPayload } from '@/utils/annotation'
 import { useLabelHotkeys } from '@/composables/workspace/useLabelHotkeys'
 import { toast } from '@/utils/toast'
 import WorkspaceShell from '@/components/workspace/WorkspaceShell.vue'
@@ -17,7 +18,7 @@ import {
   ChevronRight,
   ChevronLeft,
   ShieldAlert,
-  Loader2,
+  LoaderCircle,
   Repeat,
 } from 'lucide-vue-next'
 
@@ -69,13 +70,7 @@ function toggleAutoAdvance() {
 
 const isSubmittingAuto = ref(false)
 
-const defaultLabels: LabelOption[] = [
-  { name: 'Harassment', color: '#ef4444' },
-  { name: 'Normal', color: '#10b981' },
-  { name: 'Unlabeled', color: '#64748b' },
-]
-
-const availableLabels = computed(() => (props.labels?.length ? props.labels : defaultLabels))
+const availableLabels = computed(() => props.labels || [])
 
 // Clean Composable: Disambiguated keyboard shortcuts (Digits 1-9 and unique mnemonic letters)
 const { labelHotkeys, getDisplayHotkey } = useLabelHotkeys(availableLabels)
@@ -97,6 +92,7 @@ const session = useAnnotationSession<VideoClassificationPayload>({
     label: '',
     notes: '',
   },
+  normalizer: (raw) => normalizeVideoPayload(raw, 'classification') as VideoClassificationPayload,
   validatePayload: (data) => {
     if (!data.label || !data.label.trim()) {
       return 'Please choose a category before submitting'
@@ -492,7 +488,7 @@ watch(() => props.item.id, () => {
             :disabled="!currentSelectedLabel || session.isSaving.value || isSubmittingAuto"
             @click="session.submit()"
           >
-            <Loader2 v-if="session.isSaving.value || isSubmittingAuto" class="size-4 animate-spin" />
+            <LoaderCircle v-if="session.isSaving.value || isSubmittingAuto" class="size-4 animate-spin" />
             <CheckCircle2 v-else class="size-4" />
             <span>{{ (session.isSaving.value || isSubmittingAuto) ? 'Submitting & Advancing...' : isAutoAdvance ? 'Submit & Next [Enter]' : 'Submit [Enter]' }}</span>
           </Button>

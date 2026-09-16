@@ -4,6 +4,7 @@ import type { DataItem, TextEntity, LabelOption } from '@/types'
 import { createDataItemMediaUrl } from '@/api/media'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
 import { toast } from '@/utils/toast'
+import { normalizeTextPayload, resolveTextMode, type TextAnnotationPayload } from '@/utils/annotation'
 import { getSelectionCharacterOffsets } from '@/utils/annotation'
 import WorkspaceShell from '@/components/workspace/WorkspaceShell.vue'
 import Button from '@/components/ui/Button.vue'
@@ -12,26 +13,28 @@ import Card from '@/components/ui/Card.vue'
 import CardContent from '@/components/ui/CardContent.vue'
 import { Trash2 } from 'lucide-vue-next'
 
-export interface TextAnnotationPayload {
-  entities: TextEntity[]
-  sentiment: string
-}
-
 const props = defineProps<{
   item: DataItem
   labels?: LabelOption[]
   annotationType?: string
+  // Structured editor kind copied from the project's catalog entry (SPAN,
+  // CHOICE, RADIO). Resolved with priority over annotationType, which is a
+  // free-text task name unreliable for exact matching.
+  toolType?: string
+  hasNext?: boolean
+  hasPrev?: boolean
 }>()
 
 const emit = defineEmits<{
   submitted: []
+  next: []
+  prev: []
 }>()
 
-const defaultEntities = [
-  { name: 'Default label', color: '#38bdf8', bg: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
-]
-const availableEntities = computed(() => (props.labels?.length ? props.labels : defaultEntities))
-const currentEntity = ref(props.labels?.[0]?.name || 'Default label')
+const isClassificationMode = computed(() => resolveTextMode(props.toolType, props.annotationType) === 'classification')
+
+const availableEntities = computed(() => props.labels || [])
+const currentEntity = ref(props.labels?.[0]?.name || '')
 const selectedEntityId = ref<string | null>(null)
 
 const textContent = ref('')
@@ -46,8 +49,18 @@ const session = useAnnotationSession<TextAnnotationPayload>({
   initialPayload: {
     entities: [],
     sentiment: 'NEUTRAL',
+    selectedLabels: [],
   },
+  normalizer: (raw) => normalizeTextPayload(raw),
   validatePayload: (data) => {
+    if (isClassificationMode.value) {
+      const hasLabels = data.selectedLabels && data.selectedLabels.length > 0
+      const hasSentiment = data.sentiment && data.sentiment !== ''
+      if (!hasLabels && !hasSentiment) {
+        return 'Please select at least 1 document category or sentiment before submitting'
+      }
+      return null
+    }
     if (!data.entities || data.entities.length === 0) {
       return 'Annotation must contain at least 1 tagged entity'
     }
@@ -58,7 +71,12 @@ const session = useAnnotationSession<TextAnnotationPayload>({
   },
   onSelectLabelIndex: (index) => {
     const ent = availableEntities.value[index]
-    if (ent) currentEntity.value = ent.name
+    if (!ent) return
+    if (isClassificationMode.value) {
+      toggleClassificationLabel(ent.name)
+    } else {
+      currentEntity.value = ent.name
+    }
   },
   onDeleteSelected: () => {
     if (selectedEntityId.value) {
@@ -66,6 +84,20 @@ const session = useAnnotationSession<TextAnnotationPayload>({
     }
   },
 })
+
+function toggleClassificationLabel(labelName: string) {
+  const currentPayload = session.payload.value || { entities: [], sentiment: 'NEUTRAL', selectedLabels: [] }
+  const currentLabels = [...(currentPayload.selectedLabels || [])]
+  const idx = currentLabels.indexOf(labelName)
+  if (idx >= 0) {
+    currentLabels.splice(idx, 1)
+  } else {
+    currentLabels.push(labelName)
+  }
+  const updated = { ...currentPayload, selectedLabels: currentLabels }
+  session.payload.value = updated
+  session.pushState(updated)
+}
 
 async function loadTextContent() {
   isLoadingContent.value = true
@@ -221,11 +253,24 @@ const renderedSegments = computed<TextSegment[]>(() => {
   return segments
 })
 
-const hotkeyHints = [
-  { key: '1-9', label: 'choose entity' },
-  { key: 'Delete', label: 'remove entity' },
-  { key: 'Select text', label: 'tag span' },
-]
+const selectedClassificationLabels = computed<string[]>(() => {
+  const current = session.payload.value
+  return current && Array.isArray(current.selectedLabels) ? current.selectedLabels : []
+})
+
+const hotkeyHints = computed(() => {
+  if (isClassificationMode.value) {
+    return [
+      { key: '1-9', label: 'toggle category' },
+      { key: 'Enter', label: 'submit task' },
+    ]
+  }
+  return [
+    { key: '1-9', label: 'choose entity' },
+    { key: 'Delete', label: 'remove entity' },
+    { key: 'Select text', label: 'tag span' },
+  ]
+})
 
 onMounted(() => {
   loadTextContent()
@@ -238,46 +283,78 @@ onMounted(() => {
     :session="session"
     :labels="labels"
     v-model:current-label="currentEntity"
-    modality-title="NER & Text Classification"
+    :modality-title="isClassificationMode ? 'Document Classification' : 'Named Entity Recognition (NER)'"
     modality-type="Text"
+    :show-class-selector="!isClassificationMode"
     class-label-title="Entity type:"
     :hotkey-hints="hotkeyHints"
+    :has-next="hasNext"
+    :has-prev="hasPrev"
+    @next="emit('next')"
+    @prev="emit('prev')"
   >
-    <!-- Extra Controls Slot for Sentiment Segmented Toggle -->
+    <!-- Extra Controls Slot for Classification & Sentiment -->
     <template #controls>
-      <div class="flex items-center gap-1.5 bg-muted/40 p-1 rounded-xl border border-border/60">
-        <span class="text-xs text-muted-foreground font-medium px-1.5">Sentiment:</span>
-        <button
-          v-for="s in [
-            { val: 'POSITIVE', label: 'Positive' },
-            { val: 'NEUTRAL', label: 'Neutral' },
-            { val: 'NEGATIVE', label: 'Negative' }
-          ]"
-          :key="s.val"
-          type="button"
-          class="px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer"
-          :class="[
-            currentSentiment === s.val
-              ? (s.val === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/40 shadow-2xs'
-                : s.val === 'NEGATIVE' ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/40 shadow-2xs'
-                : 'bg-card text-foreground font-bold border border-border shadow-2xs')
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-          ]"
-          @click="setSentiment(s.val)"
-        >
-          {{ s.label }}
-        </button>
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- Classification Categories (if in classification mode) -->
+        <div v-if="isClassificationMode && availableEntities.length > 0" class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-xs text-muted-foreground font-medium px-1">Categories:</span>
+          <button
+            v-for="cat in availableEntities"
+            :key="cat.name"
+            type="button"
+            class="px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer border"
+            :style="selectedClassificationLabels.includes(cat.name) ? {
+              borderColor: cat.color || 'var(--primary)',
+              backgroundColor: `${cat.color || '#3b82f6'}20`,
+              color: 'var(--foreground)',
+            } : {}"
+            :class="[
+              selectedClassificationLabels.includes(cat.name)
+                ? 'font-bold ring-1'
+                : 'border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground'
+            ]"
+            @click="toggleClassificationLabel(cat.name)"
+          >
+            {{ cat.name }}
+          </button>
+        </div>
+
+        <!-- Sentiment segmented control -->
+        <div class="flex items-center gap-1.5 bg-muted/40 p-1 rounded-xl border border-border/60">
+          <span class="text-xs text-muted-foreground font-medium px-1.5">Sentiment:</span>
+          <button
+            v-for="s in [
+              { val: 'POSITIVE', label: 'Positive' },
+              { val: 'NEUTRAL', label: 'Neutral' },
+              { val: 'NEGATIVE', label: 'Negative' }
+            ]"
+            :key="s.val"
+            type="button"
+            class="px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer"
+            :class="[
+              currentSentiment === s.val
+                ? (s.val === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/40 shadow-2xs'
+                  : s.val === 'NEGATIVE' ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/40 shadow-2xs'
+                  : 'bg-card text-foreground font-bold border border-border shadow-2xs')
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            ]"
+            @click="setSentiment(s.val)"
+          >
+            {{ s.label }}
+          </button>
+        </div>
       </div>
     </template>
 
     <!-- Text Corpus Annotation Viewport -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <!-- Document Reading and Annotation Card -->
-      <div class="lg:col-span-2">
+      <div :class="[isClassificationMode ? 'lg:col-span-3' : 'lg:col-span-2']">
         <Card class="bg-card border border-border shadow-2xs">
           <CardContent class="p-5">
             <div class="text-xs text-muted-foreground mb-3 font-medium">
-              Select text with cursor to label entity:
+              {{ isClassificationMode ? 'Document Content (Choose categories above):' : 'Select text with cursor to label entity:' }}
             </div>
             <div v-if="isLoadingContent" class="rounded-xl bg-muted/40 p-8 text-sm text-muted-foreground text-center">
               Loading text content…

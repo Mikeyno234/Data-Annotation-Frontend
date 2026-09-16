@@ -11,7 +11,9 @@ import {
   Keyboard,
   Undo2,
   Redo2,
-  Loader2,
+  LoaderCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-vue-next'
 
 const props = withDefaults(
@@ -27,6 +29,8 @@ const props = withDefaults(
     hotkeyHints?: Array<{ key: string; label: string }>
     showHotkeys?: boolean
     showHeader?: boolean
+    hasNext?: boolean
+    hasPrev?: boolean
   }>(),
   {
     labels: () => [],
@@ -36,18 +40,21 @@ const props = withDefaults(
     showClassSelector: true,
     classLabelTitle: 'Class / Label:',
     hotkeyHints: () => [],
-    showHotkeys: false,
+    showHotkeys: true,
     showHeader: true,
+    hasNext: false,
+    hasPrev: false,
   }
 )
 
 const emit = defineEmits<{
   'update:currentLabel': [value: string]
   selectLabel: [value: string]
+  next: []
+  prev: []
 }>()
 
-const defaultLabels = [{ name: 'Default label', color: '#38bdf8' }]
-const availableLabels = computed(() => (props.labels?.length ? props.labels : defaultLabels))
+const availableLabels = computed(() => props.labels || [])
 
 function handleSelectLabel(name: string) {
   emit('update:currentLabel', name)
@@ -114,14 +121,38 @@ function handleSelectLabel(name: string) {
           class="h-8 gap-1.5 font-semibold shadow-xs min-w-[130px] text-xs cursor-pointer"
           @click="session.submit()"
         >
-          <Loader2 v-if="session.isSaving.value" class="size-3.5 animate-spin" />
+          <LoaderCircle v-if="session.isSaving.value" class="size-3.5 animate-spin" />
           <CheckCircle2 v-else class="size-3.5" />
           <span>{{ session.isSaving.value ? 'Submitting...' : 'Submit Task' }}</span>
         </Button>
+
+        <!-- Prev / Next Navigation (only when parent provides them) -->
+        <div v-if="hasPrev || hasNext" class="hidden sm:flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/60">
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-6 rounded"
+            :disabled="!hasPrev"
+            title="Previous task [A]"
+            @click="emit('prev')"
+          >
+            <ChevronLeft class="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-6 rounded"
+            :disabled="!hasNext"
+            title="Next task [D]"
+            @click="emit('next')"
+          >
+            <ChevronRight class="size-3.5" />
+          </Button>
+        </div>
       </div>
     </div>
 
-    <!-- Active Class Selector Palette (Respecting actual label color) -->
+    <!-- Active Class Selector Palette (Respecting actual label color from Task Catalog) -->
     <div
       v-if="showClassSelector && availableLabels.length > 0"
       class="flex flex-wrap items-center justify-between gap-3 bg-card px-4 py-2.5 rounded-xl border border-border shadow-2xs"

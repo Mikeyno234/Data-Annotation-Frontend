@@ -10,10 +10,8 @@ describe('Video Workspace Mode Resolution & Auto-Advance', () => {
     localStorage.clear()
   })
 
-  // Helper mirroring detection logic from VideoWorkspace.vue
-  function resolveVideoMode(annotationType?: string, override: 'auto' | 'classification' | 'timeline' = 'auto') {
-    if (override !== 'auto') return override
-
+  // Helper mirroring detection logic from VideoWorkspace.vue (deterministic from task catalog)
+  function resolveVideoMode(annotationType?: string) {
     const t = (annotationType || '').toUpperCase()
     const isTimelineType =
       t.includes('TIMELINE') ||
@@ -68,9 +66,9 @@ describe('Video Workspace Mode Resolution & Auto-Advance', () => {
     expect(resolveVideoMode(undefined)).toBe('classification')
   })
 
-  it('honors manual override when user explicitly chooses a mode', () => {
-    expect(resolveVideoMode('VIDEO_TIMELINE_PER_DETIK', 'classification')).toBe('classification')
-    expect(resolveVideoMode('VIDEO_GLOBAL', 'timeline')).toBe('timeline')
+  it('is deterministic and strictly adheres to project task catalog annotation type', () => {
+    expect(resolveVideoMode('VIDEO_TIMELINE_PER_DETIK')).toBe('timeline')
+    expect(resolveVideoMode('VIDEO_CLASSIFICATION')).toBe('classification')
   })
 
   it('persists Auto-Advance preference in localStorage', () => {

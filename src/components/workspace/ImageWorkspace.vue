@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import type { DataItem, ImageBox, ImagePolygon, ImageClassificationPayload, ImageAnnotationPayload, LabelOption } from '@/types'
 import { useMediaBlobUrl } from '@/composables/useMediaBlobUrl'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
+import { normalizeImagePayload, resolveImageSubtype } from '@/utils/annotation'
 import { useCanvasViewport } from '@/composables/workspace/useCanvasViewport'
 import { useBBoxInteraction } from '@/composables/workspace/useBBoxInteraction'
 import { usePolygonDrawing } from '@/composables/workspace/usePolygonDrawing'
@@ -22,18 +23,17 @@ const props = defineProps<{
   item: DataItem
   labels?: LabelOption[]
   annotationType?: string
+  // Structured editor kind copied from the project's catalog entry (BBOX,
+  // OBB, POLYGON, CHOICE, RADIO). Resolved with priority over annotationType,
+  // which is a free-text task name unreliable for exact matching.
+  toolType?: string
   hasNext?: boolean
   hasPrev?: boolean
 }>()
 
 const emit = defineEmits<{ submitted: []; next: []; prev: [] }>()
 
-const detectedSubtype = computed<WorkspaceSubtype>(() => {
-  const t = (props.annotationType || '').toUpperCase()
-  if (t.includes('POLYGON') || t.includes('SEGMENTATION')) return 'polygon'
-  if (t.includes('CHOICE') || t.includes('TAG') || t.includes('CLASSIF')) return 'classification'
-  return 'bbox'
-})
+const detectedSubtype = computed<WorkspaceSubtype>(() => resolveImageSubtype(props.toolType, props.annotationType))
 
 const activeTool = ref<CanvasTool>(
   detectedSubtype.value === 'polygon' ? 'polygon' : detectedSubtype.value === 'classification' ? 'select' : 'bbox'
@@ -43,9 +43,8 @@ watch(detectedSubtype, (val) => {
   activeTool.value = val === 'polygon' ? 'polygon' : val === 'classification' ? 'select' : 'bbox'
 })
 
-const defaultLabels = [{ name: 'Default label', color: '#38bdf8' }]
-const availableLabels = computed(() => (props.labels?.length ? props.labels : defaultLabels))
-const currentLabel = ref(props.labels?.[0]?.name || 'Default label')
+const availableLabels = computed(() => props.labels || [])
+const currentLabel = ref(props.labels?.[0]?.name || '')
 const selectedItemId = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const selectedClasses = ref<string[]>([])
@@ -79,6 +78,7 @@ const session = useAnnotationSession<ImageAnnotationPayload>({
     detectedSubtype.value === 'classification' ? 'Image classification' : 'Image regions'
   ),
   initialPayload: detectedSubtype.value === 'classification' ? { selectedLabels: [] } : [],
+  normalizer: (raw) => normalizeImagePayload(raw, detectedSubtype.value),
   validatePayload: (payload) => {
     if (detectedSubtype.value === 'classification') {
       const labels = (!Array.isArray(payload) && payload && 'selectedLabels' in payload)
@@ -333,13 +333,30 @@ const modalityHeaderTitle = computed(() => {
   return '2D Bounding Box'
 })
 
-onMounted(() => {
+let resizeObserver: ResizeObserver | null = null
+
+function syncCanvasDimensions() {
   const canvas = canvasRef.value
-  if (canvas) {
-    canvas.width = canvas.offsetWidth || 800
-    canvas.height = 440
+  if (!canvas) return
+  const w = canvas.offsetWidth || canvas.clientWidth || 0
+  const h = canvas.offsetHeight || canvas.clientHeight || 0
+  if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
+    canvas.width = w
+    canvas.height = h
     drawCanvas()
   }
+}
+
+onMounted(() => {
+  syncCanvasDimensions()
+  if (canvasRef.value && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => syncCanvasDimensions())
+    resizeObserver.observe(canvasRef.value)
+  }
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
 })
 </script>
 

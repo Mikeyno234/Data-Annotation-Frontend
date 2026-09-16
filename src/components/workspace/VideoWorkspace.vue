@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { DataItem, LabelOption, VideoInterval } from '@/types'
 import { createDataItemMediaUrl } from '@/api/media'
 import { useAnnotationSession } from '@/composables/useAnnotationSession'
+import { normalizeVideoPayload, resolveVideoMode } from '@/utils/annotation'
 import { toast } from '@/utils/toast'
 import WorkspaceShell from '@/components/workspace/WorkspaceShell.vue'
 import Card from '@/components/ui/Card.vue'
@@ -17,6 +18,10 @@ const props = defineProps<{
   item: DataItem
   labels?: LabelOption[]
   annotationType?: string
+  // Structured editor kind copied from the project's catalog entry (TIMELINE,
+  // CHOICE, RADIO). Resolved with priority over annotationType, which is a
+  // free-text task name unreliable for exact matching.
+  toolType?: string
   hasNext?: boolean
   hasPrev?: boolean
 }>()
@@ -27,55 +32,7 @@ const emit = defineEmits<{
   prev: []
 }>()
 
-// 1. Robust Detection: Distinguish Whole-Video Classification from Timeline Intervals (with split)
-const isTimelineType = computed(() => {
-  const t = (props.annotationType || '').toUpperCase()
-  return (
-    t.includes('TIMELINE') ||
-    t.includes('INTERVAL') ||
-    t.includes('PER_DETIK') ||
-    t.includes('PER-DETIK') ||
-    t.includes('TEMPORAL') ||
-    t.includes('SEGMENT') ||
-    t.includes('TRACK')
-  )
-})
-
-const isClassificationType = computed(() => {
-  const t = (props.annotationType || '').toUpperCase()
-  return (
-    t.includes('CLASSIF') ||
-    t.includes('GLOBAL') ||
-    t.includes('WHOLE') ||
-    t.includes('CHOICE') ||
-    t.includes('TAG') ||
-    t.includes('SCENE') ||
-    t.includes('MODERAT') ||
-    t.includes('SAFETY') ||
-    t.includes('RATING') ||
-    t.includes('SENTIMENT') ||
-    t.includes('CATEGOR') ||
-    t.includes('CLIP') ||
-    t.includes('ACTION_RECOGNITION')
-  )
-})
-
-const autoDetectedMode = computed<'classification' | 'timeline'>(() => {
-  if (isTimelineType.value) return 'timeline'
-  if (isClassificationType.value) return 'classification'
-  // Default to whole video classification: clean, fast, zero split clutter
-  return 'classification'
-})
-
-// Allow manual mode switching override so annotators are never trapped
-const modeOverride = ref<'auto' | 'classification' | 'timeline'>('auto')
-
-const activeMode = computed<'classification' | 'timeline'>(() => {
-  if (modeOverride.value !== 'auto') {
-    return modeOverride.value
-  }
-  return autoDetectedMode.value
-})
+const activeMode = computed<'classification' | 'timeline'>(() => resolveVideoMode(props.toolType, props.annotationType))
 
 const isClassificationMode = computed(() => activeMode.value === 'classification')
 
@@ -88,9 +45,8 @@ const frameRate = computed(() => Math.max(1, Number(props.item.metadata?.fps || 
 const frameDuration = computed(() => 1 / frameRate.value)
 const selected = ref('')
 
-const fallbackLabels = [{ name: 'Default label', color: '#38bdf8' }]
-const labels = computed(() => (props.labels?.length ? props.labels : fallbackLabels))
-const currentLabel = ref(labels.value[0]?.name || 'Default label')
+const labels = computed(() => props.labels || [])
+const currentLabel = ref(labels.value[0]?.name || '')
 const activeLabelColor = computed(() => labels.value.find((label) => label.name === currentLabel.value)?.color || '#f59e0b')
 
 const activeTrack = ref(0)
@@ -101,6 +57,7 @@ const session = useAnnotationSession<VideoInterval[]>({
   item: props.item,
   annotationType: props.annotationType || 'Video temporal intervals',
   initialPayload: [],
+  normalizer: (raw) => normalizeVideoPayload(raw, 'timeline') as VideoInterval[],
   validatePayload: (intervals) => {
     if (!intervals || intervals.length === 0) {
       return 'Add at least one video interval before submitting'
@@ -248,35 +205,17 @@ onUnmounted(() => {
 
 <template>
   <div class="space-y-3">
-    <!-- Compact Mode Switcher -->
+    <!-- Schema Specification Header (Deterministic from Task Catalog) -->
     <div class="flex items-center justify-between px-1 text-xs">
-      <div class="inline-flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/70 text-xs">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-all cursor-pointer font-medium"
-          :class="isClassificationMode 
-            ? 'bg-background text-foreground shadow-2xs font-semibold' 
-            : 'text-muted-foreground hover:text-foreground'"
-          @click="modeOverride = 'classification'"
-        >
-          <Tag class="size-3 text-primary" />
-          <span>Classification</span>
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-all cursor-pointer font-medium"
-          :class="!isClassificationMode 
-            ? 'bg-background text-foreground shadow-2xs font-semibold' 
-            : 'text-muted-foreground hover:text-foreground'"
-          @click="modeOverride = 'timeline'"
-        >
-          <Scissors class="size-3 text-muted-foreground" />
-          <span>Timeline</span>
-        </button>
+      <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-muted/40 border border-border/60 text-xs">
+        <component :is="isClassificationMode ? Tag : Scissors" class="size-3 text-primary" />
+        <span class="font-medium text-foreground text-[11px]">
+          {{ isClassificationMode ? 'Video Classification Engine' : 'Temporal Action Timeline Engine' }}
+        </span>
       </div>
 
       <span class="text-[11px] text-muted-foreground">
-        {{ isClassificationMode ? 'Whole-video classification' : 'Temporal intervals' }}
+        {{ isClassificationMode ? 'Whole-video classification (Task Catalog)' : 'Temporal interval scrubbing (Task Catalog)' }}
       </span>
     </div>
 

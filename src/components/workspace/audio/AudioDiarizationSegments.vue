@@ -37,7 +37,6 @@ function getSpeakerColor(speakerName: string): string {
       </div>
     </div>
 
-    <!-- Empty State -->
     <div
       v-if="segments.length === 0"
       class="rounded-xl border border-border/50 bg-muted/20 p-6 text-center text-xs text-muted-foreground"
@@ -113,7 +112,6 @@ function getSpeakerColor(speakerName: string): string {
           </div>
         </div>
 
-        <!-- Verbatim Transcript Input -->
         <div class="mt-2.5">
           <textarea
             v-model="seg.transcript"

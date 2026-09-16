@@ -56,7 +56,7 @@ const emit = defineEmits<{
 <template>
   <div class="flex items-center justify-center select-none">
     <!-- Floating Canvas Tool Dock -->
-    <div class="flex items-center h-10 px-1.5 rounded-xl bg-card/95 border border-border shadow-lg backdrop-blur-md text-muted-foreground gap-0.5">
+    <div class="flex items-center h-10 px-1.5 rounded-xl bg-card/95 border border-border shadow-xs backdrop-blur-md text-muted-foreground gap-0.5">
       <!-- 1. Reset / Clear Canvas Draft -->
       <button
         type="button"
