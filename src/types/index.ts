@@ -1,6 +1,19 @@
 export type ModalityType = string
 
-export type TaskStatus = 'UNASSIGNED' | 'IN_PROGRESS' | 'ANNOTATED' | 'IN_REVIEW' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+// Mirrors the DataItem lifecycle in Backend/pkg/constant/constant.go.
+// UNASSIGNED -> IN_PROGRESS -> ANNOTATED -> QA_PENDING -> COMPLETED
+//   REWORK loops back to IN_PROGRESS after a reviewer or QA rejection.
+//   ESCALATED is reached once the project's rework round cap is exceeded.
+//   EXCLUDED is a terminal removal from the pipeline (reject behavior REMOVE).
+export type TaskStatus =
+  | 'UNASSIGNED'
+  | 'IN_PROGRESS'
+  | 'ANNOTATED'
+  | 'QA_PENDING'
+  | 'REWORK'
+  | 'COMPLETED'
+  | 'ESCALATED'
+  | 'EXCLUDED'
 
 export interface Organization {
   id: number
@@ -118,6 +131,11 @@ export interface Project {
   description: string
   modality: ModalityType
   annotation_type: string
+  // tool_type is the structured editor kind copied from the catalog entry
+  // selected at project creation (BBOX, POLYGON, SPAN, RADIO, CHOICE,
+  // TIMELINE, etc). Workspaces should match on this exact value rather than
+  // pattern-matching annotation_type, which is a free-text task name.
+  tool_type?: string
   status: string
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   label_config?: string
@@ -182,6 +200,11 @@ export interface DataItem {
   locked_until?: string
   draft_payload?: any
   draft_saved_at?: string
+  // review_round counts completed rework cycles; last_rejection_reason carries
+  // the most recent reviewer or QA feedback so the annotator sees why the item
+  // came back without querying the audit log.
+  review_round?: number
+  last_rejection_reason?: string
   annotations?: Annotation[]
   created_at: string
 }
@@ -261,7 +284,7 @@ export interface Review {
   id: number
   annotation_id: number
   reviewer_id: number
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'FIX_REQUIRED' | string
+  status: 'PENDING' | 'APPROVED' | 'FIXED_ACCEPTED' | 'REJECTED' | string
   comment: string
   reviewed_at?: string
   created_at: string

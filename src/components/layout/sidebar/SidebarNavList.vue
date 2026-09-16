@@ -32,27 +32,10 @@ export interface NavigationNode {
 const route = useRoute()
 const authStore = useAuthStore()
 
-const iconMap: Record<string, any> = {
-  LayoutDashboard,
-  FolderKanban,
-  ClipboardList,
-  FileCheck2,
-  CheckCircle2,
-  Users,
-  ShieldAlert,
-  ListTree,
-  Layers,
-  Settings2,
-  folder: FolderKanban,
-  'pen-tool': ClipboardList,
-  'check-square': FileCheck2,
-  'shield-check': CheckCircle2,
-  settings: Settings2,
-}
+import { resolveMenuIcon } from '@/utils/design'
 
-function resolveIcon(iconName?: string) {
-  if (!iconName) return Layers
-  return iconMap[iconName] || iconMap[iconName.toLowerCase()] || Layers
+function resolveIcon(iconName?: string, code?: string) {
+  return resolveMenuIcon(iconName, code)
 }
 
 const dbMenus = ref<Menu[]>([])
@@ -152,7 +135,7 @@ const dynamicTree = computed<NavigationNode[]>(() => {
         code: c.code,
         name: c.name,
         path: c.path,
-        icon: resolveIcon(c.icon),
+        icon: resolveIcon(c.icon, c.code),
         group: root.name,
         children: [],
       }))
@@ -168,7 +151,7 @@ const dynamicTree = computed<NavigationNode[]>(() => {
           code: root.code,
           name: root.name,
           path: root.path || '',
-          icon: resolveIcon(root.icon),
+          icon: resolveIcon(root.icon, root.code),
           group: root.name,
           children: allowedChildren,
         })
@@ -180,7 +163,7 @@ const dynamicTree = computed<NavigationNode[]>(() => {
           code: root.code,
           name: root.name,
           path: root.path,
-          icon: resolveIcon(root.icon),
+          icon: resolveIcon(root.icon, root.code),
           group: 'Workspace',
           children: [],
         })

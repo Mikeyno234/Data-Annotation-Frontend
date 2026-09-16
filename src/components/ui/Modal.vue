@@ -36,9 +36,9 @@ const emit = defineEmits<{
           aria-modal="true"
           :aria-label="title || 'Dialog'"
         >
-          <div class="flex shrink-0 items-start justify-between gap-4 border-b border-border/60 bg-card px-5 py-4">
+          <div class="flex shrink-0 items-start justify-between gap-4 border-b border-border/60 bg-card px-4 sm:px-5 py-3.5 sm:py-4">
             <div class="min-w-0">
-              <h3 v-if="title" class="text-base font-semibold tracking-tight text-foreground">{{ title }}</h3>
+              <h3 v-if="title" class="text-sm sm:text-base font-semibold tracking-tight text-foreground">{{ title }}</h3>
               <p v-if="description" class="mt-0.5 text-xs text-muted-foreground">{{ description }}</p>
             </div>
             <button
@@ -50,11 +50,11 @@ const emit = defineEmits<{
             </button>
           </div>
 
-          <div class="min-h-0 overflow-y-auto px-6 py-4">
+          <div class="min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
             <slot />
           </div>
 
-          <div v-if="$slots.footer" class="flex shrink-0 items-center justify-end gap-3 bg-muted/30 px-6 py-4">
+          <div v-if="$slots.footer" class="flex shrink-0 items-center justify-end gap-3 bg-muted/30 px-4 sm:px-6 py-3 sm:py-4">
             <slot name="footer" />
           </div>
         </div>
