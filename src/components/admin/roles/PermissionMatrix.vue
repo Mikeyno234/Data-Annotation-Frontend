@@ -2,10 +2,10 @@
 import type { Role, Menu, MenuGroup } from '@/types'
 import {
   KeyRound,
-  Loader2,
+  LoaderCircle,
   CheckCircle2,
   Lock,
-  Edit2,
+  Pencil,
   FolderKanban,
   Check,
 } from 'lucide-vue-next'
@@ -105,7 +105,7 @@ function getGroupActiveCount(group: MenuGroup): string {
               'bg-destructive/15 text-destructive border-destructive/30': autoSaveStatus === 'error',
             }"
           >
-            <Loader2 v-if="autoSaveStatus === 'saving'" class="size-3.5 animate-spin" />
+            <LoaderCircle v-if="autoSaveStatus === 'saving'" class="size-3.5 animate-spin" />
             <CheckCircle2 v-else-if="autoSaveStatus === 'saved'" class="size-3.5" :stroke-width="1.6" />
             <Lock v-else class="size-3.5 text-muted-foreground" :stroke-width="1.6" />
             <span>{{ autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Saved' : 'Auto-save' }}</span>
@@ -118,7 +118,7 @@ function getGroupActiveCount(group: MenuGroup): string {
             class="gap-1.5 text-xs rounded-md h-8 px-3 cursor-pointer shadow-2xs"
             @click="emit('editRole', selectedRole)"
           >
-            <Edit2 class="size-3.5" :stroke-width="1.6" />
+            <Pencil class="size-3.5" :stroke-width="1.6" />
             <span>Edit Role</span>
           </Button>
         </div>

@@ -125,6 +125,17 @@ export const toolsByModality: Record<ModalityType, ToolOption[]> = {
       defaultPreviewData: { type: 'AUDIO_DIARIZATION', duration: '00:15', segments: [{ speaker: 'Speaker 1', start: '00:00', end: '00:04', text: 'Good morning, welcome to enterprise customer support.', color: '#38bdf8' }] },
       defaultPreviewUrl: '',
     },
+    {
+      code: 'CHOICE',
+      label: 'Audio Classification & Acoustic Tagging',
+      icon: Headphones,
+      desc: 'Categorize whole audio clip into acoustic events, emotion, or sentiment',
+      defaultXml: (labels) => `<View><Choices name="category" toName="audio">${labels.map((l) => `<Choice value="${l.name}" background="${l.color}"/>`).join('')}</Choices><Audio name="audio" value="$audio_url"/></View>`,
+      defaultInstructions: 'Listen to the audio clip and classify overall acoustic category, background environment, or speaker sentiment.',
+      defaultBadges: ['Acoustic Events', 'Sound Classification', 'Emotion / Sentiment'],
+      defaultPreviewData: { type: 'AUDIO_CLASSIFICATION', category: 'Human Speech', confidence: '98%', tags: [{ label: 'Human Speech', color: '#10b981' }] },
+      defaultPreviewUrl: '',
+    },
   ],
   VIDEO: [
     {

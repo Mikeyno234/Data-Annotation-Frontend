@@ -5,7 +5,7 @@ import Card from '@/components/ui/Card.vue'
 import CardContent from '@/components/ui/CardContent.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
-import { Edit2, Trash2, FileText, Headphones, Video as VideoIcon, Image as ImageIcon } from 'lucide-vue-next'
+import { Pencil, Trash2, FileText, Headphones, Video as VideoIcon, Image as ImageIcon } from 'lucide-vue-next'
 
 const props = defineProps<{
   item: AnnotationType
@@ -129,7 +129,7 @@ function formatTemplateName(name: string) {
           title="Edit Schema"
           @click="emit('edit', item)"
         >
-          <Edit2 class="size-3" :stroke-width="1.6" />
+          <Pencil class="size-3" :stroke-width="1.6" />
         </Button>
         <Button
           v-if="canDelete"

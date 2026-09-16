@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { ModalityType } from '@/types'
 import Modal from '@/components/ui/Modal.vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import AnnotationTypePreview from '@/components/annotation/AnnotationTypePreview.vue'
 import TemplateSchemaEditor from './TemplateSchemaEditor.vue'
-import { Wand2 } from 'lucide-vue-next'
+import { Wand2, Lock, Eye, SlidersHorizontal } from 'lucide-vue-next'
+
+const activeMobileTab = ref<'editor' | 'preview'>('editor')
 
 const props = defineProps<{
   showModal: boolean
@@ -81,9 +83,35 @@ const livePreviewItem = computed(() => {
     max-width="max-w-6xl"
     @close="emit('update:showModal', false)"
   >
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <!-- Responsive View Segmented Control (< lg screens) -->
+    <div class="flex lg:hidden items-center p-1 rounded-xl bg-muted/60 border border-border/60 mb-5 gap-1 select-none">
+      <button
+        type="button"
+        class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+        :class="activeMobileTab === 'editor' ? 'bg-card text-foreground shadow-2xs font-bold border border-border/40' : 'text-muted-foreground hover:text-foreground'"
+        @click="activeMobileTab = 'editor'"
+      >
+        <SlidersHorizontal class="size-3.5 text-primary" />
+        <span>Schema Config</span>
+      </button>
+      <button
+        type="button"
+        class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+        :class="activeMobileTab === 'preview' ? 'bg-card text-foreground shadow-2xs font-bold border border-border/40' : 'text-muted-foreground hover:text-foreground'"
+        @click="activeMobileTab = 'preview'"
+      >
+        <Eye class="size-3.5 text-emerald-500" />
+        <span>Live Preview</span>
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
       <!-- Left Column: Schema Builder Form -->
-      <form class="lg:col-span-7 space-y-6" @submit.prevent="emit('save')">
+      <form
+        class="space-y-6 lg:col-span-7"
+        :class="{ 'hidden lg:block': activeMobileTab === 'preview' }"
+        @submit.prevent="emit('save')"
+      >
         <!-- 1. Basic Info -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="sm:col-span-2 space-y-1.5">
@@ -114,20 +142,35 @@ const livePreviewItem = computed(() => {
 
         <!-- 2. Media Modality Selector -->
         <div class="space-y-2">
-          <label class="text-xs font-semibold text-foreground">Media Modality *</label>
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-foreground">Media Modality *</label>
+            <span v-if="editingId" class="inline-flex items-center gap-1 text-[11px] font-medium text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+              <Lock class="size-3" /> Locked for existing schema
+            </span>
+          </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               v-for="m in modalityList.slice(1)"
               :key="m.value"
               type="button"
-              class="flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition-all cursor-pointer"
-              :class="form.modality === m.value ? 'bg-primary/10 border-primary text-primary shadow-xs' : 'bg-card border-border/40 text-muted-foreground hover:text-foreground'"
-              @click="form.modality = m.value as ModalityType; emit('modalityChange')"
+              :disabled="!!editingId"
+              class="flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition-all"
+              :class="[
+                form.modality === m.value 
+                  ? 'bg-primary/10 border-primary text-primary shadow-xs' 
+                  : 'bg-card border-border/40 text-muted-foreground hover:text-foreground',
+                editingId ? 'opacity-60 cursor-not-allowed select-none' : 'cursor-pointer'
+              ]"
+              :title="editingId ? 'Modality cannot be changed after creation' : ''"
+              @click="!editingId && (form.modality = m.value as ModalityType, emit('modalityChange'))"
             >
               <component :is="m.icon" class="size-4" />
               <span>{{ m.label ? m.label.split(' ')[0] : m.value }}</span>
             </button>
           </div>
+          <p v-if="editingId" class="text-[11px] text-muted-foreground">
+            Modality is immutable after creation to preserve relational integrity with linked datasets and annotations.
+          </p>
         </div>
 
         <!-- 3. Tool Picker -->
@@ -198,11 +241,11 @@ const livePreviewItem = computed(() => {
         />
 
         <!-- Save Actions -->
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
+        <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-4 border-t border-border/40">
           <Button
             type="button"
             variant="ghost"
-            class="rounded-xl px-5 text-xs font-semibold"
+            class="rounded-xl px-5 text-xs font-semibold w-full sm:w-auto"
             @click="emit('update:showModal', false)"
           >
             Cancel
@@ -210,7 +253,7 @@ const livePreviewItem = computed(() => {
           <Button
             type="submit"
             :disabled="isSaving"
-            class="rounded-xl px-6 text-xs font-semibold shadow-xs"
+            class="rounded-xl px-6 text-xs font-semibold shadow-xs w-full sm:w-auto"
           >
             {{ isSaving ? 'Saving...' : editingId ? 'Update Schema' : 'Save Schema' }}
           </Button>
@@ -218,14 +261,17 @@ const livePreviewItem = computed(() => {
       </form>
 
       <!-- Right Column: Live Annotator Preview -->
-      <div class="lg:col-span-5 lg:sticky lg:top-4 space-y-3">
+      <div
+        class="lg:col-span-5 lg:sticky lg:top-4 space-y-3"
+        :class="{ 'hidden lg:block': activeMobileTab === 'editor' }"
+      >
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-foreground">
             Annotator Workspace Preview
           </span>
           <span class="text-[11px] text-muted-foreground">Real-time Simulation</span>
         </div>
-        <div class="h-[480px] w-full">
+        <div class="h-[380px] sm:h-[440px] lg:h-[500px] w-full">
           <AnnotationTypePreview :task="livePreviewItem" :modality="form.modality" />
         </div>
       </div>

@@ -39,7 +39,7 @@ function onAddLabel() {
   <div class="space-y-4">
     <!-- Default Label Classes -->
     <div class="space-y-3 rounded-2xl bg-muted/30 p-4 border border-border/40 shadow-xs">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <label class="text-xs font-bold text-foreground">Default Label Classes</label>
           <p class="text-[11px] text-muted-foreground">Categories annotators can assign.</p>
@@ -80,28 +80,30 @@ function onAddLabel() {
       </div>
 
       <!-- Quick Add Class Input -->
-      <div class="flex items-center gap-2 pt-1">
+      <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-1">
         <Input
           v-model="newLabelName"
-          class="flex-1 h-9 rounded-xl text-xs"
+          class="flex-1 min-w-[140px] h-9 rounded-xl text-xs"
           placeholder="Type new class name and press Enter..."
           @keyup.enter.prevent="onAddLabel"
         />
-        <input
-          v-model="newLabelColor"
-          type="color"
-          class="size-9 cursor-pointer rounded-xl border-0 bg-muted/60 p-0.5 shadow-inner"
-          title="Pick class color"
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          class="gap-1 rounded-xl h-9 px-3 text-xs cursor-pointer"
-          @click="onAddLabel"
-        >
-          <span>Add</span>
-        </Button>
+        <div class="flex items-center gap-2 shrink-0">
+          <input
+            v-model="newLabelColor"
+            type="color"
+            class="size-9 cursor-pointer rounded-xl border-0 bg-muted/60 p-0.5 shadow-inner"
+            title="Pick class color"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            class="gap-1 rounded-xl h-9 px-3.5 text-xs cursor-pointer"
+            @click="onAddLabel"
+          >
+            <span>Add</span>
+          </Button>
+        </div>
       </div>
     </div>
 

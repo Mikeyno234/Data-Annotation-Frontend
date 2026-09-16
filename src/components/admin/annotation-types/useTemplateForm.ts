@@ -3,6 +3,7 @@ import type { AnnotationType, ModalityType } from '@/types'
 import { annotationTypesApi, type CreateAnnotationTypePayload } from '@/api/annotationTypes'
 import { toast } from '@/utils/toast'
 import { toolsByModality, labelPresetsByModality, type ToolOption } from './templateConstants'
+import { parseLabelConfigXml } from '@/utils/annotation'
 
 export function useTemplateForm(onSuccess: () => void) {
   const showModal = ref(false)
@@ -64,10 +65,27 @@ export function useTemplateForm(onSuccess: () => void) {
   }
 
   function onModalityChange() {
-    if (!isCodeManual.value && !editingId.value && form.name) onNameInput()
+    if (editingId.value) return // Modality is locked for existing schemas
+    if (!isCodeManual.value && form.name) onNameInput()
     const currentTools = toolsByModality[form.modality] || []
-    if (currentTools.length > 0 && !currentTools.some((t) => t.code === form.tool_type)) {
-      selectTool(currentTools[0])
+    if (currentTools.length > 0) {
+      const tool = currentTools[0]
+      form.tool_type = tool.code
+      // Synchronize guidelines, badges, preview, and labels with the selected modality
+      form.instructions = tool.defaultInstructions
+      form.badgesText = tool.defaultBadges.join(', ')
+      form.preview_image_url = tool.defaultPreviewUrl || ''
+      form.previewDataJson = tool.defaultPreviewData ? JSON.stringify(tool.defaultPreviewData, null, 2) : ''
+
+      const presets = labelPresetsByModality[form.modality] || []
+      if (presets.length > 0 && presets[0].items) {
+        visualLabels.value = presets[0].items.map((it) => ({ ...it }))
+      } else {
+        visualLabels.value = [{ name: 'Default', color: '#38bdf8' }]
+      }
+      if (!isXmlMode.value) {
+        form.label_config = tool.defaultXml(visualLabels.value)
+      }
     }
   }
 
@@ -89,7 +107,7 @@ export function useTemplateForm(onSuccess: () => void) {
     const currentTool = currentTools.find((t) => t.code === form.tool_type) || currentTools[0]
     if (currentTool) {
       form.instructions = currentTool.defaultInstructions
-      toast.success('Template Applied', 'Recommended annotator guidelines inserted.')
+      toast.success('Template Applied', `Recommended guidelines for ${currentTool.label} inserted.`)
     }
   }
 
@@ -143,7 +161,11 @@ export function useTemplateForm(onSuccess: () => void) {
     form.modality = item.modality
     form.level = item.level || 'SUB_TYPE'
     form.parent_id = item.parent_id || null
-    form.tool_type = item.tool_type || 'BBOX'
+    form.tool_type = item.tool_type || (
+      item.modality === 'VIDEO' ? 'CHOICE' :
+      item.modality === 'AUDIO' ? 'TRANSCRIPT' :
+      item.modality === 'TEXT' ? 'SPAN' : 'BBOX'
+    )
     form.description = item.description || ''
     form.instructions = item.instructions || ''
     form.badgesText = Array.isArray(item.badges) ? item.badges.join(', ') : item.badges || ''
@@ -152,10 +174,18 @@ export function useTemplateForm(onSuccess: () => void) {
     form.label_config = item.label_config || ''
     form.status = item.status
 
-    visualLabels.value = [
-      { name: 'object_1', color: '#38bdf8' },
-      { name: 'object_2', color: '#10b981' },
-    ]
+    if (item.label_config) {
+      const parsed = parseLabelConfigXml(item.label_config)
+      if (parsed.length > 0) {
+        visualLabels.value = parsed.map((p) => ({ name: p.name, color: p.color || '#38bdf8' }))
+      } else {
+        const presets = labelPresetsByModality[item.modality] || []
+        visualLabels.value = presets[0]?.items?.map((it) => ({ ...it })) || [{ name: 'Default', color: '#38bdf8' }]
+      }
+    } else {
+      const presets = labelPresetsByModality[item.modality] || []
+      visualLabels.value = presets[0]?.items?.map((it) => ({ ...it })) || [{ name: 'Default', color: '#38bdf8' }]
+    }
     showModal.value = true
   }
 

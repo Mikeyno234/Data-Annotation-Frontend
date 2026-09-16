@@ -21,10 +21,10 @@ const emit = defineEmits<{
 <template>
   <div class="flex flex-col gap-5">
     <!-- Title & Action Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="text-xl font-bold tracking-tight text-foreground">Task Catalog & Schemas</h1>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-foreground">Task Catalog & Schemas</h1>
           <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
             {{ totalItems }} Templates
           </span>
@@ -34,11 +34,11 @@ const emit = defineEmits<{
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 w-full sm:w-auto">
         <Button
           v-if="canCreate"
           size="sm"
-          class="gap-1.5 rounded-xl font-semibold shadow-xs"
+          class="gap-1.5 rounded-xl font-semibold shadow-xs w-full sm:w-auto justify-center"
           @click="emit('openCreateModal')"
         >
           <Plus class="size-4" />
@@ -48,14 +48,14 @@ const emit = defineEmits<{
     </div>
 
     <!-- Modality Filters & Search Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3 border-y border-border/40 py-3">
-      <!-- Modality Pills -->
-      <div class="flex flex-wrap items-center gap-1.5">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-y border-border/40 py-3">
+      <!-- Modality Pills (Horizontally scrollable on mobile, wrapped on desktop) -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto no-scrollbar shrink-0">
         <button
           v-for="m in modalityList"
           :key="m.value"
           type="button"
-          class="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
+          class="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
           :class="[
             selectedModality === m.value
               ? 'bg-primary text-primary-foreground shadow-xs'
@@ -69,12 +69,12 @@ const emit = defineEmits<{
       </div>
 
       <!-- Search Input -->
-      <div class="relative w-full sm:w-64">
+      <div class="relative w-full md:w-64">
         <Search class="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           :model-value="searchQuery"
           placeholder="Search template name or code..."
-          class="pl-9 h-9 text-xs rounded-xl"
+          class="pl-9 h-9 text-xs rounded-xl w-full"
           @update:model-value="emit('update:searchQuery', String($event))"
         />
       </div>

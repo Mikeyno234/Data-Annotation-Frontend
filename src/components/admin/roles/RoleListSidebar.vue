@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Role } from '@/types'
 import Input from '@/components/ui/Input.vue'
-import { Shield, Search, Edit2, Trash2, X, Sparkles } from 'lucide-vue-next'
+import { Shield, Search, Pencil, Trash2, X, Sparkles } from 'lucide-vue-next'
 
 defineProps<{
   roles: Role[]
@@ -136,7 +136,7 @@ const emit = defineEmits<{
                 title="Edit Role"
                 @click.stop="emit('editRole', r)"
               >
-                <Edit2 class="size-3" />
+                <Pencil class="size-3" />
               </button>
               <button
                 type="button"
