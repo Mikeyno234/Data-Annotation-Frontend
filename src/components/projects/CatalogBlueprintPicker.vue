@@ -11,8 +11,10 @@ import {
   Layers,
   Sparkles,
   ArrowUpRight,
+  X,
 } from 'lucide-vue-next'
 import Input from '@/components/ui/Input.vue'
+import { getModalityConfig } from '@/utils/design'
 
 const props = defineProps<{
   options: MetadataOption[]
@@ -59,11 +61,7 @@ const filteredOptions = computed(() => {
 })
 
 function getModalityIcon(m?: string) {
-  const norm = (m || '').toUpperCase()
-  if (norm === 'AUDIO') return Headphones
-  if (norm === 'TEXT') return FileText
-  if (norm === 'VIDEO') return VideoIcon
-  return ImageIcon
+  return getModalityConfig(m).icon
 }
 
 function parseBadges(badges?: any): string[] {
@@ -109,13 +107,15 @@ function parseBadges(badges?: any): string[] {
           placeholder="Filter blueprints..."
           class="h-8.5 pl-8.5 text-xs rounded-xl bg-background border-border/60 focus:border-primary/50"
         />
-        <span
+        <button
           v-if="searchQuery"
-          class="absolute right-2.5 top-2 text-[10px] font-mono text-muted-foreground cursor-pointer hover:text-foreground"
+          type="button"
+          class="absolute right-2.5 top-2.5 flex size-4 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
           @click="searchQuery = ''"
+          title="Clear search"
         >
-          ✕
-        </span>
+          <X class="size-3.5" :stroke-width="2" />
+        </button>
       </div>
     </div>
 

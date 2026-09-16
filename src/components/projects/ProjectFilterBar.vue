@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import Button from '@/components/ui/Button.vue'
-import {
-  Plus,
-  Search,
-  Headphones,
-  FileText,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  Layers,
-} from 'lucide-vue-next'
+import { Plus, Search } from 'lucide-vue-next'
+import { MODALITY_CONFIG } from '@/utils/design'
 
 defineProps<{
   searchQuery: string
@@ -24,11 +17,11 @@ const emit = defineEmits<{
 }>()
 
 const modalities = [
-  { id: 'ALL', label: 'All', icon: Layers },
-  { id: 'IMAGE', label: 'Image', icon: ImageIcon },
-  { id: 'VIDEO', label: 'Video', icon: VideoIcon },
-  { id: 'TEXT', label: 'Text', icon: FileText },
-  { id: 'AUDIO', label: 'Audio', icon: Headphones },
+  { id: 'ALL', label: 'All', icon: MODALITY_CONFIG.MULTI.icon },
+  { id: 'IMAGE', label: MODALITY_CONFIG.IMAGE.shortLabel, icon: MODALITY_CONFIG.IMAGE.icon },
+  { id: 'AUDIO', label: MODALITY_CONFIG.AUDIO.shortLabel, icon: MODALITY_CONFIG.AUDIO.icon },
+  { id: 'TEXT', label: MODALITY_CONFIG.TEXT.shortLabel, icon: MODALITY_CONFIG.TEXT.icon },
+  { id: 'VIDEO', label: MODALITY_CONFIG.VIDEO.shortLabel, icon: MODALITY_CONFIG.VIDEO.icon },
 ]
 </script>
 

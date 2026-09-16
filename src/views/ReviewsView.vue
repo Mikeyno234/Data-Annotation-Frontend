@@ -25,11 +25,11 @@ import {
   SlidersHorizontal,
   Clock,
   CheckCircle2,
-  XCircle,
   Sparkles,
   Layers,
   Cpu,
 } from 'lucide-vue-next'
+import { getModalityConfig } from '@/utils/design'
 
 const router = useRouter()
 const route = useRoute()
@@ -418,8 +418,12 @@ onMounted(async () => {
 
           <!-- Badges for selected project -->
           <template v-if="selectedProject">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border capitalize">
-              {{ selectedProject.modality.toLowerCase() }}
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border"
+              :class="getModalityConfig(selectedProject.modality).badgeClass"
+            >
+              <component :is="getModalityConfig(selectedProject.modality).icon" class="size-3" :stroke-width="1.75" />
+              <span>{{ getModalityConfig(selectedProject.modality).shortLabel }}</span>
             </span>
             <span
               v-if="selectedProject.pending_count > 0"

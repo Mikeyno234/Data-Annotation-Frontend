@@ -11,7 +11,7 @@ import {
   CheckCheck,
   Clock,
   CheckCircle2,
-  XCircle,
+  X,
   Cpu,
 } from 'lucide-vue-next'
 

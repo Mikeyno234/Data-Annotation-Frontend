@@ -118,10 +118,10 @@ const isLoading = computed(() => isProjectsLoading.value)
           <div>
             <div class="text-[11px] font-medium text-muted-foreground">Mean Lead Time</div>
             <div class="text-2xl font-semibold text-foreground mt-1 tracking-tight">
-              {{ analytics?.mean_lead_time ?? '—' }}
+              {{ analytics?.mean_lead_time ?? 'N/A' }}
             </div>
             <div class="text-[11px] text-muted-foreground mt-0.5">
-              Score: <span class="text-foreground font-medium">{{ analytics?.quality_score ?? '—' }}</span>
+              Score: <span class="text-foreground font-medium">{{ analytics?.quality_score ?? 'N/A' }}</span>
             </div>
           </div>
           <div class="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">

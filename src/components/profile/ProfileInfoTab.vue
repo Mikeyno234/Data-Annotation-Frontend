@@ -11,7 +11,7 @@ import Badge from '@/components/ui/Badge.vue'
 import {
   HardDrive,
   Camera,
-  Loader2,
+  LoaderCircle,
   Mail,
   UploadCloud,
   Trash2,
@@ -112,7 +112,7 @@ async function handleUpdateProfile() {
 }
 
 function formatDate(dateStr?: string) {
-  if (!dateStr) return '—'
+  if (!dateStr) return 'N/A'
   try {
     return new Date(dateStr).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -170,7 +170,7 @@ function formatDate(dateStr?: string) {
                 <span class="font-medium">Change</span>
               </div>
               <div v-if="isUploadingAvatar || isDeletingAvatar" class="absolute inset-0 bg-background/80 flex items-center justify-center">
-                <Loader2 class="size-5 text-primary animate-spin" />
+                <LoaderCircle class="size-5 text-primary animate-spin" />
               </div>
             </div>
 
@@ -255,7 +255,7 @@ function formatDate(dateStr?: string) {
           <span class="text-xs text-muted-foreground">Organization</span>
           <div class="mt-1.5 flex items-center gap-2 text-foreground font-medium">
             <Building2 class="size-4 text-primary" />
-            <span>{{ authStore.user?.organization?.name || authStore.organization?.name || '—' }}</span>
+            <span>{{ authStore.user?.organization?.name || authStore.organization?.name || 'N/A' }}</span>
           </div>
         </div>
 

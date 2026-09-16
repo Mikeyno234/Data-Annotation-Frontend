@@ -72,7 +72,7 @@ function handleLimitChange(limit: number) {
 }
 
 function formatAction(action: string): string {
-  if (!action) return '—'
+  if (!action) return 'N/A'
   return action
     .toLowerCase()
     .split('_')
@@ -81,7 +81,7 @@ function formatAction(action: string): string {
 }
 
 function formatDate(dateStr?: string): string {
-  if (!dateStr) return '—'
+  if (!dateStr) return 'N/A'
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return dateStr
   return date.toLocaleString()

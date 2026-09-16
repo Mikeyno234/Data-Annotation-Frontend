@@ -110,10 +110,13 @@ const showExportModal = ref(false)
 const exportFormat = ref('yolo')
 const isExporting = ref(false)
 
-const approvedItems = computed(() =>
-  dataItems.value.filter((i) => i.status === 'ACCEPTED' || i.status === 'COMPLETED' || i.status === 'ANNOTATED')
+// Export is only meaningful once at least one item has fully cleared the
+// pipeline (review, then QA when the project requires it). Backend/pkg/db
+// InitDatabaseViews treats COMPLETED as the sole terminal success state.
+const completedItems = computed(() =>
+  dataItems.value.filter((i) => i.status === 'COMPLETED')
 )
-const canExport = computed(() => approvedItems.value.length > 0)
+const canExport = computed(() => completedItems.value.length > 0)
 
 interface FormattedExportOption extends ExportFormatOption {
   icon: any
@@ -135,7 +138,9 @@ const availableFormats = ref<FormattedExportOption[]>([
 const myInProgressTask = computed(() => {
   if (!authStore.user) return undefined
   return dataItems.value.find(
-    (item) => item.status === 'IN_PROGRESS' && item.locked_by_id === authStore.user?.id
+    (item) =>
+      (item.status === 'IN_PROGRESS' || item.status === 'REWORK') &&
+      item.locked_by_id === authStore.user?.id
   )
 })
 

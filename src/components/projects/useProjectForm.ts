@@ -13,6 +13,7 @@ export function useProjectForm(onSuccess: () => void) {
     description: '',
     modality: '',
     annotation_type: '',
+    tool_type: '',
     label_config: '',
   })
 
@@ -86,6 +87,12 @@ export function useProjectForm(onSuccess: () => void) {
   function applyTemplateLabels(taskVal?: string) {
     const currentVal = taskVal || newProject.value.annotation_type
     const opt = annotationTypeOptions.value.find((o) => o.value === currentVal || o.label === currentVal)
+    if (opt) {
+      // Carry the catalog entry's structured tool_type so the workspace can
+      // pick the correct editor by exact match instead of pattern-matching
+      // the free-text annotation_type name.
+      newProject.value.tool_type = opt.tool_type || ''
+    }
     if (opt && opt.label_config) {
       newProject.value.label_config = opt.label_config
       projectLabels.value = parseProjectLabels(opt.label_config)
@@ -219,6 +226,7 @@ export function useProjectForm(onSuccess: () => void) {
       description: '',
       modality: defaultModality,
       annotation_type: '',
+      tool_type: '',
       label_config: '',
     }
     projectLabels.value = []
@@ -236,6 +244,7 @@ export function useProjectForm(onSuccess: () => void) {
       }
     } else {
       newProject.value.annotation_type = ''
+      newProject.value.tool_type = ''
       newProject.value.label_config = ''
     }
 
@@ -250,6 +259,7 @@ export function useProjectForm(onSuccess: () => void) {
       description: project.description || '',
       modality: project.modality,
       annotation_type: project.annotation_type,
+      tool_type: project.tool_type || '',
       label_config: project.label_config || '',
     }
     projectLabels.value = parseProjectLabels(project.label_config)

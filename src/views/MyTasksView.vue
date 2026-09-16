@@ -28,7 +28,7 @@ const authStore = useAuthStore()
 
 const tasks = ref<DataItem[]>([])
 const isLoading = ref(true)
-const filter = ref<'ALL' | 'IN_PROGRESS' | 'UNASSIGNED'>('ALL')
+const filter = ref<'ALL' | 'IN_PROGRESS' | 'UNASSIGNED' | 'REWORK'>('ALL')
 
 const currentPage = ref(1)
 const pageLimit = ref(12)
@@ -63,7 +63,7 @@ async function fetchMyTasks() {
   }
 }
 
-function handleFilterChange(tab: 'ALL' | 'IN_PROGRESS' | 'UNASSIGNED') {
+function handleFilterChange(tab: 'ALL' | 'IN_PROGRESS' | 'UNASSIGNED' | 'REWORK') {
   filter.value = tab
   currentPage.value = 1
   fetchMyTasks()
@@ -94,7 +94,11 @@ function modalityIcon(modality: string) {
 }
 
 function isMyInProgress(item: DataItem) {
-  return item.status === 'IN_PROGRESS' && item.locked_by_id === myId.value
+  return (item.status === 'IN_PROGRESS' || item.status === 'REWORK') && item.locked_by_id === myId.value
+}
+
+function isMyRework(item: DataItem) {
+  return item.status === 'REWORK' && item.locked_by_id === myId.value
 }
 
 function formatDate(dateStr?: string) {
@@ -150,6 +154,15 @@ onMounted(fetchMyTasks)
       >
         <span>Available Queue</span>
       </button>
+
+      <button
+        type="button"
+        class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+        :class="filter === 'REWORK' ? 'bg-card text-foreground font-medium shadow-2xs border border-border' : 'text-muted-foreground hover:text-foreground border border-transparent'"
+        @click="handleFilterChange('REWORK')"
+      >
+        <span>Rework</span>
+      </button>
     </div>
 
     <!-- Skeleton Loading -->
@@ -167,7 +180,13 @@ onMounted(fetchMyTasks)
       </div>
       <h2 class="text-sm font-semibold text-foreground">No tasks found</h2>
       <p class="mt-1 max-w-xs text-xs text-muted-foreground">
-        {{ filter === 'IN_PROGRESS' ? 'You have no active in-progress tasks right now.' : 'No available tasks in this queue.' }}
+        {{
+          filter === 'IN_PROGRESS'
+            ? 'You have no active in-progress tasks right now.'
+            : filter === 'REWORK'
+              ? 'No tasks are currently waiting for rework.'
+              : 'No available tasks in this queue.'
+        }}
       </p>
     </div>
 
@@ -198,10 +217,8 @@ onMounted(fetchMyTasks)
                   <Save class="size-2.5 text-foreground" :stroke-width="1.6" />Draft
                 </span>
 
-                <Badge
-                  :variant="isMyInProgress(item) ? 'warning' : 'secondary'"
-                >
-                  {{ isMyInProgress(item) ? 'In Progress' : 'Available' }}
+                <Badge :variant="isMyInProgress(item) ? 'warning' : 'secondary'">
+                  {{ isMyRework(item) ? 'Rework' : isMyInProgress(item) ? 'In Progress' : 'Available' }}
                 </Badge>
               </div>
             </div>

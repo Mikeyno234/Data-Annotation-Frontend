@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { toast } from '@/utils/toast'
 import Input from '@/components/ui/Input.vue'
 import Button from '@/components/ui/Button.vue'
-import { ArrowRight, Layers, Loader2, CheckCircle2 } from 'lucide-vue-next'
+import { ArrowRight, Layers, LoaderCircle, CheckCircle2 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -153,7 +153,7 @@ async function handleLogin() {
               :class="isSuccess ? 'bg-emerald-600 text-white border-emerald-600' : ''"
             >
               <template v-if="isLoading">
-                <Loader2 class="size-3.5 animate-spin" />
+                <LoaderCircle class="size-3.5 animate-spin" />
                 <span>Authenticating...</span>
               </template>
               <template v-else-if="isSuccess">

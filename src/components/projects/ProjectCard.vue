@@ -1,18 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Project } from '@/types'
 import {
-  Headphones,
-  FileText,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  Layers,
   UploadCloud,
   ArrowUpRight,
   Settings2,
   Database,
   Cpu,
 } from 'lucide-vue-next'
+import { getModalityConfig, formatAnnotationEngine } from '@/utils/design'
 
 const props = defineProps<{
   project: Project
@@ -26,15 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-
-function formatAnnotationEngine(raw: string): string {
-  if (!raw) return 'Standard Engine'
-  // Humanize SNAKE_CASE or RAW_CODES to readable Title Case
-  return raw
-    .replace(/[_-]+/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
+const modalityConfig = computed(() => getModalityConfig(props.project.modality))
 
 function navigateToProject() {
   router.push(`/projects/${props.project.id}`)
@@ -54,16 +43,12 @@ function navigateToProject() {
           <div
             class="flex size-6.5 items-center justify-center rounded-md border border-border bg-muted text-foreground"
           >
-            <Headphones v-if="project.modality === 'AUDIO'" class="size-3.5 text-foreground" :stroke-width="1.6" />
-            <ImageIcon v-else-if="project.modality === 'IMAGE'" class="size-3.5 text-foreground" :stroke-width="1.6" />
-            <FileText v-else-if="project.modality === 'TEXT'" class="size-3.5 text-foreground" :stroke-width="1.6" />
-            <VideoIcon v-else-if="project.modality === 'VIDEO'" class="size-3.5 text-foreground" :stroke-width="1.6" />
-            <Layers v-else class="size-3.5 text-foreground" :stroke-width="1.6" />
+            <component :is="modalityConfig.icon" class="size-3.5 text-foreground" :stroke-width="1.75" />
           </div>
 
           <!-- Modality Tag & Project Code -->
           <span class="text-xs font-medium text-foreground capitalize">
-            {{ project.modality.toLowerCase() }}
+            {{ modalityConfig.shortLabel }}
           </span>
           <span class="text-border text-xs">/</span>
           <span class="text-xs text-muted-foreground font-mono">

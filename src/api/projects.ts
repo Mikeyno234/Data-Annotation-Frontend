@@ -7,6 +7,9 @@ export interface CreateProjectPayload {
   description?: string
   modality: string
   annotation_type: string
+  // Structured editor kind copied from the selected catalog entry (BBOX,
+  // POLYGON, SPAN, RADIO, CHOICE, TIMELINE, etc). See Project.tool_type.
+  tool_type?: string
   label_config?: string
 }
 

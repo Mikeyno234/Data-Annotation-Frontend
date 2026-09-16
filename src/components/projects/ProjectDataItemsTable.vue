@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataItem } from '@/types'
+import { getStatusConfig } from '@/utils/design'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Card from '@/components/ui/Card.vue'
@@ -31,17 +32,7 @@ const emit = defineEmits<{
   (e: 'limitChange', limit: number): void
 }>()
 
-function formatStatus(status: string): string {
-  const map: Record<string, string> = {
-    UNASSIGNED: 'Unassigned',
-    IN_PROGRESS: 'In Progress',
-    ANNOTATED: 'Annotated',
-    ACCEPTED: 'Accepted',
-    COMPLETED: 'Completed',
-    REJECTED: 'Rejected',
-  }
-  return map[status] || status
-}
+
 </script>
 
 <template>
@@ -60,8 +51,11 @@ function formatStatus(status: string): string {
             <option value="ALL">All Statuses</option>
             <option value="UNASSIGNED">Unassigned</option>
             <option value="IN_PROGRESS">In Progress</option>
-            <option value="ANNOTATED">Annotated</option>
+            <option value="ANNOTATED">Awaiting Review</option>
+            <option value="QA_PENDING">Awaiting QA</option>
+            <option value="REWORK">Rework</option>
             <option value="COMPLETED">Completed</option>
+            <option value="ESCALATED">Escalated</option>
           </select>
         </div>
       </div>
@@ -100,23 +94,13 @@ function formatStatus(status: string): string {
               </td>
 
               <td class="px-5 py-3.5">
-                <Badge
-                  :variant="
-                    item.status === 'COMPLETED' || item.status === 'ACCEPTED'
-                      ? 'success'
-                      : item.status === 'ANNOTATED'
-                      ? 'info'
-                      : item.status === 'IN_PROGRESS'
-                      ? 'warning'
-                      : 'secondary'
-                  "
-                >
-                  {{ formatStatus(item.status) }}
+                <Badge :variant="getStatusConfig(item.status).badgeVariant">
+                  {{ getStatusConfig(item.status).label }}
                 </Badge>
               </td>
               <td class="px-5 py-3.5 text-right">
                 <Button
-                  v-if="item.status === 'IN_PROGRESS' && item.locked_by_id === currentUserId"
+                  v-if="(item.status === 'IN_PROGRESS' || item.status === 'REWORK') && item.locked_by_id === currentUserId"
                   size="sm"
                   class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
                   @click="emit('openTask', item)"
@@ -125,7 +109,7 @@ function formatStatus(status: string): string {
                   <span>Continue</span>
                 </Button>
                 <Button
-                  v-else
+                  v-else-if="item.status === 'UNASSIGNED' || item.status === 'REWORK'"
                   variant="outline"
                   size="sm"
                   class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
