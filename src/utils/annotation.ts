@@ -3,7 +3,16 @@
  * Pure functions designed for maximum testability and reuse across all workspace modalities.
  */
 
-import type { LabelOption } from '@/types'
+import type {
+  LabelOption,
+  AudioSegment,
+  ImageBox,
+  ImagePolygon,
+  ImageClassificationPayload,
+  ImageAnnotationPayload,
+  TextEntity,
+  VideoInterval,
+} from '@/types'
 
 export interface BoxCoords {
   x: number
@@ -16,6 +25,86 @@ const DEFAULT_LABEL_PALETTE = [
   '#38bdf8', '#10b981', '#f59e0b', '#ec4899',
   '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6'
 ]
+
+// ---------------------------------------------------------------------------
+// Workspace editor resolution
+//
+// A project's annotation_type is a free-text task name (e.g. "2D Bounding
+// Box", "Whole-Video Classification") chosen by whoever set up the task
+// catalog. Matching keywords in that string to decide which editor to render
+// is fragile: a catalog entry named without an expected keyword (e.g. "Video
+// Review") silently falls through to a default editor with no warning.
+//
+// tool_type (Backend/model/entity/project.go AnnotationTypeDefinition.ToolType)
+// is the structured value the catalog author actually picked from a fixed set
+// (BBOX, POLYGON, SPAN, RADIO, CHOICE, TIMELINE, TRANSCRIPT, OBB) and is copied
+// onto the project at creation. Resolving against it first is deterministic;
+// the keyword-matching functions below remain as a fallback only for projects
+// created before tool_type existed, or when a catalog entry was created
+// without picking a structured tool_type.
+// ---------------------------------------------------------------------------
+
+/** Structured tool_type values assigned by the annotation type catalog. */
+export type ToolType = 'BBOX' | 'OBB' | 'POLYGON' | 'CHOICE' | 'RADIO' | 'SPAN' | 'TIMELINE' | 'TRANSCRIPT'
+
+function normalizeToolType(toolType?: string): ToolType | null {
+  const t = (toolType || '').trim().toUpperCase()
+  const known: ToolType[] = ['BBOX', 'OBB', 'POLYGON', 'CHOICE', 'RADIO', 'SPAN', 'TIMELINE', 'TRANSCRIPT']
+  return (known as string[]).includes(t) ? (t as ToolType) : null
+}
+
+/**
+ * Resolves the Image workspace editor mode. Exact-matches tool_type first
+ * (BBOX/OBB -> bbox, POLYGON -> polygon, CHOICE/RADIO -> classification),
+ * falling back to keyword-matching annotationType for legacy projects.
+ */
+export function resolveImageSubtype(toolType: string | undefined, annotationType: string | undefined): 'bbox' | 'polygon' | 'classification' {
+  const exact = normalizeToolType(toolType)
+  if (exact === 'BBOX' || exact === 'OBB') return 'bbox'
+  if (exact === 'POLYGON') return 'polygon'
+  if (exact === 'CHOICE' || exact === 'RADIO') return 'classification'
+
+  const t = (annotationType || '').toUpperCase()
+  if (t.includes('POLYGON') || t.includes('SEGMENTATION')) return 'polygon'
+  if (t.includes('CHOICE') || t.includes('TAG') || t.includes('CLASSIF')) return 'classification'
+  return 'bbox'
+}
+
+/**
+ * Resolves the Video workspace editor mode. Exact-matches tool_type first
+ * (TIMELINE -> timeline, CHOICE/RADIO -> classification), falling back to
+ * keyword-matching annotationType for legacy projects.
+ */
+export function resolveVideoMode(toolType: string | undefined, annotationType: string | undefined): 'timeline' | 'classification' {
+  const exact = normalizeToolType(toolType)
+  if (exact === 'TIMELINE') return 'timeline'
+  if (exact === 'CHOICE' || exact === 'RADIO') return 'classification'
+
+  const t = (annotationType || '').toUpperCase()
+  const isTimeline =
+    t.includes('TIMELINE') || t.includes('INTERVAL') || t.includes('PER_DETIK') ||
+    t.includes('PER-DETIK') || t.includes('TEMPORAL') || t.includes('SEGMENT') || t.includes('TRACK')
+  if (isTimeline) return 'timeline'
+  // Default to whole-video classification: clean, fast, zero split clutter.
+  return 'classification'
+}
+
+/**
+ * Resolves the Text workspace editor mode. Exact-matches tool_type first
+ * (SPAN -> entities, CHOICE/RADIO -> classification), falling back to
+ * keyword-matching annotationType for legacy projects.
+ */
+export function resolveTextMode(toolType: string | undefined, annotationType: string | undefined): 'entities' | 'classification' {
+  const exact = normalizeToolType(toolType)
+  if (exact === 'SPAN') return 'entities'
+  if (exact === 'CHOICE' || exact === 'RADIO') return 'classification'
+
+  const t = (annotationType || '').toUpperCase()
+  const isClassification =
+    t.includes('CLASSIF') || t.includes('SENTIMENT') || t.includes('INTENT') ||
+    t.includes('TOPIC') || t.includes('CHOICE') || t.includes('CATEGORY')
+  return isClassification ? 'classification' : 'entities'
+}
 
 /**
  * Parses Label Studio XML configuration string into structured LabelOption array.
@@ -298,3 +387,214 @@ export function getSelectionCharacterOffsets(container: HTMLElement): SelectionO
     text: trimmed,
   }
 }
+
+export interface TextAnnotationPayload {
+  entities: TextEntity[]
+  sentiment?: string
+  selectedLabels?: string[]
+}
+
+export interface VideoClassificationPayload {
+  label: string
+  notes?: string
+  tags?: string[]
+}
+
+/**
+ * Normalizes any incoming audio payload (whether direct array or wrapped in {segments})
+ * into a well-typed AudioSegment array with direct canonical fields.
+ */
+export function normalizeAudioPayload(raw: any, fallbackSpeaker = 'Speaker 1'): AudioSegment[] {
+  if (!raw) return []
+
+  const list: any[] = Array.isArray(raw)
+    ? raw
+    : (typeof raw === 'object' && Array.isArray(raw.segments) ? raw.segments : [])
+
+  return list.map((item, idx) => ({
+    id: String(item.id || `seg-${Date.now()}-${idx}`),
+    start: Number(item.start || 0),
+    end: Number(item.end || 0),
+    speaker: item.speaker || fallbackSpeaker,
+    label: item.speaker || fallbackSpeaker,
+    transcript: item.transcript || item.text || '',
+    confidence: typeof item.confidence === 'number' ? item.confidence : 1.0,
+  }))
+}
+
+/**
+ * Serializes AudioSegments into canonical database payload structure.
+ */
+export function serializeAudioPayload(segments: AudioSegment[]): { segments: any[] } {
+  return {
+    segments: (segments || []).map((seg) => ({
+      id: seg.id,
+      start: seg.start,
+      end: seg.end,
+      speaker: seg.speaker,
+      transcript: seg.transcript || '',
+      confidence: seg.confidence ?? 1.0,
+    })),
+  }
+}
+
+/**
+ * Normalizes any incoming image payload (direct array, or wrapped in {regions} / {boxes})
+ * into typed ImageBox[], ImagePolygon[], or ImageClassificationPayload with guaranteed IDs.
+ */
+export function normalizeImagePayload(
+  raw: any,
+  subtype: 'bbox' | 'polygon' | 'classification'
+): ImageAnnotationPayload {
+  if (!raw) {
+    return subtype === 'classification' ? { selectedLabels: [] } : []
+  }
+
+  if (subtype === 'classification') {
+    if (Array.isArray(raw)) {
+      const labels = raw.map((item) => (typeof item === 'string' ? item : item.label || '')).filter(Boolean)
+      return { selectedLabels: labels }
+    }
+    if (typeof raw === 'object') {
+      if (Array.isArray(raw.selectedLabels)) {
+        return { selectedLabels: raw.selectedLabels }
+      }
+      if (raw.label) {
+        return { selectedLabels: [String(raw.label)] }
+      }
+    }
+    return { selectedLabels: [] }
+  }
+
+  if (subtype === 'polygon') {
+    const list: any[] = Array.isArray(raw)
+      ? raw
+      : (typeof raw === 'object' && Array.isArray(raw.polygons) ? raw.polygons : [])
+
+    return list.map((item, idx): ImagePolygon => ({
+      id: String(item.id || `poly-${Date.now()}-${idx}`),
+      points: Array.isArray(item.points)
+        ? item.points.map((p: any) => ({ x: Number(p.x || 0), y: Number(p.y || 0) }))
+        : [],
+      label: item.label || '',
+      confidence: typeof item.confidence === 'number' ? item.confidence : 1.0,
+      color: item.color,
+    }))
+  }
+
+  // Default: bbox
+  const list: any[] = Array.isArray(raw)
+    ? raw
+    : (typeof raw === 'object' && Array.isArray(raw.regions)
+        ? raw.regions
+        : (typeof raw === 'object' && Array.isArray(raw.boxes) ? raw.boxes : []))
+
+  return list.map((item, idx): ImageBox => ({
+    id: String(item.id || `box-${Date.now()}-${idx}`),
+    x: Number(item.x || 0),
+    y: Number(item.y || 0),
+    width: Number(item.width || 0),
+    height: Number(item.height || 0),
+    label: item.label || '',
+    confidence: typeof item.confidence === 'number' ? item.confidence : 1.0,
+    color: item.color,
+  }))
+}
+
+/**
+ * Normalizes text annotation payload to support both span tagging (NER) and text classification.
+ */
+export function normalizeTextPayload(raw: any): TextAnnotationPayload {
+  if (!raw) {
+    return { entities: [], sentiment: 'NEUTRAL', selectedLabels: [] }
+  }
+
+  if (Array.isArray(raw)) {
+    return {
+      entities: raw.map((item, idx) => ({
+        id: String(item.id || `ent-${Date.now()}-${idx}`),
+        start: Number(item.start || 0),
+        end: Number(item.end || 0),
+        text: String(item.text || ''),
+        label: String(item.label || ''),
+        color: item.color,
+      })),
+      sentiment: 'NEUTRAL',
+      selectedLabels: [],
+    }
+  }
+
+  if (typeof raw === 'object') {
+    const rawEntities = Array.isArray(raw.entities) ? raw.entities : []
+    const entities = rawEntities.map((item: any, idx: number) => ({
+      id: String(item.id || `ent-${Date.now()}-${idx}`),
+      start: Number(item.start || 0),
+      end: Number(item.end || 0),
+      text: String(item.text || ''),
+      label: String(item.label || ''),
+      color: item.color,
+    }))
+
+    const sentiment = String(raw.sentiment || 'NEUTRAL')
+    let selectedLabels: string[] = []
+    if (Array.isArray(raw.selectedLabels)) {
+      selectedLabels = raw.selectedLabels.map(String)
+    } else if (raw.label) {
+      selectedLabels = [String(raw.label)]
+    }
+
+    return { entities, sentiment, selectedLabels }
+  }
+
+  return { entities: [], sentiment: 'NEUTRAL', selectedLabels: [] }
+}
+
+/**
+ * Normalizes video annotation payloads for timeline intervals and video-level classification.
+ */
+export function normalizeVideoPayload(
+  raw: any,
+  mode: 'timeline' | 'classification'
+): VideoInterval[] | VideoClassificationPayload {
+  if (!raw) {
+    return mode === 'classification' ? { label: '', notes: '', tags: [] } : []
+  }
+
+  if (mode === 'classification') {
+    if (typeof raw === 'string') {
+      return { label: raw, notes: '', tags: [] }
+    }
+    if (typeof raw === 'object' && !Array.isArray(raw)) {
+      const label = raw.label || (Array.isArray(raw.selectedLabels) ? raw.selectedLabels[0] : '') || ''
+      return {
+        label: String(label),
+        notes: String(raw.notes || ''),
+        tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
+      }
+    }
+    if (Array.isArray(raw) && raw.length > 0) {
+      const first = raw[0]
+      return {
+        label: typeof first === 'string' ? first : first.label || '',
+        notes: '',
+        tags: raw.map((r) => (typeof r === 'string' ? r : r.label || '')).filter(Boolean),
+      }
+    }
+    return { label: '', notes: '', tags: [] }
+  }
+
+  // Timeline mode
+  const list: any[] = Array.isArray(raw)
+    ? raw
+    : (typeof raw === 'object' && Array.isArray(raw.intervals) ? raw.intervals : [])
+
+  return list.map((item, idx): VideoInterval => ({
+    id: String(item.id || `interval-${Date.now()}-${idx}`),
+    start: Number(item.start || 0),
+    end: Number(item.end || 0),
+    label: String(item.label || ''),
+    action: item.action,
+    track: typeof item.track === 'number' ? item.track : 0,
+  }))
+}
+

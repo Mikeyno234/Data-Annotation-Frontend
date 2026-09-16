@@ -130,7 +130,7 @@ export function useAnnotationPreviewData(
     if (parsedPreviewData.value?.segments && Array.isArray(parsedPreviewData.value.segments))
       return parsedPreviewData.value.segments
     return [
-      { speaker: 'Speaker 1', start: '00:00', end: '00:05', text: 'Sample audio track segment.', color: '#38bdf8' },
+      { speaker: 'Speaker 1', start: '00:00', end: '00:05', transcript: 'Sample audio track segment.', color: '#38bdf8' },
     ]
   })
 

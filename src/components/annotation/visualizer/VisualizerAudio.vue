@@ -7,7 +7,7 @@ export interface VisualizerAudioSegment {
   speaker: string
   start: number
   end: number
-  text: string
+  transcript: string
   color: string
 }
 
@@ -96,8 +96,8 @@ function formatTime(seconds: number): string {
               {{ formatTime(seg.start) }} - {{ formatTime(seg.end) }}
             </span>
           </div>
-          <p v-if="seg.text" class="text-xs text-foreground mt-1.5 leading-relaxed font-normal">
-            {{ seg.text }}
+          <p v-if="seg.transcript" class="text-xs text-foreground mt-1.5 leading-relaxed font-normal">
+            {{ seg.transcript }}
           </p>
         </div>
       </div>

@@ -37,65 +37,53 @@ const audioDuration = ref(0)
 const activeSegmentId = ref<string | null>(null)
 let activeSegmentEnd = 0
 
-// Parse structured regions
+// Parse structured payload strictly: direct 'a = a' mapping without fallback chains
 const parsedData = computed(() => {
   const p = props.payload
-  if (!p) return { type: 'empty', regions: [], text: '', labels: [] }
+  if (!p) return { type: 'empty', regions: [], labels: [] }
 
-  if (p && typeof p === 'object' && Array.isArray(p.regions)) {
+  // 1. Image Bounding Boxes (array of boxes or { regions: [...] })
+  const boxes = Array.isArray(p) ? p : (Array.isArray(p.regions) ? p.regions : null)
+  if (boxes && boxes.length > 0 && boxes[0].x !== undefined) {
     return {
       type: 'image_boxes',
-      regions: p.regions.map((r: any, idx: number) => ({
-        id: r.id || `reg-${idx}`,
-        label: r.label || r.tag || 'Object',
-        x: Number(r.x ?? 0),
-        y: Number(r.y ?? 0),
-        width: Number(r.width ?? r.w ?? 20),
-        height: Number(r.height ?? r.h ?? 20),
-        color: r.color || getColorForLabel(r.label || `${idx}`),
+      regions: boxes.map((box: any) => ({
+        id: box.id,
+        label: box.label,
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        color: box.color || getColorForLabel(box.label),
+        confidence: box.confidence,
       })),
-      labels: Array.from(new Set(p.regions.map((r: any) => r.label || 'Object'))) as string[],
+      labels: [...new Set(boxes.map((b: any) => b.label))] as string[],
     }
   }
 
-  if (Array.isArray(p) && p.length > 0 && (p[0].x !== undefined || p[0].startX !== undefined)) {
-    return {
-      type: 'image_boxes',
-      regions: p.map((r: any, idx: number) => ({
-        id: r.id || `reg-${idx}`,
-        label: r.label || r.tag || 'Object',
-        x: Number(r.x ?? r.startX ?? 0),
-        y: Number(r.y ?? r.startY ?? 0),
-        width: Number(r.width ?? r.w ?? 20),
-        height: Number(r.height ?? r.h ?? 20),
-        color: r.color || getColorForLabel(r.label || `${idx}`),
-      })),
-      labels: Array.from(new Set(p.map((r: any) => r.label || 'Object'))) as string[],
-    }
-  }
-
-  const segments = p.segments || (Array.isArray(p) && p[0]?.start !== undefined ? p : null)
-  if (segments && Array.isArray(segments)) {
+  // 2. Audio Segments (canonical { segments: [...] })
+  if (p.segments && Array.isArray(p.segments)) {
     return {
       type: 'audio_segments',
-      segments: segments.map((s: any, idx: number) => ({
-        id: s.id || `seg-${idx}`,
-        speaker: s.speaker || s.label || `Speaker ${idx + 1}`,
-        start: Number(s.start || s.start_time || 0),
-        end: Number(s.end || s.end_time || 1),
-        text: s.text || s.transcription || '',
-        color: s.color || getColorForLabel(s.speaker || `${idx}`),
+      segments: p.segments.map((s: any) => ({
+        id: s.id,
+        speaker: s.speaker,
+        start: s.start,
+        end: s.end,
+        transcript: s.transcript,
+        color: getColorForLabel(s.speaker),
       })),
-      labels: Array.from(new Set(segments.map((s: any) => s.speaker || 'Speaker'))) as string[],
+      labels: [...new Set(p.segments.map((s: any) => s.speaker))] as string[],
     }
   }
 
-  if (p.label || p.category || p.classification || p.choice) {
+  // 3. Classification (Video, Text, or Image classification)
+  if (p.label !== undefined) {
     return {
       type: 'classification',
-      label: p.label || p.category || p.classification || p.choice,
-      confidence: p.confidence || p.score,
-      notes: p.notes || p.comment,
+      label: p.label,
+      confidence: p.confidence,
+      notes: p.notes,
     }
   }
 

@@ -146,7 +146,7 @@ const displayInstructions = computed(() => {
 <template>
   <div class="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-border/50 bg-card/80 shadow-2xl backdrop-blur-xl">
     <!-- Header Bar -->
-    <div class="flex items-center justify-between border-b border-border/40 bg-muted/40 px-4 py-2.5 backdrop-blur-md">
+    <div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 border-b border-border/40 bg-muted/40 px-3 sm:px-4 py-2.5 backdrop-blur-md">
       <div class="flex min-w-0 items-center gap-2">
         <div class="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
           <Eye class="size-3" />
@@ -157,7 +157,7 @@ const displayInstructions = computed(() => {
           </span>
           <span
             v-if="task?.tool_type"
-            class="inline-flex items-center rounded px-1.5 py-0.2 font-mono text-[9px] font-semibold bg-muted text-muted-foreground border border-border/40"
+            class="inline-flex items-center rounded px-1.5 py-0.2 font-mono text-[9px] font-semibold bg-muted text-muted-foreground border border-border/40 shrink-0"
           >
             {{ task.tool_type }}
           </span>
@@ -179,7 +179,7 @@ const displayInstructions = computed(() => {
         <template v-if="allowUpload">
           <div v-if="customFileName" class="flex items-center gap-1.5 rounded-md border border-border bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
             <UploadCloud class="size-3 text-primary" />
-            <span class="max-w-[80px] truncate">{{ customFileName }}</span>
+            <span class="max-w-[70px] sm:max-w-[100px] truncate">{{ customFileName }}</span>
             <button type="button" class="ml-0.5 hover:text-primary cursor-pointer" title="Reset to default blueprint" @click="resetCustomAsset">
               <RotateCcw class="size-2.5" />
             </button>
@@ -193,7 +193,8 @@ const displayInstructions = computed(() => {
             @click="triggerHeaderUpload"
           >
             <UploadCloud class="size-3 text-primary" />
-            <span>Upload Test File</span>
+            <span class="hidden sm:inline">Upload Test File</span>
+            <span class="sm:hidden">Upload</span>
           </button>
         </template>
 
@@ -204,7 +205,7 @@ const displayInstructions = computed(() => {
     </div>
 
     <!-- Modality Viewport -->
-    <div class="relative flex-1 min-h-[320px] w-full overflow-hidden bg-zinc-950/90 select-none">
+    <div class="relative flex-1 min-h-[260px] sm:min-h-[320px] w-full overflow-hidden bg-zinc-950/90 select-none">
       <!-- 1. EMPTY STATE WHEN NO ASSET ATTACHED -->
       <template v-if="!hasAssetForModality">
         <!-- Interactive Dropzone (only in catalog playground / when allowUpload is true) -->

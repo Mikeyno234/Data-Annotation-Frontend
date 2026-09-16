@@ -5,7 +5,7 @@ export interface AudioSegmentItem {
   speaker?: string
   start?: string
   end?: string
-  text?: string
+  transcript?: string
   color?: string
 }
 
@@ -81,7 +81,7 @@ const emit = defineEmits<{
             </span>
           </div>
           <p class="mt-1 truncate text-xs text-zinc-200">
-            {{ seg.text }}
+            {{ seg.transcript }}
           </p>
         </div>
       </div>

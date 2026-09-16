@@ -11,6 +11,11 @@ import {
   computeColorLassoBounds,
   getSelectionCharacterOffsets,
   parseLabelConfigXml,
+  normalizeAudioPayload,
+  serializeAudioPayload,
+  normalizeImagePayload,
+  normalizeTextPayload,
+  normalizeVideoPayload,
 } from '../annotation'
 
 describe('Annotation Utilities', () => {
@@ -245,6 +250,117 @@ describe('Annotation Utilities', () => {
       const labels = parseLabelConfigXml(xml)
 
       expect(labels).toEqual([{ name: 'Category A', color: '#38bdf8' }])
+    })
+  })
+
+  describe('normalizeAudioPayload & serializeAudioPayload', () => {
+    it('normalizes database seed wrapped in { segments: [...] }', () => {
+      const raw = {
+        segments: [
+          { start: 0.0, end: 4.5, speaker: 'Speaker 1', text: 'Selamat pagi para pendengar.' },
+        ],
+      }
+      const segs = normalizeAudioPayload(raw)
+      expect(segs).toHaveLength(1)
+      expect(segs[0].speaker).toBe('Speaker 1')
+      expect(segs[0].transcript).toBe('Selamat pagi para pendengar.')
+      expect(segs[0].id).toBeTruthy()
+    })
+
+    it('normalizes direct array of segments', () => {
+      const raw = [{ id: 'seg-1', start: 1, end: 3, speaker: 'Host', transcript: 'Halo' }]
+      const segs = normalizeAudioPayload(raw)
+      expect(segs).toHaveLength(1)
+      expect(segs[0].id).toBe('seg-1')
+      expect(segs[0].transcript).toBe('Halo')
+    })
+
+    it('serializes audio segments cleanly', () => {
+      const segs = [{ id: 'seg-1', start: 0, end: 2, speaker: 'Announcer', transcript: 'Hello' }]
+      const serialized = serializeAudioPayload(segs)
+      expect(serialized.segments).toHaveLength(1)
+      expect(serialized.segments[0].transcript).toBe('Hello')
+      expect(serialized.segments[0].speaker).toBe('Announcer')
+    })
+  })
+
+  describe('normalizeImagePayload', () => {
+    it('unwraps { regions: [...] } from init.sql database seed', () => {
+      const raw = {
+        regions: [{ x: 12.5, y: 34.0, width: 45.0, height: 30.0, label: 'Vehicle' }],
+      }
+      const boxes = normalizeImagePayload(raw, 'bbox') as any[]
+      expect(boxes).toHaveLength(1)
+      expect(boxes[0].label).toBe('Vehicle')
+      expect(boxes[0].x).toBe(12.5)
+      expect(boxes[0].id).toBeTruthy()
+    })
+
+    it('unwraps direct array for bbox', () => {
+      const raw = [{ id: 'b1', x: 10, y: 20, width: 30, height: 40, label: 'Person' }]
+      const boxes = normalizeImagePayload(raw, 'bbox') as any[]
+      expect(boxes).toHaveLength(1)
+      expect(boxes[0].id).toBe('b1')
+      expect(boxes[0].label).toBe('Person')
+    })
+
+    it('normalizes polygon payload with points', () => {
+      const raw = {
+        polygons: [
+          { points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }], label: 'Zone' },
+        ],
+      }
+      const polys = normalizeImagePayload(raw, 'polygon') as any[]
+      expect(polys).toHaveLength(1)
+      expect(polys[0].label).toBe('Zone')
+      expect(polys[0].points).toHaveLength(3)
+    })
+
+    it('normalizes classification labels from string array or object', () => {
+      const res1 = normalizeImagePayload(['Cat', 'Dog'], 'classification') as any
+      expect(res1.selectedLabels).toEqual(['Cat', 'Dog'])
+
+      const res2 = normalizeImagePayload({ selectedLabels: ['Bird'] }, 'classification') as any
+      expect(res2.selectedLabels).toEqual(['Bird'])
+    })
+  })
+
+  describe('normalizeTextPayload', () => {
+    it('unwraps entities from { entities: [...] }', () => {
+      const raw = {
+        entities: [{ start: 0, end: 5, text: 'Hello', label: 'Greeting' }],
+        sentiment: 'POSITIVE',
+      }
+      const res = normalizeTextPayload(raw)
+      expect(res.entities).toHaveLength(1)
+      expect(res.entities[0].label).toBe('Greeting')
+      expect(res.sentiment).toBe('POSITIVE')
+    })
+
+    it('supports direct array of entities', () => {
+      const raw = [{ start: 10, end: 14, text: 'John', label: 'PER' }]
+      const res = normalizeTextPayload(raw)
+      expect(res.entities).toHaveLength(1)
+      expect(res.entities[0].text).toBe('John')
+    })
+  })
+
+  describe('normalizeVideoPayload', () => {
+    it('unwraps timeline intervals from { intervals: [...] }', () => {
+      const raw = {
+        intervals: [{ start: 0, end: 5, label: 'Action 1' }],
+      }
+      const intervals = normalizeVideoPayload(raw, 'timeline') as any[]
+      expect(intervals).toHaveLength(1)
+      expect(intervals[0].label).toBe('Action 1')
+      expect(intervals[0].id).toBeTruthy()
+    })
+
+    it('normalizes video classification object', () => {
+      const raw = { label: 'Action', notes: 'Clear video' }
+      const res = normalizeVideoPayload(raw, 'classification') as any
+      expect(res.label).toBe('Action')
+      expect(res.notes).toBe('Clear video')
     })
   })
 })
