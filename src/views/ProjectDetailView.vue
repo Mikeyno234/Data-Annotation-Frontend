@@ -7,11 +7,13 @@ import ProjectDataItemsTable from '@/components/projects/ProjectDataItemsTable.v
 import UploadDatasetModal from '@/components/projects/UploadDatasetModal.vue'
 import CreateBatchModal from '@/components/projects/CreateBatchModal.vue'
 import CreateProjectModal from '@/components/projects/CreateProjectModal.vue'
-import ProjectBatchList from '@/components/projects/ProjectBatchList.vue'
 import BatchAssignModal from '@/components/projects/BatchAssignModal.vue'
 import Card from '@/components/ui/Card.vue'
 import CardContent from '@/components/ui/CardContent.vue'
+import Button from '@/components/ui/Button.vue'
+import Badge from '@/components/ui/Badge.vue'
 import { useProjectDetail } from '@/composables/useProjectDetail'
+import { Users, Layers, Plus, UploadCloud, Database } from 'lucide-vue-next'
 
 const route = useRoute()
 const projectId = route.params.id as string
@@ -45,6 +47,7 @@ const {
   showCreateBatchModal,
   isCreatingBatch,
   showUploadModal,
+  selectedBatchForUpload,
   selectedUploadFiles,
   uploadName,
   isUploading,
@@ -71,6 +74,10 @@ const {
   handleCheckoutNext,
   handleOpenEditModal,
   fetchProjectData,
+  activeBatchId,
+  activeBatch,
+  activeDatasetName,
+  selectActiveBatch,
 } = useProjectDetail(projectId)
 
 onMounted(fetchProjectData)
@@ -158,34 +165,149 @@ onMounted(fetchProjectData)
       </CardContent>
     </Card>
 
-    <!-- Workforce Batches Section (Extracted Subcomponent) -->
-    <ProjectBatchList
-      :batches="allBatches"
-      :can-manage-workforce="canManageWorkforce"
-      :can-upload-dataset="canUploadDataset"
-      @create-batch="openCreateBatchModal"
-      @assign-batch="openBatchAssignModal"
-      @upload-to-batch="openUploadModalForBatch"
-      @launch-batch="handleCheckoutNext"
-    />
+    <!-- Unified Workforce & Batch Allocations Section (Fundamental Hierarchy) -->
+    <div class="space-y-4">
+      <!-- Section Header with Batch Switcher & New Batch CTA -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-semibold text-foreground tracking-tight">Workforce & Batch Allocations</h2>
+          <p class="text-xs text-muted-foreground">
+            Partition batch workloads across annotator teams, review stages, and quality assurance
+          </p>
+        </div>
 
-    <!-- Data Items Table (Operational Dataset Items) -->
-    <ProjectDataItemsTable
-      :data-items="dataItems"
-      :selected-status-filter="selectedStatusFilter"
-      :my-in-progress-task="myInProgressTask"
-      :current-page="currentPage"
-      :page-limit="pageLimit"
-      :total-data-items="totalDataItems"
-      :total-pages="totalPages"
-      :is-loading="isLoading"
-      @update:selected-status-filter="selectedStatusFilter = $event"
-      @filter-change="handleStatusFilterChange"
-      @page-change="handlePageChange"
-      @limit-change="handleLimitChange"
-      @checkout-next="handleCheckoutNext"
-      @open-task="openTaskInWorkspace"
-    />
+        <div class="flex items-center gap-2">
+          <!-- Batch Switcher if multiple batches exist -->
+          <div v-if="allBatches.length > 1" class="flex items-center gap-1.5 p-1 bg-muted/50 rounded-lg border border-border/60">
+            <span class="text-[11px] text-muted-foreground px-1.5 font-medium">Batch:</span>
+            <button
+              v-for="b in allBatches"
+              :key="b.batch.id"
+              type="button"
+              :class="[
+                'px-2.5 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap cursor-pointer',
+                activeBatchId === b.batch.id
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground',
+              ]"
+              @click="selectActiveBatch(b.batch.id)"
+            >
+              {{ b.batch.name }}
+            </button>
+          </div>
+
+          <Button
+            v-if="canManageWorkforce"
+            variant="outline"
+            size="sm"
+            class="gap-1.5 text-xs h-8 cursor-pointer"
+            @click="openCreateBatchModal"
+          >
+            <Plus class="size-3.5" :stroke-width="1.8" />
+            <span>New Batch</span>
+          </Button>
+        </div>
+      </div>
+
+      <!-- If No Batches Exist -->
+      <div
+        v-if="allBatches.length === 0"
+        class="rounded-2xl border border-dashed border-border/80 bg-muted/10 p-10 text-center"
+      >
+        <Layers class="mx-auto size-9 text-muted-foreground/60" :stroke-width="1.4" />
+        <h4 class="mt-3 text-sm font-semibold text-foreground">No batches created yet</h4>
+        <p class="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
+          Batches divide datasets into structured workloads assigned to annotator teams.
+        </p>
+        <Button
+          v-if="canManageWorkforce"
+          variant="outline"
+          size="sm"
+          class="mt-4 gap-1.5 text-xs"
+          @click="openCreateBatchModal"
+        >
+          <Plus class="size-3.5" :stroke-width="1.8" />
+          <span>Create First Batch</span>
+        </Button>
+      </div>
+
+      <!-- Active Batch Content -->
+      <template v-else-if="activeBatch">
+        <!-- Active Batch Summary Card (Pool-based Workforce & Actions) -->
+        <Card class="border-border/70 shadow-xs">
+          <CardContent class="p-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground border border-border shrink-0">
+                <Layers class="size-4" :stroke-width="1.7" />
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-semibold text-foreground truncate">{{ activeBatch.name }}</h3>
+                  <Badge variant="secondary">{{ activeBatch.status || 'OPEN' }}</Badge>
+                </div>
+                <div class="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground">
+                  <span v-if="activeDatasetName" class="flex items-center gap-1">
+                    <Database class="size-3" :stroke-width="1.6" />
+                    {{ activeDatasetName }}
+                  </span>
+                  <span class="tabular-nums">
+                    {{ (activeBatch.total_items || itemStatusCounts.total || totalDataItems).toLocaleString() }} items
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <Users class="size-3" :stroke-width="1.6" />
+                    <span v-if="activeBatch.assignees && activeBatch.assignees.length > 0">
+                      {{ activeBatch.assignees.length }} annotator(s) assigned
+                    </span>
+                    <span v-else class="italic text-muted-foreground/80">No annotators assigned</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <Button
+                v-if="canUploadDataset"
+                variant="ghost"
+                size="sm"
+                class="h-8 px-2.5 text-xs gap-1.5 cursor-pointer"
+                @click="openUploadModalForBatch(activeBatch.id)"
+              >
+                <UploadCloud class="size-3.5" :stroke-width="1.6" />
+                <span>Add Data</span>
+              </Button>
+              <Button
+                v-if="canManageWorkforce"
+                variant="outline"
+                size="sm"
+                class="h-8 px-3 text-xs gap-1.5 cursor-pointer"
+                @click="openBatchAssignModal(activeBatch)"
+              >
+                <Users class="size-3.5" :stroke-width="1.6" />
+                <span>Assign Annotators</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Data Items Table -->
+        <ProjectDataItemsTable
+          :data-items="dataItems"
+          :selected-status-filter="selectedStatusFilter"
+          :my-in-progress-task="myInProgressTask"
+          :current-page="currentPage"
+          :page-limit="pageLimit"
+          :total-data-items="totalDataItems"
+          :total-pages="totalPages"
+          :is-loading="isLoading"
+          @update:selected-status-filter="selectedStatusFilter = $event"
+          @filter-change="handleStatusFilterChange"
+          @page-change="handlePageChange"
+          @limit-change="handleLimitChange"
+          @checkout-next="handleCheckoutNext"
+          @open-task="openTaskInWorkspace"
+        />
+      </template>
+    </div>
 
     <!-- Batch Assign Workforce Modal (Extracted Subcomponent) -->
     <BatchAssignModal
@@ -219,7 +341,6 @@ onMounted(fetchProjectData)
       :selected-files="selectedUploadFiles"
       :is-uploading="isUploading"
       :existing-batches="allBatches.map(b => b.batch)"
-      :available-annotators="filteredBatchAnnotators"
       @update:show-upload-modal="showUploadModal = $event"
       @select-files="handleFilesSelected"
       @clear-files="handleClearFiles"

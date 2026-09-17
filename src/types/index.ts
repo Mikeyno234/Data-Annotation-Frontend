@@ -237,6 +237,7 @@ export interface DataItem {
   id: number
   batch_id: number
   project_id: number
+  job_id?: number
   external_id?: string
   modality: ModalityType
   file_name: string
@@ -480,5 +481,3 @@ export interface ProjectStats {
   completion_percentage: number
   my_active_task?: DataItem | null
 }
-
-

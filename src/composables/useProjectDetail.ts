@@ -119,10 +119,10 @@ export function useProjectDetail(projectId: string | number) {
       return isEligibleRole && isActive
     })
 
-    if (filterOrgOnly.value && project.value?.organization_id) {
+    if (project.value?.organization_id) {
       const targetOrg = project.value.organization_id
       list = list.filter(
-        (u) => !u.organization_id || u.organization_id === targetOrg || u.organization?.id === targetOrg
+        (u) => u.organization_id === targetOrg || u.organization?.id === targetOrg
       )
     }
 
@@ -144,11 +144,7 @@ export function useProjectDetail(projectId: string | number) {
     selectedBatchToAssign.value = batch
     selectedBatchUserIds.value = batch.assignees ? batch.assignees.map((u) => u.id) : []
     annotatorSearchQuery.value = ''
-    if (authStore.isSuperAdmin) {
-      projectForm.fetchAnnotators()
-    } else {
-      projectForm.fetchAnnotators(project.value?.organization_id)
-    }
+    projectForm.fetchAnnotators(project.value?.organization_id)
     showBatchAssignModal.value = true
   }
 
@@ -181,11 +177,7 @@ export function useProjectDetail(projectId: string | number) {
   const isCreatingBatch = ref(false)
 
   function openCreateBatchModal() {
-    if (authStore.isSuperAdmin) {
-      projectForm.fetchAnnotators()
-    } else {
-      projectForm.fetchAnnotators(project.value?.organization_id)
-    }
+    projectForm.fetchAnnotators(project.value?.organization_id)
     showCreateBatchModal.value = true
   }
 
@@ -268,11 +260,6 @@ export function useProjectDetail(projectId: string | number) {
       const targetBatchId = payload?.batchId || selectedBatchForUpload.value
       if (targetBatchId) {
         formData.append('batch_id', String(targetBatchId))
-      }
-      if (payload?.assigneeIds && payload.assigneeIds.length > 0) {
-        payload.assigneeIds.forEach((uid) => {
-          formData.append('assignee_ids', String(uid))
-        })
       }
 
       selectedUploadFiles.value.forEach((file) => {
@@ -435,6 +422,30 @@ export function useProjectDetail(projectId: string | number) {
     }
   }
 
+  // Active batch selection (batch switcher). Annotators pull work from the
+  // batch pool; membership is governed by batch assignees, not per-item jobs.
+  const activeBatchId = ref<number | null>(null)
+
+  const activeBatch = computed<Batch | null>(() => {
+    if (!activeBatchId.value) {
+      return allBatches.value[0]?.batch || null
+    }
+    const found = allBatches.value.find((b) => b.batch.id === activeBatchId.value)
+    return found ? found.batch : null
+  })
+
+  const activeDatasetName = computed(() => {
+    if (!activeBatchId.value) {
+      return allBatches.value[0]?.datasetName || ''
+    }
+    const found = allBatches.value.find((b) => b.batch.id === activeBatchId.value)
+    return found ? found.datasetName : ''
+  })
+
+  function selectActiveBatch(batchId: number) {
+    activeBatchId.value = batchId
+  }
+
   // Master fetcher
   async function fetchProjectData() {
     isLoading.value = true
@@ -453,10 +464,10 @@ export function useProjectDetail(projectId: string | number) {
         fetchDataItems(),
       ])
 
-      if (authStore.isSuperAdmin) {
-        await projectForm.fetchAnnotators()
-      } else {
-        await projectForm.fetchAnnotators(project.value?.organization_id)
+      await projectForm.fetchAnnotators(project.value?.organization_id)
+
+      if (allBatches.value.length > 0 && !activeBatchId.value) {
+        activeBatchId.value = allBatches.value[0].batch.id
       }
     } catch (err: any) {
       toast.error('Failed to load project details', err?.message)
@@ -523,5 +534,9 @@ export function useProjectDetail(projectId: string | number) {
     handleCheckoutNext,
     handleOpenEditModal,
     fetchProjectData,
+    activeBatchId,
+    activeBatch,
+    activeDatasetName,
+    selectActiveBatch,
   }
 }
