@@ -190,6 +190,7 @@ export interface Project {
   created_by_id: number
   organization?: Organization
   datasets?: Dataset[]
+  assignees?: User[]
   created_at: string
 }
 
@@ -228,6 +229,7 @@ export interface Batch {
   priority: string
   due_date?: string
   assigned_to_id?: number
+  assignees?: User[]
   data_items?: DataItem[]
 }
 
@@ -464,3 +466,19 @@ export interface ExportFormatOption {
   desc: string
   ext: string
 }
+
+export interface ProjectStats {
+  total_items: number
+  unassigned: number
+  in_progress: number
+  annotated: number
+  qa_pending: number
+  rework: number
+  completed: number
+  escalated: number
+  can_export: boolean
+  completion_percentage: number
+  my_active_task?: DataItem | null
+}
+
+

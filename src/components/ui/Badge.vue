@@ -15,12 +15,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const badgeClasses = computed(() => {
-  const base = 'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium transition-all focus:outline-none select-none tracking-tight'
+  const base = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all focus:outline-none select-none tracking-tight'
 
   const variants = {
     default: 'bg-primary/10 text-primary border border-primary/20',
-    secondary: 'bg-muted text-muted-foreground border border-border/60',
-    outline: 'bg-transparent text-foreground border border-border',
+    secondary: 'bg-muted/70 text-muted-foreground border border-border/70',
+    outline: 'bg-transparent text-foreground border border-border/80',
     destructive: 'bg-destructive/10 text-destructive border border-destructive/20',
     success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
     warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
