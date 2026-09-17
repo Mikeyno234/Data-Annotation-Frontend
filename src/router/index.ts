@@ -64,9 +64,7 @@ const routes = [
   },
   {
     path: '/qa',
-    name: 'qa',
-    component: () => import('@/views/QAView.vue'),
-    meta: { requiresAuth: true, permission: 'qa.view' },
+    redirect: '/reviews?tab=qa',
   },
   {
     path: '/admin/users',

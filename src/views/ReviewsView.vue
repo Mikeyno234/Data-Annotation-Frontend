@@ -13,6 +13,7 @@ import Pagination from '@/components/ui/Pagination.vue'
 import ReviewCard from '@/components/reviews/ReviewCard.vue'
 import ProjectReviewCard from '@/components/reviews/ProjectReviewCard.vue'
 import ReviewRejectModal from '@/components/reviews/ReviewRejectModal.vue'
+import QAView from '@/views/QAView.vue'
 import {
   FileCheck2,
   Search,
@@ -250,6 +251,63 @@ function toggleItemSelection(annotationId: number) {
   }
 }
 
+// Top-Level Reviews vs QA Tab
+const activeTab = ref<'reviews' | 'qa'>(route.query.tab === 'qa' ? 'qa' : 'reviews')
+watch(() => route.query.tab, (tab) => {
+  if (tab === 'qa') {
+    activeTab.value = 'qa'
+  } else {
+    activeTab.value = 'reviews'
+  }
+})
+function switchTab(tab: 'reviews' | 'qa') {
+  activeTab.value = tab
+  router.replace({ query: { ...route.query, tab: tab === 'qa' ? 'qa' : undefined } })
+}
+
+// In-Place Edit & Approve Modal State
+const showEditApproveModal = ref(false)
+const editApproveReview = ref<Review | null>(null)
+const editApprovePayloadString = ref('')
+const editApproveComment = ref('Directly verified and corrected in-place')
+const isSubmittingEditApprove = ref(false)
+
+function openEditApproveModal(rev: Review) {
+  editApproveReview.value = rev
+  editApprovePayloadString.value = JSON.stringify(rev.annotation?.payload || {}, null, 2)
+  editApproveComment.value = 'Directly verified and corrected in-place'
+  showEditApproveModal.value = true
+}
+
+async function handleConfirmEditApprove() {
+  if (!editApproveReview.value) return
+  let parsedPayload: any
+  try {
+    parsedPayload = JSON.parse(editApprovePayloadString.value)
+  } catch (err: any) {
+    toast.error('Invalid JSON Payload', 'Please correct JSON syntax before approving.')
+    return
+  }
+
+  isSubmittingEditApprove.value = true
+  try {
+    await workflowApi.approveReview(
+      editApproveReview.value.annotation_id,
+      editApproveComment.value,
+      parsedPayload
+    )
+    toast.success('Annotation Fixed & Approved', `Annotation #${editApproveReview.value.annotation_id} updated and approved`)
+    showEditApproveModal.value = false
+    selectedAnnotationIds.value.delete(editApproveReview.value.annotation_id)
+    fetchReviews()
+    fetchProjects()
+  } catch (err: any) {
+    toast.error('Fix & Approve Failed', err?.message)
+  } finally {
+    isSubmittingEditApprove.value = false
+  }
+}
+
 // --- SINGLE APPROVE & REJECT ---
 
 async function handleApproveSingle(rev: Review) {
@@ -269,6 +327,7 @@ function openSingleRejectModal(rev: Review) {
   rejectComment.value = ''
   showRejectModal.value = true
 }
+
 
 // --- BATCH APPROVE & REJECT ---
 
@@ -397,8 +456,52 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6 max-w-7xl mx-auto pb-12">
-    <!-- Top Header & Breadcrumb -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <!-- Master Unified Navigation: Review Queue vs QA Inspection -->
+    <div class="flex items-center gap-1.5 border-b border-border/80 pb-3">
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer select-none"
+        :class="
+          activeTab === 'reviews'
+            ? 'bg-foreground text-background shadow-2xs font-semibold'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+        "
+        @click="switchTab('reviews')"
+      >
+        <FileCheck2 class="size-3.5" :stroke-width="1.6" />
+        <span>Review Queue</span>
+        <span
+          v-if="totalPendingReviews > 0"
+          class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold tabular-nums"
+        >
+          {{ totalPendingReviews }}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer select-none"
+        :class="
+          activeTab === 'qa'
+            ? 'bg-foreground text-background shadow-2xs font-semibold'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+        "
+        @click="switchTab('qa')"
+      >
+        <CheckCircle2 class="size-3.5" :stroke-width="1.6" />
+        <span>QA Inspection & Consensus</span>
+      </button>
+    </div>
+
+    <!-- Render QA Inspection View if activeTab === 'qa' -->
+    <div v-if="activeTab === 'qa'">
+      <QAView />
+    </div>
+
+    <!-- Otherwise render Review Queue -->
+    <div v-else class="flex flex-col gap-6">
+      <!-- Top Header & Breadcrumb -->
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="space-y-1">
         <!-- Back button if in Project View -->
         <button
@@ -742,6 +845,7 @@ onMounted(async () => {
             @update:selected="toggleItemSelection(rev.annotation_id)"
             @inspect="router.push(`/workspace?task_id=${$event}`)"
             @approve="handleApproveSingle"
+            @editApprove="openEditApproveModal"
             @reject="openSingleRejectModal"
           />
         </div>
@@ -760,6 +864,73 @@ onMounted(async () => {
         </Card>
       </div>
     </template>
+    </div>
+
+    <!-- Direct In-Place Edit & Approve Modal -->
+    <Modal
+      :open="showEditApproveModal"
+      title="Direct In-Place Edit & Approve"
+      description="Reviewer/QA can directly modify and approve the annotation payload in a single step (Fix & Accept)."
+      maxWidth="max-w-2xl"
+      @close="showEditApproveModal = false; editApproveReview = null"
+    >
+      <div v-if="editApproveReview" class="space-y-4 p-1">
+        <div class="p-3 rounded-lg border border-border bg-muted/30 flex items-center justify-between text-xs">
+          <div>
+            <span class="font-semibold text-foreground">Annotation #{{ editApproveReview.annotation_id }}</span>
+            <div class="text-[11px] text-muted-foreground mt-0.5">
+              File: {{ editApproveReview.annotation?.data_item?.file_name || 'Task Item' }}
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+            Fix & Accept
+          </span>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reviewer/QA Note</label>
+          <input
+            v-model="editApproveComment"
+            type="text"
+            class="w-full h-9 rounded-md border border-border bg-card px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+            placeholder="e.g. Corrected bounding box coordinates and accepted."
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Annotation Payload (JSON)</label>
+          <textarea
+            v-model="editApprovePayloadString"
+            rows="12"
+            class="w-full rounded-md border border-border bg-background p-3 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+            placeholder="{ ... }"
+          ></textarea>
+          <p class="text-[11px] text-muted-foreground">
+            Modify the geometry coordinates, labels, or attributes above. Submitting records a FIXED_ACCEPTED verdict and persists the new payload.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <Button
+            variant="ghost"
+            type="button"
+            size="sm"
+            @click="showEditApproveModal = false; editApproveReview = null"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            :disabled="isSubmittingEditApprove"
+            @click="handleConfirmEditApprove"
+          >
+            <RefreshCw v-if="isSubmittingEditApprove" class="size-3.5 animate-spin mr-1.5" />
+            <span>Confirm Fix & Approve</span>
+          </Button>
+        </div>
+      </div>
+    </Modal>
 
     <ReviewRejectModal
       :open="showRejectModal"
