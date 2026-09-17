@@ -9,6 +9,7 @@ import VisualizerImage from './visualizer/VisualizerImage.vue'
 import VisualizerAudio from './visualizer/VisualizerAudio.vue'
 import VisualizerText from './visualizer/VisualizerText.vue'
 import VisualizerVideo from './visualizer/VisualizerVideo.vue'
+import { colorForLabel } from '@/utils/annotation'
 
 const props = defineProps<{
   payload: any
@@ -40,13 +41,13 @@ let activeSegmentEnd = 0
 // Parse structured payload strictly: direct 'a = a' mapping without fallback chains
 const parsedData = computed(() => {
   const p = props.payload
-  if (!p) return { type: 'empty', regions: [], labels: [] }
+  if (!p) return { type: 'empty' as const, regions: [], labels: [] }
 
   // 1. Image Bounding Boxes (array of boxes or { regions: [...] })
   const boxes = Array.isArray(p) ? p : (Array.isArray(p.regions) ? p.regions : null)
   if (boxes && boxes.length > 0 && boxes[0].x !== undefined) {
     return {
-      type: 'image_boxes',
+      type: 'image_boxes' as const,
       regions: boxes.map((box: any) => ({
         id: box.id,
         label: box.label,
@@ -54,7 +55,7 @@ const parsedData = computed(() => {
         y: box.y,
         width: box.width,
         height: box.height,
-        color: box.color || getColorForLabel(box.label),
+        color: box.color || colorForLabel(box.label),
         confidence: box.confidence,
       })),
       labels: [...new Set(boxes.map((b: any) => b.label))] as string[],
@@ -64,14 +65,14 @@ const parsedData = computed(() => {
   // 2. Audio Segments (canonical { segments: [...] })
   if (p.segments && Array.isArray(p.segments)) {
     return {
-      type: 'audio_segments',
+      type: 'audio_segments' as const,
       segments: p.segments.map((s: any) => ({
         id: s.id,
         speaker: s.speaker,
         start: s.start,
         end: s.end,
         transcript: s.transcript,
-        color: getColorForLabel(s.speaker),
+        color: colorForLabel(s.speaker),
       })),
       labels: [...new Set(p.segments.map((s: any) => s.speaker))] as string[],
     }
@@ -80,22 +81,15 @@ const parsedData = computed(() => {
   // 3. Classification (Video, Text, or Image classification)
   if (p.label !== undefined) {
     return {
-      type: 'classification',
+      type: 'classification' as const,
       label: p.label,
       confidence: p.confidence,
       notes: p.notes,
     }
   }
 
-  return { type: 'generic', data: p }
+  return { type: 'generic' as const, data: p }
 })
-
-function getColorForLabel(label: string): string {
-  const colors = ['#fa694c', '#0ea5e9', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#84cc16']
-  let hash = 0
-  for (let i = 0; i < label.length; i++) hash = label.charCodeAt(i) + ((hash << 5) - hash)
-  return colors[Math.abs(hash) % colors.length]
-}
 
 function toggleMasterAudioPlay() {
   if (!audioRef.value) return

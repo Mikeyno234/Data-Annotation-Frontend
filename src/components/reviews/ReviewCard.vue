@@ -20,6 +20,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'inspect', taskItemId: number | undefined): void
   (e: 'approve', rev: Review): void
+  (e: 'editApprove', rev: Review): void
   (e: 'reject', rev: Review): void
   (e: 'update:selected', value: boolean): void
 }>()
@@ -107,6 +108,16 @@ function getAnnotatorName(rev: Review): string {
           >
             <X class="size-3" :stroke-width="1.6" />
             <span>Reject</span>
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 h-6.5 px-2 rounded text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer border border-transparent hover:border-amber-500/20"
+            title="Directly edit annotation payload in-place and approve"
+            @click="emit('editApprove', rev)"
+          >
+            <FileCode2 class="size-3" :stroke-width="1.6" />
+            <span>Edit & Approve</span>
           </button>
 
           <button

@@ -78,8 +78,8 @@ function savePreferences() {
 
         <div class="flex items-center justify-between py-2 border-b border-border/40">
           <div>
-            <div class="font-bold text-foreground">Show AI Pre-label Confidence</div>
-            <div class="text-[11px] text-muted-foreground">Display % badges on bounding boxes and spans</div>
+            <div class="font-bold text-foreground">Show Annotation Quality Indicators</div>
+            <div class="text-[11px] text-muted-foreground">Display score and consensus badges on reviewed items</div>
           </div>
           <input
             v-model="preferences.showConfidenceScores"

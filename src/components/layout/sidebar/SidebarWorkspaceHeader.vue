@@ -10,15 +10,10 @@ import { Layers } from 'lucide-vue-next'
         <Layers class="size-3.5" :stroke-width="1.6" />
       </div>
 
-      <!-- Static Application Brand Name -->
-      <div class="flex items-center gap-1.5 min-w-0">
-        <span class="truncate text-xs font-semibold tracking-tight text-sidebar-foreground">
-          Data Annotation
-        </span>
-        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-muted-foreground border border-sidebar-border">
-          AI
-        </span>
-      </div>
+      <!-- Application Brand Name -->
+      <span class="truncate text-xs font-semibold tracking-tight text-sidebar-foreground">
+        Data Annotation
+      </span>
     </div>
   </div>
 </template>

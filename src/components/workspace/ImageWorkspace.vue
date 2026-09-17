@@ -8,7 +8,6 @@ import { useCanvasViewport } from '@/composables/workspace/useCanvasViewport'
 import { useBBoxInteraction } from '@/composables/workspace/useBBoxInteraction'
 import { usePolygonDrawing } from '@/composables/workspace/usePolygonDrawing'
 import { renderCanvasWorkspace } from '@/composables/workspace/canvasRenderer'
-import { generateAutoPrelabelData } from '@/composables/workspace/imagePrelabel'
 import { toast } from '@/utils/toast'
 import WorkspaceShell from '@/components/workspace/WorkspaceShell.vue'
 import WorkspaceFloatingToolbar, { type CanvasTool, type WorkspaceSubtype } from '@/components/workspace/WorkspaceFloatingToolbar.vue'
@@ -275,35 +274,6 @@ function resetDraft() {
   session.pushState([])
   drawCanvas()
   toast.info('Draft Reset', 'All annotations cleared.')
-}
-
-function autoPrelabel() {
-  const canvas = canvasRef.value
-  if (!canvas) return
-  const labelObj = availableLabels.value[0]
-
-  if (detectedSubtype.value === 'classification') {
-    if (labelObj && !selectedClasses.value.includes(labelObj.name)) toggleClass(labelObj.name)
-    toast.success('AI Assisted', 'Top confidence category applied.')
-    return
-  }
-
-  const { poly, box } = generateAutoPrelabelData(detectedSubtype.value, canvas.width, canvas.height, labelObj)
-  if (poly) {
-    const updated = [...currentPolygons.value, poly]
-    session.payload.value = updated
-    selectedItemId.value = poly.id
-    session.pushState(updated)
-    drawCanvas()
-    toast.success('AI Assisted', 'Suggested polygon segmentation generated.')
-  } else if (box) {
-    const updated = [...currentBoxes.value, box]
-    session.payload.value = updated
-    selectedItemId.value = box.id
-    session.pushState(updated)
-    drawCanvas()
-    toast.success('AI Assisted', 'Suggested object region detected.')
-  }
 }
 
 const hotkeyHints = computed(() => {

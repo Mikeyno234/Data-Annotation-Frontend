@@ -83,9 +83,6 @@ const dynamicTree = computed<NavigationNode[]>(() => {
     if (authStore.hasPermission('review.view')) {
       fallbackWorkspace.push({ id: 4, code: 'REVIEWS', name: 'Reviews', path: '/reviews', icon: FileCheck2, group: 'Workspace', children: [] })
     }
-    if (authStore.hasPermission('qa.view')) {
-      fallbackWorkspace.push({ id: 5, code: 'QA', name: 'Quality', path: '/qa', icon: CheckCircle2, group: 'Workspace', children: [] })
-    }
 
     const fallbackAdminChildren: NavigationNode[] = []
     if (authStore.hasPermission('user.view')) {
@@ -120,6 +117,7 @@ const dynamicTree = computed<NavigationNode[]>(() => {
   const roots = dbMenus.value.filter((m) => !m.parent_id)
   const isMenuAllowed = (m: Menu): boolean => {
     if (m.is_active === false) return false
+    if (m.code === 'QA' || m.path === '/qa') return false
     if (!m.levels || m.levels.length === 0) return true
     return m.levels.some((lvl) => lvl.is_active)
   }
