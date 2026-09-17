@@ -6,6 +6,15 @@ import Badge from '@/components/ui/Badge.vue'
 import Card from '@/components/ui/Card.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '@/components/ui/table'
+import {
   SlidersHorizontal,
   RotateCcw,
   Play,
@@ -31,8 +40,6 @@ const emit = defineEmits<{
   pageChange: [page: number]
   limitChange: [limit: number]
 }>()
-
-
 </script>
 
 <template>
@@ -74,55 +81,58 @@ const emit = defineEmits<{
     </div>
 
     <Card class="overflow-hidden shadow-2xs border border-border">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-muted/40 text-[11px] font-medium text-muted-foreground border-b border-border">
-            <tr>
-              <th class="px-5 py-3">Task ID</th>
-              <th class="px-5 py-3">File Name</th>
-              <th class="px-5 py-3">Modality</th>
-              <th class="px-5 py-3">Status</th>
-              <th class="px-5 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border/60">
-            <tr v-for="item in dataItems" :key="item.id" class="transition-colors hover:bg-muted/30">
-              <td class="px-5 py-3.5 tabular-nums font-medium text-muted-foreground">#{{ item.id }}</td>
-              <td class="px-5 py-3.5 text-foreground font-medium">{{ item.file_name }}</td>
-              <td class="px-5 py-3.5">
-                <Badge variant="outline" class="capitalize">{{ item.modality.toLowerCase() }}</Badge>
-              </td>
+      <Table>
+        <TableHeader>
+          <TableRow class="bg-muted/40 hover:bg-muted/40">
+            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">Task ID</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">File Name</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">Modality</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">Status</TableHead>
+            <TableHead class="px-5 py-3 text-right text-[11px] font-medium text-muted-foreground">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableEmpty v-if="!isLoading && dataItems.length === 0" :colspan="5">
+            No data items found for this filter.
+          </TableEmpty>
 
-              <td class="px-5 py-3.5">
-                <Badge :variant="getStatusConfig(item.status).badgeVariant">
-                  {{ getStatusConfig(item.status).label }}
-                </Badge>
-              </td>
-              <td class="px-5 py-3.5 text-right">
-                <Button
-                  v-if="(item.status === 'IN_PROGRESS' || item.status === 'REWORK') && item.locked_by_id === currentUserId"
-                  size="sm"
-                  class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
-                  @click="emit('openTask', item)"
-                >
-                  <RotateCcw class="size-3" :stroke-width="1.6" />
-                  <span>Continue</span>
-                </Button>
-                <Button
-                  v-else-if="item.status === 'UNASSIGNED' || item.status === 'REWORK'"
-                  variant="outline"
-                  size="sm"
-                  class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
-                  @click="emit('openTask', item)"
-                >
-                  <Play class="size-2.5 fill-current" />
-                  <span>Annotate</span>
-                </Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <TableRow v-for="item in dataItems" :key="item.id">
+            <TableCell class="px-5 py-3.5 tabular-nums font-medium text-muted-foreground">#{{ item.id }}</TableCell>
+            <TableCell class="px-5 py-3.5 text-foreground font-medium">{{ item.file_name }}</TableCell>
+            <TableCell class="px-5 py-3.5">
+              <Badge variant="outline" class="capitalize">{{ item.modality.toLowerCase() }}</Badge>
+            </TableCell>
+
+            <TableCell class="px-5 py-3.5">
+              <Badge :variant="getStatusConfig(item.status).badgeVariant">
+                {{ getStatusConfig(item.status).label }}
+              </Badge>
+            </TableCell>
+
+            <TableCell class="px-5 py-3.5 text-right">
+              <Button
+                v-if="(item.status === 'IN_PROGRESS' || item.status === 'REWORK') && item.locked_by_id === currentUserId"
+                size="sm"
+                class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
+                @click="emit('openTask', item)"
+              >
+                <RotateCcw class="size-3" :stroke-width="1.6" />
+                <span>Continue</span>
+              </Button>
+              <Button
+                v-else-if="item.status === 'UNASSIGNED' || item.status === 'REWORK'"
+                variant="outline"
+                size="sm"
+                class="h-7 px-2.5 text-xs gap-1 font-medium rounded-md cursor-pointer"
+                @click="emit('openTask', item)"
+              >
+                <Play class="size-2.5 fill-current" />
+                <span>Annotate</span>
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
 
       <!-- Pagination Bar -->
       <div class="px-5 py-2 border-t border-muted/20">

@@ -47,7 +47,7 @@ export function useProjectForm(onSuccess: () => void) {
 
       if (targetOrgId && targetOrgId > 0) {
         filtered = filtered.filter(
-          (u) => !u.organization_id || u.organization_id === targetOrgId || u.organization?.id === targetOrgId
+          (u) => u.organization_id === targetOrgId || u.organization?.id === targetOrgId
         )
       }
       availableAnnotators.value = filtered

@@ -8,16 +8,18 @@ import Badge from '@/components/ui/Badge.vue'
 import Card from '@/components/ui/Card.vue'
 import CardContent from '@/components/ui/CardContent.vue'
 import {
-  X,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet'
+import {
   ExternalLink,
-  Layers,
   UploadCloud,
   Play,
-  Calendar,
   Building2,
-  Cpu,
-  Database,
-  CheckCircle2,
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -31,6 +33,13 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+
+const isOpen = computed({
+  get: () => props.open && !!props.project,
+  set: (val: boolean) => {
+    if (!val) emit('close')
+  },
+})
 
 const modalityConfig = computed(() => {
   return getModalityConfig(props.project?.modality)
@@ -72,73 +81,30 @@ function formatDate(dateStr?: string) {
 </script>
 
 <template>
-  <!-- Backdrop -->
-  <Transition
-    enter-active-class="transition-opacity duration-200 ease-out"
-    enter-from-class="opacity-0"
-    enter-to-class="opacity-100"
-    leave-active-class="transition-opacity duration-150 ease-in"
-    leave-from-class="opacity-100"
-    leave-to-class="opacity-0"
-  >
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs cursor-pointer"
-      @click="emit('close')"
-      aria-hidden="true"
-    />
-  </Transition>
-
-  <!-- Side Panel Drawer (SaaS Search-Flows Quick View) -->
-  <Transition
-    enter-active-class="transition-transform duration-250 ease-out"
-    enter-from-class="translate-x-full"
-    enter-to-class="translate-x-0"
-    leave-active-class="transition-transform duration-200 ease-in"
-    leave-from-class="translate-x-0"
-    leave-to-class="translate-x-full"
-  >
-    <aside
-      v-if="open && project"
-      class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border/80 bg-card text-card-foreground shadow-xl sm:max-w-lg"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="`Preview for ${project.name}`"
-      @keydown.esc="emit('close')"
-    >
+  <Sheet :open="isOpen" @update:open="(val) => isOpen = val">
+    <SheetContent v-if="project" side="right" class="flex flex-col p-0 sm:max-w-lg">
       <!-- Drawer Header -->
-      <div class="flex items-start justify-between border-b border-border/70 p-5">
-        <div class="space-y-1.5 pr-4">
-          <div class="flex items-center gap-2">
-            <Badge :variant="project.status === 'ACTIVE' ? 'success' : 'secondary'">
-              {{ project.status || 'ACTIVE' }}
-            </Badge>
-            <span class="font-mono text-[11px] text-muted-foreground uppercase">
-              {{ project.code }}
-            </span>
-          </div>
-          <h2 class="text-lg font-semibold tracking-tight text-foreground line-clamp-1">
-            {{ project.name }}
-          </h2>
-          <p v-if="project.organization?.name" class="flex items-center gap-1 text-xs text-muted-foreground">
-            <Building2 class="size-3.5" :stroke-width="1.6" />
-            <span>{{ project.organization.name }}</span>
-          </p>
+      <SheetHeader class="border-b border-border/70 p-5 space-y-1.5 pr-12">
+        <div class="flex items-center gap-2">
+          <Badge :variant="project.status === 'ACTIVE' ? 'success' : 'secondary'">
+            {{ project.status || 'ACTIVE' }}
+          </Badge>
+          <span class="font-mono text-[11px] text-muted-foreground uppercase">
+            {{ project.code }}
+          </span>
         </div>
+        <SheetTitle class="text-lg font-semibold tracking-tight text-foreground line-clamp-1">
+          {{ project.name }}
+        </SheetTitle>
+        <SheetDescription v-if="project.organization?.name" class="flex items-center gap-1 text-xs text-muted-foreground">
+          <Building2 class="size-3.5" :stroke-width="1.6" />
+          <span>{{ project.organization.name }}</span>
+        </SheetDescription>
+      </SheetHeader>
 
-        <button
-          type="button"
-          class="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
-          @click="emit('close')"
-          aria-label="Close preview drawer"
-        >
-          <X class="size-4" :stroke-width="2" />
-        </button>
-      </div>
-
-      <!-- Drawer Content -->
+      <!-- Drawer Body -->
       <div class="flex-1 overflow-y-auto p-5 space-y-6">
-        <!-- Modality & Engine Banner (Coss UI Card Frame) -->
+        <!-- Modality & Engine Banner -->
         <Card class="border-border/60 bg-muted/20">
           <CardContent class="p-4 space-y-3">
             <div class="flex items-center justify-between">
@@ -167,7 +133,7 @@ function formatDate(dateStr?: string) {
           </CardContent>
         </Card>
 
-        <!-- KPI Metrics Grid (TailAdmin 3-column micro grid) -->
+        <!-- KPI Metrics Grid -->
         <div class="grid grid-cols-3 gap-2.5">
           <div class="rounded-xl border border-border/70 bg-card p-3 text-center">
             <div class="text-[11px] font-medium text-muted-foreground">Batches</div>
@@ -191,7 +157,7 @@ function formatDate(dateStr?: string) {
           </div>
         </div>
 
-        <!-- Configuration Metadata Preview -->
+        <!-- Configuration Details -->
         <div class="space-y-2">
           <div class="text-xs font-semibold text-foreground tracking-tight">Configuration Details</div>
           <div class="rounded-xl border border-border/70 bg-card divide-y divide-border/50 text-xs">
@@ -217,8 +183,8 @@ function formatDate(dateStr?: string) {
         </div>
       </div>
 
-      <!-- Drawer Footer Action Bar -->
-      <div class="border-t border-border/70 p-4 bg-muted/10 flex items-center justify-between gap-3">
+      <!-- Drawer Footer -->
+      <SheetFooter class="border-t border-border/70 p-4 bg-muted/10 flex sm:flex-row items-center justify-between gap-3">
         <Button
           variant="outline"
           size="sm"
@@ -248,7 +214,7 @@ function formatDate(dateStr?: string) {
           <span>Open Full</span>
           <ExternalLink class="size-3.5" :stroke-width="1.6" />
         </Button>
-      </div>
-    </aside>
-  </Transition>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
 </template>
