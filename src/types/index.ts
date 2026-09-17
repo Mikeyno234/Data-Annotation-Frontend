@@ -246,7 +246,9 @@ export interface DataItem {
   metadata?: Record<string, unknown> | null
   status: TaskStatus
   locked_by_id?: number
+  locked_by?: User
   locked_until?: string
+  batch?: Batch
   draft_payload?: AnnotationPayload | null
   draft_saved_at?: string
   // review_round counts completed rework cycles; last_rejection_reason carries

@@ -62,6 +62,7 @@ export function useProjectDetail(projectId: string | number) {
 
   // Data Items filtering & pagination state
   const selectedStatusFilter = ref<TaskStatus | ''>('')
+  const selectedBatchFilter = ref<number | ''>('')
   const currentPage = ref(1)
   const pageLimit = ref(10)
   const totalDataItems = ref(0)
@@ -372,6 +373,7 @@ export function useProjectDetail(projectId: string | number) {
     try {
       const res: any = await annotationsApi.getDataItems({
         project_id: Number(projectId),
+        batch_id: selectedBatchFilter.value ? Number(selectedBatchFilter.value) : undefined,
         status: selectedStatusFilter.value || undefined,
         page: currentPage.value,
         limit: pageLimit.value,
@@ -393,6 +395,11 @@ export function useProjectDetail(projectId: string | number) {
   }
 
   function handleStatusFilterChange() {
+    currentPage.value = 1
+    fetchDataItems()
+  }
+
+  function handleBatchFilterChange() {
     currentPage.value = 1
     fetchDataItems()
   }
@@ -490,6 +497,7 @@ export function useProjectDetail(projectId: string | number) {
     allBatches,
     projectForm,
     selectedStatusFilter,
+    selectedBatchFilter,
     currentPage,
     pageLimit,
     totalDataItems,
@@ -528,6 +536,7 @@ export function useProjectDetail(projectId: string | number) {
     openExportModal,
     handleExportDataset,
     handleStatusFilterChange,
+    handleBatchFilterChange,
     handlePageChange,
     handleLimitChange,
     openTaskInWorkspace,

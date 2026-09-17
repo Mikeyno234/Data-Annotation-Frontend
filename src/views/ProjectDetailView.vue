@@ -30,6 +30,7 @@ const {
   allBatches,
   projectForm,
   selectedStatusFilter,
+  selectedBatchFilter,
   currentPage,
   pageLimit,
   totalDataItems,
@@ -68,6 +69,7 @@ const {
   openExportModal,
   handleExportDataset,
   handleStatusFilterChange,
+  handleBatchFilterChange,
   handlePageChange,
   handleLimitChange,
   openTaskInWorkspace,
@@ -292,6 +294,8 @@ onMounted(fetchProjectData)
         <!-- Data Items Table -->
         <ProjectDataItemsTable
           :data-items="dataItems"
+          :batches="allBatches.map(b => b.batch)"
+          :selected-batch-filter="selectedBatchFilter"
           :selected-status-filter="selectedStatusFilter"
           :my-in-progress-task="myInProgressTask"
           :current-page="currentPage"
@@ -299,7 +303,9 @@ onMounted(fetchProjectData)
           :total-data-items="totalDataItems"
           :total-pages="totalPages"
           :is-loading="isLoading"
+          @update:selected-batch-filter="selectedBatchFilter = $event"
           @update:selected-status-filter="selectedStatusFilter = $event"
+          @batch-filter-change="handleBatchFilterChange"
           @filter-change="handleStatusFilterChange"
           @page-change="handlePageChange"
           @limit-change="handleLimitChange"
