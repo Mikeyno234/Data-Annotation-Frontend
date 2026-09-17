@@ -1,7 +1,8 @@
 import { ref, computed } from 'vue'
 import { projectsApi } from '@/api/projects'
+import { adminApi } from '@/api/admin'
 import { metadataApi, type MetadataOption } from '@/api/metadata'
-import type { Project, LabelOption } from '@/types'
+import type { Project, LabelOption, User } from '@/types'
 import { toast } from '@/utils/toast'
 
 export function useProjectForm(onSuccess: () => void) {
@@ -15,7 +16,45 @@ export function useProjectForm(onSuccess: () => void) {
     annotation_type: '',
     tool_type: '',
     label_config: '',
+    assignee_ids: [] as number[],
   })
+
+  const availableAnnotators = ref<User[]>([])
+  const allUsers = ref<User[]>([])
+  async function fetchAnnotators(targetOrgId?: number) {
+    try {
+      const res: any = await adminApi.getUsers({
+        limit: 200,
+        organization_id: targetOrgId && targetOrgId > 0 ? targetOrgId : undefined,
+      })
+      const rawUsers: User[] = Array.isArray(res?.data)
+        ? res.data
+        : (Array.isArray(res) ? res : (res?.data?.data || []))
+
+      allUsers.value = rawUsers
+
+      let filtered = rawUsers.filter((u) => {
+        const roleName = (u.role?.name || '').toLowerCase()
+        const isEligibleRole =
+          roleName.includes('annotator') ||
+          roleName.includes('manager') ||
+          roleName.includes('reviewer') ||
+          roleName.includes('admin') ||
+          roleName === ''
+        const isActive = !u.status || u.status.toUpperCase() === 'ACTIVE'
+        return isEligibleRole && isActive
+      })
+
+      if (targetOrgId && targetOrgId > 0) {
+        filtered = filtered.filter(
+          (u) => !u.organization_id || u.organization_id === targetOrgId || u.organization?.id === targetOrgId
+        )
+      }
+      availableAnnotators.value = filtered
+    } catch {
+      availableAnnotators.value = []
+    }
+  }
 
   const projectLabels = ref<LabelOption[]>([])
   const modalityOptions = ref<{ value: string; label: string }[]>([])
@@ -233,9 +272,11 @@ export function useProjectForm(onSuccess: () => void) {
       annotation_type: '',
       tool_type: '',
       label_config: '',
+      assignee_ids: [],
     }
     projectLabels.value = []
     await refreshAnnotationTypes()
+    await fetchAnnotators()
 
     if (initialTemplateCode) {
       const match = annotationTypeOptions.value.find(
@@ -266,9 +307,11 @@ export function useProjectForm(onSuccess: () => void) {
       annotation_type: project.annotation_type,
       tool_type: project.tool_type || '',
       label_config: project.label_config || '',
+      assignee_ids: project.assignees?.map((u) => u.id) || [],
     }
     projectLabels.value = parseProjectLabels(project.label_config)
     await refreshAnnotationTypes()
+    await fetchAnnotators(project.organization_id)
     showCreateModal.value = true
   }
 
@@ -303,6 +346,8 @@ export function useProjectForm(onSuccess: () => void) {
     annotationTypeOptions,
     isMetadataLoading,
     selectedTaskObject,
+    availableAnnotators,
+    allUsers,
     onModalityChange,
     handleSelectTask,
     handleAiPromptSubmit,
@@ -310,8 +355,10 @@ export function useProjectForm(onSuccess: () => void) {
     handleUpdateProjectLabelColor,
     handleRemoveProjectLabel,
     fetchMetadata,
+    fetchAnnotators,
     openCreateModal,
     openEditModal,
     handleCreateProject,
   }
 }
+

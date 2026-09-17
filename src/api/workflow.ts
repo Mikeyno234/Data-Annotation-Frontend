@@ -20,8 +20,11 @@ export const workflowApi = {
   getReviewProjects(params?: { search?: string }) {
     return apiClient.get<{ success: boolean; data: ReviewProjectSummary[] }>('/reviews/projects', { params })
   },
-  approveReview(annotationId: number | string, comment?: string) {
-    return apiClient.post<{ success: boolean; data: Review }>(`/reviews/${annotationId}/approve`, { comment })
+  approveReview(annotationId: number | string, comment?: string, fixPayload?: any) {
+    return apiClient.post<{ success: boolean; data: Review }>(`/reviews/${annotationId}/approve`, {
+      comment,
+      fix_payload: fixPayload,
+    })
   },
   rejectReview(annotationId: number | string, comment: string) {
     return apiClient.post<{ success: boolean; data: Review }>(`/reviews/${annotationId}/reject`, { comment })

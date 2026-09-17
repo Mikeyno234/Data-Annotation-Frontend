@@ -25,10 +25,17 @@ export interface BoxCoords {
   height: number
 }
 
-const DEFAULT_LABEL_PALETTE = [
+export const DEFAULT_LABEL_PALETTE = [
   '#38bdf8', '#10b981', '#f59e0b', '#ec4899',
-  '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6'
-]
+  '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6',
+] as const
+
+/** Deterministic color for any label string, drawn from the shared palette. */
+export function colorForLabel(label: string, palette: readonly string[] = DEFAULT_LABEL_PALETTE): string {
+  let hash = 0
+  for (let i = 0; i < label.length; i++) hash = label.charCodeAt(i) + ((hash << 5) - hash)
+  return palette[Math.abs(hash) % palette.length]
+}
 
 function normalizeToolType(toolType?: string): ToolType | null {
   const t = (toolType || '').trim().toUpperCase() as ToolType

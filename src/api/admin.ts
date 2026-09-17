@@ -8,6 +8,7 @@ export const adminApi = {
     search?: string
     role_id?: number
     status?: string
+    organization_id?: number
   }) {
     return apiClient.get<{ success: boolean; data: User[]; pagination: Pagination }>('/users', { params })
   },
