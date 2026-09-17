@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DataItem } from '@/types'
+import type { DataItem, TaskStatus } from '@/types'
 import { getStatusConfig } from '@/utils/design'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
@@ -13,7 +13,7 @@ import {
 
 defineProps<{
   dataItems: DataItem[]
-  selectedStatusFilter: string
+  selectedStatusFilter: TaskStatus | ''
   myInProgressTask: DataItem | undefined
   currentUserId?: number
   currentPage: number
@@ -24,12 +24,12 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:selectedStatusFilter', val: string): void
-  (e: 'filterChange'): void
-  (e: 'checkoutNext'): void
-  (e: 'openTask', item: DataItem): void
-  (e: 'pageChange', page: number): void
-  (e: 'limitChange', limit: number): void
+  'update:selectedStatusFilter': [val: TaskStatus | '']
+  filterChange: []
+  checkoutNext: []
+  openTask: [item: DataItem]
+  pageChange: [page: number]
+  limitChange: [limit: number]
 }>()
 
 
@@ -46,9 +46,9 @@ const emit = defineEmits<{
           <select
             :value="selectedStatusFilter"
             class="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/15 cursor-pointer transition-all"
-            @change="emit('update:selectedStatusFilter', ($event.target as HTMLSelectElement).value); emit('filterChange')"
+            @change="emit('update:selectedStatusFilter', ($event.target as HTMLSelectElement).value as TaskStatus | ''); emit('filterChange')"
           >
-            <option value="ALL">All Statuses</option>
+            <option value="">All Statuses</option>
             <option value="UNASSIGNED">Unassigned</option>
             <option value="IN_PROGRESS">In Progress</option>
             <option value="ANNOTATED">Awaiting Review</option>

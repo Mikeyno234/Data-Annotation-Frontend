@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { MetadataOption } from '@/api/metadata'
-import type { LabelOption } from '@/types'
+import type { LabelOption, User } from '@/types'
 import Modal from '@/components/ui/Modal.vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -18,6 +18,7 @@ import {
   Tag,
   Plus,
   X,
+  Users,
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -30,12 +31,14 @@ const props = defineProps<{
     modality: string
     annotation_type: string
     label_config: string
+    assignee_ids?: number[]
   }
   projectLabels: LabelOption[]
   modalityOptions: { value: string; label: string }[]
   annotationTypeOptions: MetadataOption[]
   isMetadataLoading: boolean
   selectedTaskObject: MetadataOption | null
+  availableAnnotators?: User[]
 }>()
 
 const emit = defineEmits<{
@@ -104,6 +107,19 @@ function handleDirectLabelColorChange(idx: number, newColor: string) {
     newLabelColor.value = newColor
   }
 }
+
+function toggleAssignee(userId: number) {
+  if (!props.newProject.assignee_ids) {
+    props.newProject.assignee_ids = []
+  }
+  const idx = props.newProject.assignee_ids.indexOf(userId)
+  if (idx > -1) {
+    props.newProject.assignee_ids.splice(idx, 1)
+  } else {
+    props.newProject.assignee_ids.push(userId)
+  }
+}
+
 
 function addNewLabel() {
   const name = newLabelName.value.trim()
@@ -244,6 +260,55 @@ function addNewLabel() {
               placeholder="Annotator instructions or dataset scope..."
               class="w-full rounded-xl border border-border/60 bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-inner resize-none transition-all"
             ></textarea>
+          </div>
+
+          <!-- Assign Project Annotators -->
+          <div class="rounded-xl border border-border/60 bg-card/60 p-3.5 space-y-2.5 shadow-2xs">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Users class="size-3.5 text-primary" />
+                  <span>Assign Project Annotators ({{ (newProject.assignee_ids || []).length }})</span>
+                </span>
+                <p class="text-[11px] text-muted-foreground mt-0.5">
+                  Select 1 to 3 annotators. Only assigned annotators can see and checkout this project. If none selected, the project remains open to all project annotators.
+                </p>
+              </div>
+            </div>
+
+            <div v-if="(availableAnnotators || []).length === 0" class="text-xs text-muted-foreground italic py-1">
+              No annotators registered in tenant directory.
+            </div>
+
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-1">
+              <label
+                v-for="user in availableAnnotators"
+                :key="user.id"
+                class="flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer select-none transition-colors"
+                :class="
+                  (newProject.assignee_ids || []).includes(user.id)
+                    ? 'border-primary/60 bg-primary/10 text-foreground font-medium'
+                    : 'border-border/60 bg-background/80 hover:bg-muted/50 text-muted-foreground'
+                "
+              >
+                <input
+                  type="checkbox"
+                  :value="user.id"
+                  :checked="(newProject.assignee_ids || []).includes(user.id)"
+                  @change="toggleAssignee(user.id)"
+                  class="size-3.5 rounded border-border text-primary focus:ring-0 cursor-pointer accent-primary"
+                />
+                <div class="truncate flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-xs font-medium text-foreground truncate">{{ user.full_name || user.email }}</span>
+                    <span v-if="user.organization?.name" class="text-[9px] px-1 rounded bg-muted text-muted-foreground font-mono truncate">
+                      {{ user.organization.name }}
+                    </span>
+                  </div>
+                  <div class="text-[10px] text-muted-foreground truncate font-mono">{{ user.email }}</div>
+                </div>
+              </label>
+            </div>
           </div>
 
           <!-- Interactive Project Classes & Taxonomy Editor -->

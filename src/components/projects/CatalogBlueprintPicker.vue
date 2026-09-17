@@ -32,13 +32,17 @@ const emit = defineEmits<{
 const searchQuery = ref('')
 
 const modalityTabs = computed(() => {
-  return [
-    { value: 'ALL', label: 'All Modalities', icon: Layers },
-    { value: 'IMAGE', label: 'Image & Vision', icon: ImageIcon },
-    { value: 'AUDIO', label: 'Audio & Speech', icon: Headphones },
-    { value: 'TEXT', label: 'Text & NLP', icon: FileText },
-    { value: 'VIDEO', label: 'Video Streams', icon: VideoIcon },
-  ]
+  const tabs = [{ value: 'ALL', label: 'All Modalities', icon: Layers }]
+  if (props.modalityList && props.modalityList.length > 0) {
+    props.modalityList.forEach((m) => {
+      tabs.push({
+        value: m.value,
+        label: m.label,
+        icon: getModalityIcon(m.value),
+      })
+    })
+  }
+  return tabs
 })
 
 const filteredOptions = computed(() => {
