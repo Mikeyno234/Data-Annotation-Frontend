@@ -12,9 +12,10 @@ import {
   CheckCheck,
   ZoomIn,
   ZoomOut,
+  Sparkles,
 } from 'lucide-vue-next'
 
-export type CanvasTool = 'select' | 'bbox' | 'lasso' | 'polygon' | 'pan'
+export type CanvasTool = 'select' | 'bbox' | 'lasso' | 'polygon' | 'pan' | 'sam3'
 export type WorkspaceSubtype = 'bbox' | 'polygon' | 'classification'
 
 withDefaults(
@@ -27,6 +28,7 @@ withDefaults(
     isSaving?: boolean
     canSubmit?: boolean
     isDrawingPolygon?: boolean
+    canUseAI?: boolean
   }>(),
   {
     subtype: 'bbox',
@@ -37,6 +39,7 @@ withDefaults(
     isSaving: false,
     canSubmit: true,
     isDrawingPolygon: false,
+    canUseAI: true,
   }
 )
 
@@ -55,27 +58,27 @@ const emit = defineEmits<{
 
 <template>
   <div class="flex items-center justify-center select-none">
-    <!-- Floating Canvas Tool Dock -->
-    <div class="flex items-center h-10 px-1.5 rounded-xl bg-card/95 border border-border shadow-xs backdrop-blur-md text-muted-foreground gap-0.5">
+    <!-- Floating Canvas Tool Dock (Apple HIG Fluid Glass Toolbar) -->
+    <div class="flex items-center h-11 px-2.5 rounded-2xl bg-card/90 border border-border/80 shadow-lg backdrop-blur-xl text-muted-foreground gap-1.5">
       <!-- 1. Reset / Clear Canvas Draft -->
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94] disabled:opacity-30 disabled:pointer-events-none"
         title="Reset / Clear Canvas"
         @click="emit('resetDraft')"
       >
-        <RotateCcw class="size-3.5 stroke-[1.8]" />
+        <RotateCcw class="size-4 stroke-[1.9]" />
       </button>
 
       <!-- Divider -->
-      <div class="h-4 w-px bg-border mx-1"></div>
+      <div class="h-5 w-px bg-border/70 mx-1"></div>
 
       <!-- 2. Primary Creation Tools by Subtype -->
       <!-- BBOX Mode: Rectangle Box + Freehand Lasso to Box -->
       <template v-if="subtype === 'bbox'">
         <button
           type="button"
-          class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer active:scale-95 font-medium"
+          class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer active:scale-[0.94] font-medium"
           :class="[
             activeTool === 'bbox'
               ? 'bg-primary text-primary-foreground shadow-xs font-bold'
@@ -84,12 +87,12 @@ const emit = defineEmits<{
           title="Bounding Box Tool [B] (Click & Drag Rectangle)"
           @click="emit('update:activeTool', 'bbox')"
         >
-          <Square class="size-3.5 stroke-[2.2]" />
+          <Square class="size-4 stroke-[2.2]" />
         </button>
 
         <button
           type="button"
-          class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer active:scale-95 font-medium"
+          class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer active:scale-[0.94] font-medium"
           :class="[
             activeTool === 'lasso'
               ? 'bg-primary text-primary-foreground shadow-xs font-bold'
@@ -98,7 +101,7 @@ const emit = defineEmits<{
           title="Lasso to Box Tool [L] (Draw around object to auto-bound)"
           @click="emit('update:activeTool', 'lasso')"
         >
-          <LassoSelect class="size-3.5 stroke-[2.2]" />
+          <LassoSelect class="size-4 stroke-[2.2]" />
         </button>
       </template>
 
@@ -106,7 +109,7 @@ const emit = defineEmits<{
       <button
         v-if="subtype === 'polygon'"
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer active:scale-95 font-medium"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer active:scale-[0.94] font-medium"
         :class="[
           activeTool === 'polygon'
             ? 'bg-primary text-primary-foreground shadow-xs font-bold'
@@ -115,24 +118,40 @@ const emit = defineEmits<{
         title="Polygon Tool [P] (Click vertices to draw)"
         @click="emit('update:activeTool', 'polygon')"
       >
-        <Scissors class="size-3.5 stroke-[2.2]" />
+        <Scissors class="size-4 stroke-[2.2]" />
       </button>
 
       <!-- Complete Polygon Button (shown only when drawing polygon with >= 3 points) -->
       <button
         v-if="subtype === 'polygon' && isDrawingPolygon"
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs transition-all cursor-pointer hover:bg-emerald-500 active:scale-95 font-bold"
+        class="flex size-8 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs transition-all cursor-pointer hover:bg-emerald-500 active:scale-[0.94] font-bold"
         title="Close Polygon [Enter]"
         @click="emit('completePolygon')"
       >
-        <CheckCheck class="size-4 stroke-[2.5]" />
+        <CheckCheck class="size-4.5 stroke-[2.5]" />
+      </button>
+
+      <!-- SAM 3 AI Magic Wand Auto-Segment Tool -->
+      <button
+        v-if="canUseAI && subtype !== 'classification'"
+        type="button"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer active:scale-[0.94] font-medium relative"
+        :class="[
+          activeTool === 'sam3'
+            ? 'bg-purple-600 text-white shadow-xs font-bold'
+            : 'hover:bg-purple-500/15 hover:text-purple-400'
+        ]"
+        title="Meta SAM 3 AI Auto-Segment [A] (Click object on image to auto-segment)"
+        @click="emit('update:activeTool', 'sam3')"
+      >
+        <Sparkles class="size-4 stroke-[2.2]" />
       </button>
 
       <!-- 3. Pointer / Select Tool -->
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer active:scale-95 font-medium"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer active:scale-[0.94] font-medium"
         :class="[
           activeTool === 'select'
             ? 'bg-primary text-primary-foreground shadow-xs font-bold'
@@ -141,13 +160,13 @@ const emit = defineEmits<{
         title="Select / Pointer Tool [V]"
         @click="emit('update:activeTool', 'select')"
       >
-        <MousePointer2 class="size-3.5 stroke-[2]" />
+        <MousePointer2 class="size-4 stroke-[2]" />
       </button>
 
       <!-- 4. Pan / Hand Tool -->
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer active:scale-95 font-medium"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer active:scale-[0.94] font-medium"
         :class="[
           activeTool === 'pan'
             ? 'bg-primary text-primary-foreground shadow-xs font-bold'
@@ -156,32 +175,32 @@ const emit = defineEmits<{
         title="Pan / Hand Tool [H]"
         @click="emit('update:activeTool', 'pan')"
       >
-        <Move class="size-3.5 stroke-[2]" />
+        <Move class="size-4 stroke-[2]" />
       </button>
 
       <!-- Divider -->
-      <div class="h-4 w-px bg-border mx-1"></div>
+      <div class="h-5 w-px bg-border/70 mx-1"></div>
 
       <!-- Zoom In / Out Controls -->
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-95"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94]"
         title="Zoom In [Ctrl + Scroll Up]"
         @click="emit('zoomIn')"
       >
-        <ZoomIn class="size-3.5 stroke-[1.8]" />
+        <ZoomIn class="size-4 stroke-[1.9]" />
       </button>
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-95"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94]"
         title="Zoom Out [Ctrl + Scroll Down]"
         @click="emit('zoomOut')"
       >
-        <ZoomOut class="size-3.5 stroke-[1.8]" />
+        <ZoomOut class="size-4 stroke-[1.9]" />
       </button>
       <button
         type="button"
-        class="flex h-7.5 px-2 items-center justify-center rounded-lg text-xs font-medium tabular-nums transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-95"
+        class="flex h-8 px-2.5 items-center justify-center rounded-xl text-xs font-semibold tabular-nums transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94]"
         title="Reset Zoom & Pan (100%)"
         @click="emit('resetZoom')"
       >
@@ -189,38 +208,38 @@ const emit = defineEmits<{
       </button>
 
       <!-- Divider -->
-      <div class="h-4 w-px bg-border mx-1"></div>
+      <div class="h-5 w-px bg-border/70 mx-1"></div>
 
       <!-- 5. Undo & Redo Controls -->
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94] disabled:opacity-30 disabled:pointer-events-none"
         :disabled="!canUndo"
         title="Undo [Ctrl+Z]"
         @click="emit('undo')"
       >
-        <Undo2 class="size-3.5 stroke-[1.8]" />
+        <Undo2 class="size-4 stroke-[1.9]" />
       </button>
 
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94] disabled:opacity-30 disabled:pointer-events-none"
         :disabled="!canRedo"
         title="Redo [Ctrl+Y]"
         @click="emit('redo')"
       >
-        <Redo2 class="size-3.5 stroke-[1.8]" />
+        <Redo2 class="size-4 stroke-[1.9]" />
       </button>
 
       <!-- 6. Delete Selected Item (Trash) -->
       <button
         type="button"
-        class="flex size-7.5 items-center justify-center rounded-lg transition-all cursor-pointer hover:bg-destructive/15 hover:text-destructive active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer hover:bg-destructive/15 hover:text-destructive active:scale-[0.94] disabled:opacity-30 disabled:pointer-events-none"
         :disabled="!hasSelection"
         title="Delete Selected Item [Delete]"
         @click="emit('deleteSelected')"
       >
-        <Trash2 class="size-3.5 stroke-[1.8]" />
+        <Trash2 class="size-4 stroke-[1.9]" />
       </button>
     </div>
   </div>

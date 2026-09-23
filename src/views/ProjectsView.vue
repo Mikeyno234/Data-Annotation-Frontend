@@ -62,6 +62,7 @@ onMounted(async () => {
   await Promise.all([
     fetchModalities(),
     fetchProjects(),
+    projectForm.fetchMetadata(),
   ])
 
   // If redirected with action=create

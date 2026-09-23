@@ -55,13 +55,28 @@ export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanv
       ctx.lineWidth = (isSelected ? 2.5 : 1.8) / c.zoomScale
       ctx.strokeRect(box.x, box.y, box.width, box.height)
 
-      const bannerH = 18 / c.zoomScale
-      const fontSize = Math.max(10 / c.zoomScale, 8)
-      ctx.fillStyle = color
-      ctx.fillRect(box.x, box.y - bannerH, Math.max((box.label.length * 7 + 12) / c.zoomScale, 40 / c.zoomScale), bannerH)
+      const badgeH = 15 / c.zoomScale
+      const fontSize = Math.max(9 / c.zoomScale, 7.5)
+      const badgeW = Math.max((box.label.length * 6.2 + 8) / c.zoomScale, 32 / c.zoomScale)
+      const bx = box.x
+      const by = box.y > badgeH + 2 / c.zoomScale ? box.y - badgeH - 1 / c.zoomScale : box.y + 1 / c.zoomScale
+
+      ctx.fillStyle = isSelected ? color : 'rgba(15, 23, 42, 0.84)'
+      ctx.beginPath()
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(bx, by, badgeW, badgeH, 3 / c.zoomScale)
+      } else {
+        ctx.rect(bx, by, badgeW, badgeH)
+      }
+      ctx.fill()
+      if (!isSelected) {
+        ctx.strokeStyle = `${color}88`
+        ctx.lineWidth = 1 / c.zoomScale
+        ctx.stroke()
+      }
       ctx.fillStyle = '#ffffff'
-      ctx.font = `bold ${fontSize}px Inter, sans-serif`
-      ctx.fillText(`${box.label}`, box.x + 3 / c.zoomScale, box.y - 4 / c.zoomScale)
+      ctx.font = `600 ${fontSize}px Inter, -apple-system, sans-serif`
+      ctx.fillText(box.label, bx + 4 / c.zoomScale, by + badgeH - 3.5 / c.zoomScale)
 
       if (isSelected) {
         const handleR = 4 / c.zoomScale
@@ -114,13 +129,28 @@ export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanv
       })
 
       const p0 = poly.points[0]
-      const bannerH = 18 / c.zoomScale
-      const fontSize = Math.max(10 / c.zoomScale, 8)
-      ctx.fillStyle = color
-      ctx.fillRect(p0.x, p0.y - bannerH, Math.max((poly.label.length * 7 + 12) / c.zoomScale, 40 / c.zoomScale), bannerH)
+      const badgeH = 15 / c.zoomScale
+      const fontSize = Math.max(9 / c.zoomScale, 7.5)
+      const badgeW = Math.max((poly.label.length * 6.2 + 8) / c.zoomScale, 32 / c.zoomScale)
+      const bx = p0.x
+      const by = p0.y > badgeH + 2 / c.zoomScale ? p0.y - badgeH - 1 / c.zoomScale : p0.y + 1 / c.zoomScale
+
+      ctx.fillStyle = isSelected ? color : 'rgba(15, 23, 42, 0.84)'
+      ctx.beginPath()
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(bx, by, badgeW, badgeH, 3 / c.zoomScale)
+      } else {
+        ctx.rect(bx, by, badgeW, badgeH)
+      }
+      ctx.fill()
+      if (!isSelected) {
+        ctx.strokeStyle = `${color}88`
+        ctx.lineWidth = 1 / c.zoomScale
+        ctx.stroke()
+      }
       ctx.fillStyle = '#ffffff'
-      ctx.font = `bold ${fontSize}px Inter, sans-serif`
-      ctx.fillText(`${poly.label}`, p0.x + 3 / c.zoomScale, p0.y - 4 / c.zoomScale)
+      ctx.font = `600 ${fontSize}px Inter, -apple-system, sans-serif`
+      ctx.fillText(poly.label, bx + 4 / c.zoomScale, by + badgeH - 3.5 / c.zoomScale)
     })
 
     const pts = c.polyPoints

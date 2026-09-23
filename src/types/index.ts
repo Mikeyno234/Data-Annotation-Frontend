@@ -188,6 +188,7 @@ export interface Project {
   start_date?: string
   due_date?: string
   created_by_id: number
+  ai_assistance_enabled?: boolean
   organization?: Organization
   datasets?: Dataset[]
   assignees?: User[]

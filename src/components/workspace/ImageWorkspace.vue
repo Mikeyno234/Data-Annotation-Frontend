@@ -16,10 +16,12 @@ import Card from '@/components/ui/Card.vue'
 import CardContent from '@/components/ui/CardContent.vue'
 import ImageBoxList from './image/ImageBoxList.vue'
 import ImagePolygonList from './image/ImagePolygonList.vue'
-import { Tag, Check } from 'lucide-vue-next'
+import { Tag, Check, Sparkles, Loader2, MousePointer2 } from 'lucide-vue-next'
+import { aiApi } from '@/api/ai'
 
 const props = defineProps<{
   item: DataItem
+  projectId?: number | string
   labels?: LabelOption[]
   annotationType?: string
   // Structured editor kind copied from the project's catalog entry (BBOX,
@@ -28,6 +30,7 @@ const props = defineProps<{
   toolType?: string
   hasNext?: boolean
   hasPrev?: boolean
+  canUseAI?: boolean
 }>()
 
 const emit = defineEmits<{ submitted: []; next: []; prev: [] }>()
@@ -107,6 +110,7 @@ const session = useAnnotationSession<ImageAnnotationPayload>({
     KeyB: () => { if (detectedSubtype.value === 'bbox') activeTool.value = 'bbox' },
     KeyL: () => { if (detectedSubtype.value === 'bbox') activeTool.value = 'lasso' },
     KeyP: () => { if (detectedSubtype.value === 'polygon') activeTool.value = 'polygon' },
+    KeyA: () => { activeTool.value = 'sam3' },
     KeyV: () => { activeTool.value = 'select' },
     KeyH: () => { activeTool.value = 'pan' },
     Enter: () => {
@@ -230,8 +234,127 @@ function handleMouseDown(e: MouseEvent) {
     viewport.startPan(e.clientX, e.clientY)
     return
   }
+  if (activeTool.value === 'sam3') {
+    handleSAM3Click(clickX, clickY)
+    return
+  }
   if (detectedSubtype.value === 'polygon') polygonDrawer.startPolygonMouseDown(clickX, clickY, activeTool.value)
   else if (detectedSubtype.value === 'bbox') bboxInteraction.startBBoxMouseDown(clickX, clickY, activeTool.value)
+}
+
+const isAILoading = ref(false)
+const activeProjectId = computed(() => Number(props.projectId || props.item?.project_id || 0))
+
+function getImageBase64(): string {
+  if (!imageLoaded || !imageEl.complete || imageEl.naturalWidth === 0) return ''
+  try {
+    const offscreen = document.createElement('canvas')
+    const maxDim = 1024
+    let w = imageEl.naturalWidth
+    let h = imageEl.naturalHeight
+    if (w > maxDim || h > maxDim) {
+      if (w > h) {
+        h = Math.round((h * maxDim) / w)
+        w = maxDim
+      } else {
+        w = Math.round((w * maxDim) / h)
+        h = maxDim
+      }
+    }
+    offscreen.width = w
+    offscreen.height = h
+    const ctx = offscreen.getContext('2d')
+    if (!ctx) return ''
+    ctx.drawImage(imageEl, 0, 0, w, h)
+    return offscreen.toDataURL('image/jpeg', 0.85)
+  } catch {
+    return ''
+  }
+}
+
+async function handleSAM3Click(worldX: number, worldY: number) {
+  if (isAILoading.value || !props.item?.id) return
+  isAILoading.value = true
+  try {
+    const b64 = getImageBase64()
+    const res: any = await aiApi.segmentPoint(activeProjectId.value, {
+      data_item_id: props.item.id,
+      image_url: props.item.source_url?.startsWith('http') ? props.item.source_url : undefined,
+      image_base64: b64 || undefined,
+      points: [{ x: worldX, y: worldY, label: 1 }],
+      label_name: currentLabel.value,
+      canvas_width: imageEl.naturalWidth || 800,
+      canvas_height: imageEl.naturalHeight || 600,
+    })
+    const data: any = res?.data?.polygons ? res.data : (res?.polygons ? res : res?.data)
+    if (data?.polygons && data.polygons.length > 0) {
+      applyAIPolygons(data.polygons)
+      toast.success('SAM 3 Segment Ready', `Detected ${data.polygons.length} segment(s)`)
+    }
+  } catch (err: any) {
+    toast.error('SAM 3 Auto-Segment Failed', err?.response?.data?.message || err?.message || 'AI service error')
+  } finally {
+    isAILoading.value = false
+  }
+}
+
+async function handleSAM3ConceptPrompt() {
+  if (isAILoading.value || !props.item?.id) return
+  const targetConcept = currentLabel.value.trim() || 'object'
+  isAILoading.value = true
+  try {
+    const b64 = getImageBase64()
+    const res: any = await aiApi.segmentConcept(activeProjectId.value, {
+      data_item_id: props.item.id,
+      image_url: props.item.source_url?.startsWith('http') ? props.item.source_url : undefined,
+      image_base64: b64 || undefined,
+      concept: targetConcept,
+    })
+    const data: any = res?.data?.polygons ? res.data : (res?.polygons ? res : res?.data)
+    if (data?.polygons && data.polygons.length > 0) {
+      applyAIPolygons(data.polygons)
+      toast.success('AI Detection Complete', `Auto-detected ${data.polygons.length} segment(s) for "${targetConcept}"`)
+    } else {
+      toast.info('No Matches Found', `No instances of "${targetConcept}" detected. Try clicking directly on the object.`)
+    }
+  } catch (err: any) {
+    toast.error('AI Auto-Segment Failed', err?.response?.data?.message || err?.message || 'AI service error')
+  } finally {
+    isAILoading.value = false
+  }
+}
+
+function applyAIPolygons(polys: any[]) {
+  if (detectedSubtype.value === 'polygon') {
+    const newPolys: ImagePolygon[] = polys.map((p, idx) => ({
+      id: `poly_sam3_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+      points: p.points,
+      label: currentLabel.value || p.label || 'Object',
+    }))
+    const updated = [...currentPolygons.value, ...newPolys]
+    session.payload.value = updated
+    session.pushState(updated)
+  } else if (detectedSubtype.value === 'bbox') {
+    const newBoxes: ImageBox[] = polys.map((p, idx) => {
+      const xs = p.points.map((pt: any) => pt[0])
+      const ys = p.points.map((pt: any) => pt[1])
+      const minX = Math.min(...xs)
+      const maxX = Math.max(...xs)
+      const minY = Math.min(...ys)
+      const maxY = Math.max(...ys)
+      return {
+        id: `box_sam3_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+        x: Math.max(0, minX),
+        y: Math.max(0, minY),
+        width: Math.max(1, maxX - minX),
+        height: Math.max(1, maxY - minY),
+        label: currentLabel.value || p.label || 'Object',
+      }
+    })
+    const updated = [...currentBoxes.value, ...newBoxes]
+    session.payload.value = updated
+    session.pushState(updated)
+  }
 }
 
 function handleMouseMove(e: MouseEvent) {
@@ -339,7 +462,7 @@ onUnmounted(() => {
     :modality-title="modalityHeaderTitle"
     modality-type="Image"
     :show-class-selector="detectedSubtype !== 'classification'"
-    class-label-title="Active class"
+    class-label-title="Label Category"
     :hotkey-hints="hotkeyHints"
   >
     <!-- Workspace Main Layout -->
@@ -350,6 +473,7 @@ onUnmounted(() => {
         <div class="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
           <WorkspaceFloatingToolbar
             :subtype="detectedSubtype"
+            :can-use-a-i="canUseAI ?? true"
             v-model:active-tool="activeTool"
             :can-undo="session.canUndo.value"
             :can-redo="session.canRedo.value"
@@ -365,6 +489,30 @@ onUnmounted(() => {
             @zoom-out="viewport.applyZoom(viewport.zoomScale.value / 1.3)"
             @reset-zoom="viewport.resetViewport()"
           />
+        </div>
+
+        <!-- SAM 3 Auto-Segment Dock (Apple HIG Fluid Segmented Pill) -->
+        <div
+          v-if="activeTool === 'sam3'"
+          class="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-3.5 py-1.5 rounded-2xl bg-card/90 border border-purple-500/30 shadow-lg backdrop-blur-xl text-xs pointer-events-auto transition-all duration-200"
+        >
+          <!-- 1-Click Auto-Detect for Selected Active Class -->
+          <button
+            type="button"
+            class="h-8 px-4 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium flex items-center gap-2 transition-all active:scale-[0.97] shadow-xs disabled:opacity-50 cursor-pointer"
+            :disabled="isAILoading"
+            :title="`Auto-detect all '${currentLabel || 'objects'}' using SAM 3`"
+            @click="handleSAM3ConceptPrompt"
+          >
+            <Loader2 v-if="isAILoading" class="size-3.5 animate-spin" />
+            <Sparkles v-else class="size-3.5 text-purple-200" />
+            <span>{{ isAILoading ? 'Segmenting...' : `Auto-Detect "${currentLabel || 'Selected Class'}"` }}</span>
+          </button>
+
+          <!-- Point Segment Direct Click Hint -->
+          <span class="text-[11px] text-muted-foreground/80 border-l border-border/50 pl-3 flex items-center gap-1.5 select-none">
+            <MousePointer2 class="size-3 text-muted-foreground/70" /> or click directly on object
+          </span>
         </div>
 
         <Card class="overflow-hidden bg-card/90 shadow-sm relative group">

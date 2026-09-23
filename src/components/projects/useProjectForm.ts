@@ -59,7 +59,7 @@ export function useProjectForm(onSuccess: () => void) {
   const projectLabels = ref<LabelOption[]>([])
   const modalityOptions = ref<{ value: string; label: string }[]>([])
   const annotationTypeOptions = ref<MetadataOption[]>([])
-  const isMetadataLoading = ref(true)
+  const isMetadataLoading = ref(false)
 
   const selectedTaskObject = computed(() => {
     return annotationTypeOptions.value.find((o) => o.value === newProject.value.annotation_type) || null
@@ -252,13 +252,7 @@ export function useProjectForm(onSuccess: () => void) {
   }
 
   async function refreshAnnotationTypes() {
-    try {
-      const res: any = await metadataApi.getAnnotationOptions('ALL')
-      const data = res.data || res
-      annotationTypeOptions.value = data.annotation_types || []
-    } catch {
-      // keep existing options if fail
-    }
+    return fetchMetadata()
   }
 
   async function openCreateModal(initialTemplateCode?: string) {
@@ -275,8 +269,10 @@ export function useProjectForm(onSuccess: () => void) {
       assignee_ids: [],
     }
     projectLabels.value = []
-    await refreshAnnotationTypes()
-    await fetchAnnotators()
+    await Promise.all([
+      fetchMetadata(),
+      fetchAnnotators(),
+    ])
 
     if (initialTemplateCode) {
       const match = annotationTypeOptions.value.find(

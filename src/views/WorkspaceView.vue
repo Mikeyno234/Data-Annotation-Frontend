@@ -30,6 +30,7 @@ const projectLabels = ref<LabelOption[]>([])
 const projectAnnotationType = ref('')
 const projectToolType = ref('')
 const projectModality = ref('')
+const projectAIAssistanceEnabled = ref(true)
 const submittedIds = new Set<number>()
 
 const effectiveModality = computed(() => {
@@ -46,6 +47,7 @@ async function loadProjectConfig(projectId: number) {
     projectAnnotationType.value = project.annotation_type || ''
     projectToolType.value = project.tool_type || ''
     projectModality.value = project.modality || ''
+    projectAIAssistanceEnabled.value = project.ai_assistance_enabled ?? true
   } catch (e) {
     console.error('Failed to load project config', e)
   }
@@ -276,9 +278,11 @@ onBeforeUnmount(() => {
         v-else-if="effectiveModality === 'IMAGE'"
         :key="`image-${activeItem.id}`"
         :item="activeItem"
+        :project-id="Number(route.query.project_id || activeItem.project_id || 0)"
         :labels="projectLabels"
         :annotation-type="projectAnnotationType"
         :tool-type="projectToolType"
+        :can-use-a-i="projectAIAssistanceEnabled"
         :has-next="currentIndex < dataItems.length - 1"
         :has-prev="currentIndex > 0"
         @submitted="handleSubmitted"

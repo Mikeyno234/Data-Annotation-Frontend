@@ -241,7 +241,7 @@ onUnmounted(() => {
       v-model:current-label="currentLabel"
       modality-title="Video Temporal Intervals"
       modality-type="Video"
-      class-label-title="Action label:"
+      class-label-title="Action Category"
       :hotkey-hints="hotkeyHints"
     >
       <Card class="overflow-hidden bg-card/90 shadow-sm">
