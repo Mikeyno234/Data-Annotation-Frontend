@@ -4,7 +4,6 @@ import { adminApi } from '@/api/admin'
 import type { AuditLog } from '@/types'
 import { toast } from '@/utils/toast'
 import Badge from '@/components/ui/Badge.vue'
-import Card from '@/components/ui/Card.vue'
 import Input from '@/components/ui/Input.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import { ShieldAlert, Terminal, Clock, Search, RefreshCw, SlidersHorizontal } from 'lucide-vue-next'
@@ -109,24 +108,24 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Search & Filter Bar -->
+    <!-- Search & Filter Bar (Berry Pill & Rounded-xl Controls) -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="relative w-full max-w-sm">
-        <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" :stroke-width="1.6" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" :stroke-width="1.8" />
         <Input
           v-model="searchQuery"
           placeholder="Search by action, user, or resource..."
-          class="pl-8 text-xs h-8"
+          class="pl-9 text-xs h-9.5 rounded-xl border-border/80 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs"
           @input="handleSearchInput"
         />
       </div>
 
       <div class="flex items-center gap-2">
-        <SlidersHorizontal class="size-3.5 text-muted-foreground" :stroke-width="1.6" />
-        <span class="text-xs text-muted-foreground">Status:</span>
+        <SlidersHorizontal class="size-3.5 text-muted-foreground" :stroke-width="1.8" />
+        <span class="text-xs text-muted-foreground font-medium">Status:</span>
         <select
           v-model="selectedStatusFilter"
-          class="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/15 cursor-pointer"
+          class="h-9.5 rounded-xl border border-border/80 bg-card px-3 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-2xs cursor-pointer"
           @change="handleFilterChange"
         >
           <option value="ALL">All statuses</option>
@@ -136,49 +135,49 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Audit Logs Table Card -->
-    <Card class="overflow-hidden shadow-2xs">
+    <!-- Audit Logs Table (Berry MainCard style) -->
+    <div class="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
-          <thead class="bg-muted/40 text-xs font-medium text-muted-foreground border-b border-border">
+          <thead class="bg-muted/50 text-[11px] font-semibold text-muted-foreground border-b border-border/70">
             <tr>
-              <th class="px-4 py-3 font-medium">Timestamp</th>
-              <th class="px-4 py-3 font-medium">User</th>
-              <th class="px-4 py-3 font-medium">Action</th>
-              <th class="px-4 py-3 font-medium">Resource</th>
-              <th class="px-4 py-3 font-medium">IP address</th>
-              <th class="px-4 py-3 font-medium">Status</th>
+              <th class="px-5 py-3">Timestamp</th>
+              <th class="px-5 py-3">User</th>
+              <th class="px-5 py-3">Action</th>
+              <th class="px-5 py-3">Resource</th>
+              <th class="px-5 py-3">IP Address</th>
+              <th class="px-5 py-3">Status</th>
             </tr>
           </thead>
-          <tbody class="text-xs divide-y divide-border/30">
+          <tbody class="text-xs divide-y divide-border/40">
             <tr v-if="isLoading">
-              <td colspan="6" class="p-8 text-center text-muted-foreground font-sans">
-                <RefreshCw class="size-5 animate-spin mx-auto mb-2 text-primary" />
-                Loading audit logs...
+              <td colspan="6" class="p-12 text-center text-muted-foreground font-sans">
+                <RefreshCw class="size-6 animate-spin mx-auto mb-2 text-primary" />
+                <span class="text-xs font-medium">Loading audit logs...</span>
               </td>
             </tr>
 
             <tr v-else-if="auditLogs.length === 0">
-              <td colspan="6" class="p-8 text-center text-muted-foreground font-sans">
-                No audit logs found matching your filters
+              <td colspan="6" class="p-12 text-center text-muted-foreground font-sans">
+                <span class="text-xs font-medium">No audit logs found matching your filters</span>
               </td>
             </tr>
 
-            <tr v-for="log in auditLogs" :key="log.id" class="transition-colors hover:bg-muted/30">
-              <td class="px-4 py-3 text-muted-foreground tabular-nums whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
-              <td class="px-4 py-3 text-foreground font-medium">{{ log.user_email || 'System' }}</td>
-              <td class="px-4 py-3 text-foreground">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-foreground border border-border/60">
+            <tr v-for="log in auditLogs" :key="log.id" class="transition-colors hover:bg-muted/20">
+              <td class="px-5 py-3.5 text-muted-foreground tabular-nums whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
+              <td class="px-5 py-3.5 text-foreground font-semibold">{{ log.user_email || 'System' }}</td>
+              <td class="px-5 py-3.5 text-foreground">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted/80 text-foreground border border-border/60">
                   {{ formatAction(log.action) }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-muted-foreground">
-                <span class="capitalize">{{ log.resource_type?.toLowerCase() || 'Resource' }}</span>
-                <span class="text-muted-foreground/70 tabular-nums"> #{{ log.resource_id }}</span>
+              <td class="px-5 py-3.5 text-muted-foreground">
+                <span class="capitalize font-medium text-foreground/80">{{ log.resource_type?.toLowerCase() || 'Resource' }}</span>
+                <span class="text-muted-foreground/70 tabular-nums font-mono text-[11px]"> #{{ log.resource_id }}</span>
               </td>
-              <td class="px-4 py-3 text-muted-foreground tabular-nums font-mono text-[11px]">{{ log.ip_address || '127.0.0.1' }}</td>
-              <td class="px-4 py-3">
-                <Badge :variant="log.status === 'SUCCESS' ? 'success' : 'destructive'" class="text-[11px] capitalize">
+              <td class="px-5 py-3.5 text-muted-foreground tabular-nums font-mono text-[11px]">{{ log.ip_address || '127.0.0.1' }}</td>
+              <td class="px-5 py-3.5">
+                <Badge :variant="log.status === 'SUCCESS' ? 'success' : 'destructive'" class="text-[10px] rounded-full px-2.5 uppercase font-semibold">
                   {{ log.status?.toLowerCase() || 'unknown' }}
                 </Badge>
               </td>
@@ -188,7 +187,7 @@ onMounted(() => {
       </div>
 
       <!-- Pagination Bar -->
-      <div class="px-4 py-2 border-t border-border/40">
+      <div class="px-5 py-3 border-t border-border/70">
         <Pagination
           :page="currentPage"
           :limit="pageLimit"
@@ -199,7 +198,7 @@ onMounted(() => {
           @update:limit="handleLimitChange"
         />
       </div>
-    </Card>
+    </div>
   </div>
 </template>
 

@@ -65,25 +65,25 @@ function getGroupActiveCount(group: MenuGroup): string {
 
   <!-- Selected Role Matrix View -->
   <div v-else-if="selectedRole" class="flex flex-col gap-4 w-full">
-    <!-- Header Banner Card -->
-    <div class="bg-card rounded-lg p-4 sm:p-5 shadow-2xs border border-border">
-      <div class="flex flex-wrap items-center justify-between gap-4">
+    <!-- Header Banner Card (Berry MainCard style with circular accent) -->
+    <div class="relative bg-card rounded-2xl p-5 shadow-xs border border-border/80 overflow-hidden before:absolute before:size-44 before:rounded-full before:bg-primary/5 before:-top-16 before:-right-16 before:pointer-events-none">
+      <div class="flex flex-wrap items-center justify-between gap-4 relative z-10">
         <div class="flex items-start gap-3.5 min-w-0">
-          <div class="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground border border-border">
-            <KeyRound class="size-4 text-muted-foreground" :stroke-width="1.6" />
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-2xs">
+            <KeyRound class="size-4.5" :stroke-width="1.8" />
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-base font-semibold text-foreground tracking-tight">{{ selectedRole.name }}</h2>
+              <h2 class="text-base font-bold text-foreground tracking-tight">{{ selectedRole.name }}</h2>
               <span
                 v-if="selectedRole.organization?.name"
-                class="text-[10px] px-2 py-0.5 rounded-md font-medium bg-primary/10 text-primary border border-primary/20"
+                class="text-[10px] px-2.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20"
               >
                 {{ selectedRole.organization.name }}
               </span>
               <span
                 v-else-if="selectedRole.is_system"
-                class="text-[10px] px-2 py-0.5 rounded-md font-medium bg-muted text-muted-foreground border border-border"
+                class="text-[10px] px-2.5 py-0.5 rounded-full font-semibold bg-muted text-muted-foreground border border-border"
               >
                 System Role
               </span>
@@ -97,17 +97,17 @@ function getGroupActiveCount(group: MenuGroup): string {
         <div class="flex items-center gap-2.5 shrink-0">
           <!-- Auto-save Status Indicator -->
           <div
-            class="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md transition-all duration-200 border"
+            class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 border shadow-2xs"
             :class="{
-              'bg-muted/40 text-muted-foreground border-transparent': autoSaveStatus === 'idle',
+              'bg-muted/60 text-muted-foreground border-border/60': autoSaveStatus === 'idle',
               'bg-warning/15 text-warning border-warning/30': autoSaveStatus === 'saving',
               'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30': autoSaveStatus === 'saved',
               'bg-destructive/15 text-destructive border-destructive/30': autoSaveStatus === 'error',
             }"
           >
             <LoaderCircle v-if="autoSaveStatus === 'saving'" class="size-3.5 animate-spin" />
-            <CheckCircle2 v-else-if="autoSaveStatus === 'saved'" class="size-3.5" :stroke-width="1.6" />
-            <Lock v-else class="size-3.5 text-muted-foreground" :stroke-width="1.6" />
+            <CheckCircle2 v-else-if="autoSaveStatus === 'saved'" class="size-3.5" :stroke-width="1.8" />
+            <Lock v-else class="size-3 text-muted-foreground" :stroke-width="1.8" />
             <span>{{ autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Saved' : 'Auto-save' }}</span>
           </div>
 
@@ -115,7 +115,7 @@ function getGroupActiveCount(group: MenuGroup): string {
             v-if="!selectedRole.is_system"
             variant="outline"
             size="sm"
-            class="gap-1.5 text-xs rounded-md h-8 px-3 cursor-pointer shadow-2xs"
+            class="gap-1.5 text-xs rounded-xl h-8.5 px-3.5 font-medium cursor-pointer shadow-2xs"
             @click="emit('editRole', selectedRole)"
           >
             <Pencil class="size-3.5" :stroke-width="1.6" />
@@ -128,28 +128,28 @@ function getGroupActiveCount(group: MenuGroup): string {
     <!-- Super Admin Protected Role Notice -->
     <div
       v-if="isSelectedRoleSuperAdmin"
-      class="rounded-lg bg-muted/40 border border-border p-3.5 flex items-center gap-3 text-xs text-muted-foreground"
+      class="rounded-xl bg-muted/40 border border-border/80 p-3.5 flex items-center gap-3 text-xs text-muted-foreground shadow-2xs"
     >
-      <Lock class="size-4 text-muted-foreground shrink-0" :stroke-width="1.6" />
+      <Lock class="size-4 text-muted-foreground shrink-0" :stroke-width="1.8" />
       <span>Super Admin has unrestricted system permissions across all modules and cannot be modified.</span>
     </div>
 
-    <!-- Module Access Permissions Bento Sections -->
+    <!-- Module Access Permissions Bento Sections (Berry MainCard style) -->
     <div class="space-y-4">
       <div
         v-for="group in menuGroups"
         :key="group.id"
-        class="bg-card rounded-lg border border-border overflow-hidden shadow-2xs"
+        class="bg-card rounded-2xl border border-border/80 overflow-hidden shadow-xs"
       >
         <!-- Group Header -->
-        <div class="flex items-center justify-between p-3.5 sm:px-4 bg-muted/30 border-b border-border">
+        <div class="flex items-center justify-between p-4 bg-muted/50 border-b border-border/70">
           <div class="flex items-center gap-2.5">
-            <div class="flex size-7 items-center justify-center rounded-md bg-muted text-muted-foreground border border-border">
-              <FolderKanban class="size-3.5" :stroke-width="1.6" />
+            <div class="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-2xs">
+              <FolderKanban class="size-4" :stroke-width="1.8" />
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold text-foreground tracking-tight">{{ group.name }}</span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground border border-border/60">
+              <span class="text-xs font-bold text-foreground tracking-tight">{{ group.name }}</span>
+              <span class="text-[10px] px-2.5 py-0.5 rounded-full font-semibold bg-muted text-muted-foreground border border-border/70">
                 {{ getGroupActiveCount(group) }}
               </span>
             </div>
@@ -159,7 +159,7 @@ function getGroupActiveCount(group: MenuGroup): string {
             <Button
               variant="ghost"
               size="sm"
-              class="h-6.5 px-2 text-[10.5px] font-medium text-muted-foreground hover:text-foreground rounded-md cursor-pointer"
+              class="h-7 px-2.5 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
               @click="emit('toggleGroup', group, true)"
             >
               Select All
@@ -168,7 +168,7 @@ function getGroupActiveCount(group: MenuGroup): string {
             <Button
               variant="ghost"
               size="sm"
-              class="h-6.5 px-2 text-[10.5px] font-medium text-muted-foreground hover:text-destructive rounded-md cursor-pointer"
+              class="h-7 px-2.5 text-[11px] font-medium text-muted-foreground hover:text-destructive rounded-lg cursor-pointer"
               @click="emit('toggleGroup', group, false)"
             >
               Clear

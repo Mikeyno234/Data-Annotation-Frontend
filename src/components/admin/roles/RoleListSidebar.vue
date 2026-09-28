@@ -24,11 +24,11 @@ const emit = defineEmits<{
   <div class="flex flex-col gap-3 w-full">
     <!-- Search Bar & Counter Header -->
     <div class="relative">
-      <Search class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" :stroke-width="1.6" />
+      <Search class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" :stroke-width="1.8" />
       <Input
         :model-value="searchQuery"
         placeholder="Search roles or tenant..."
-        class="h-8 pl-8 pr-8 text-xs rounded-md border border-border bg-card shadow-2xs"
+        class="h-9.5 pl-9 pr-8 text-xs rounded-xl border border-border/80 bg-card shadow-2xs focus:ring-2 focus:ring-primary/20 focus:border-primary"
         @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       />
       <button
@@ -38,12 +38,12 @@ const emit = defineEmits<{
         title="Clear search"
         @click="emit('update:searchQuery', '')"
       >
-        <X class="size-3.5" :stroke-width="1.6" />
+        <X class="size-3.5" :stroke-width="1.8" />
       </button>
     </div>
 
-    <!-- Role Profiles Container -->
-    <div class="flex flex-col gap-1 rounded-lg bg-card border border-border p-1.5 shadow-2xs max-h-[calc(100vh-250px)] min-h-[300px] overflow-y-auto">
+    <!-- Role Profiles Container (Berry Rounded-2xl Card) -->
+    <div class="flex flex-col gap-1.5 rounded-2xl bg-card border border-border/80 p-2 shadow-xs max-h-[calc(100vh-250px)] min-h-[300px] overflow-y-auto">
       <!-- Loading Skeleton State -->
       <div v-if="isLoading" class="p-2 space-y-2">
         <div
@@ -69,16 +69,16 @@ const emit = defineEmits<{
         <span class="text-[11px] text-muted-foreground mt-0.5">Try refining your filter or search query</span>
       </div>
 
-      <!-- Role Items List -->
+      <!-- Role Items List (Berry Rounded-xl Nav Item style) -->
       <button
         v-for="r in filteredRoles"
         v-else
         :key="r.id"
         type="button"
-        class="group relative flex flex-col gap-1.5 rounded-xl p-3 text-left transition-all duration-150 cursor-pointer select-none font-sans btn-tactile border"
+        class="group relative flex flex-col gap-1.5 rounded-xl p-3 text-left transition-all duration-150 cursor-pointer select-none font-sans border"
         :class="
           selectedRoleId === r.id
-            ? 'bg-card border-primary/40 shadow-xs ring-1 ring-primary/20 text-foreground'
+            ? 'bg-primary/10 border-primary/30 shadow-2xs text-foreground'
             : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/30'
         "
         @click="emit('selectRole', r.id)"

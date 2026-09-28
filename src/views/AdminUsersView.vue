@@ -150,10 +150,10 @@ onMounted(fetchUsersData)
           v-if="canCreateUser"
           variant="default"
           size="sm"
-          class-name="gap-1.5 rounded-lg text-xs shadow-xs"
+          class="gap-2 rounded-xl text-xs font-semibold h-9 px-4 shadow-xs"
           @click="showCreateModal = true"
         >
-          <UserPlus class="size-3.5" :stroke-width="1.8" />
+          <UserPlus class="size-4" :stroke-width="1.8" />
           <span>Add User</span>
         </Button>
       </div>
