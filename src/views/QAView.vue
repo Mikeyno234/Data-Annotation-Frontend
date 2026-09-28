@@ -93,18 +93,18 @@ const batchComment = ref('Consensus evaluation verified in batch')
 const isSubmittingBatch = ref(false)
 
 const statusTabs = [
-  { id: 'PENDING', label: 'Pending QA' },
-  { id: 'PASSED', label: 'Passed Quality' },
-  { id: 'FAILED', label: 'Failed Consensus' },
-  { id: 'ALL', label: 'All QA Tasks' },
+  { id: 'PENDING', label: 'Pending' },
+  { id: 'PASSED', label: 'Passed' },
+  { id: 'FAILED', label: 'Failed' },
+  { id: 'ALL', label: 'All' },
 ]
 
 const scorePresets = [
-  { label: '100% Perfect', value: 100 },
-  { label: '95% High', value: 95 },
-  { label: '85% Good', value: 85 },
-  { label: '70% Fair', value: 70 },
-  { label: '50% Poor', value: 50 },
+  { label: '100', value: 100 },
+  { label: '95', value: 95 },
+  { label: '85', value: 85 },
+  { label: '70', value: 70 },
+  { label: '50', value: 50 },
 ]
 
 // Aggregate Metrics across projects
@@ -258,7 +258,17 @@ function handleLimitChange(limit: number) {
 
 // --- SELECTION & BATCH ACTIONS ---
 
+const selectableTasks = computed(() =>
+  qaTasks.value.filter((t) => t.status === 'PENDING' || t.status === 'UNASSIGNED')
+)
+
+const hasSelectableTasks = computed(() => selectableTasks.value.length > 0)
+
 function toggleTaskSelection(taskId: number, checked: boolean) {
+  const task = qaTasks.value.find((t) => t.id === taskId)
+  if (task && task.status !== 'PENDING' && task.status !== 'UNASSIGNED') {
+    return
+  }
   if (checked) {
     selectedTaskIds.value.add(taskId)
   } else {
@@ -267,15 +277,15 @@ function toggleTaskSelection(taskId: number, checked: boolean) {
 }
 
 const isAllPageSelected = computed(() => {
-  if (qaTasks.value.length === 0) return false
-  return qaTasks.value.every((t) => selectedTaskIds.value.has(t.id))
+  if (selectableTasks.value.length === 0) return false
+  return selectableTasks.value.every((t) => selectedTaskIds.value.has(t.id))
 })
 
 function toggleSelectAllPage() {
   if (isAllPageSelected.value) {
-    qaTasks.value.forEach((t) => selectedTaskIds.value.delete(t.id))
+    selectableTasks.value.forEach((t) => selectedTaskIds.value.delete(t.id))
   } else {
-    qaTasks.value.forEach((t) => selectedTaskIds.value.add(t.id))
+    selectableTasks.value.forEach((t) => selectedTaskIds.value.add(t.id))
   }
 }
 
@@ -286,6 +296,10 @@ function deselectAll() {
 // --- EVALUATION MODAL LOGIC ---
 
 function openEvalModal(task: QATask) {
+  if (task.status !== 'PENDING' && task.status !== 'UNASSIGNED') {
+    toast.error('Task Already Evaluated', 'Only pending QA tasks can be evaluated.')
+    return
+  }
   selectedTask.value = task
   evalScore.value = 95.0
   evalPassed.value = true
@@ -323,7 +337,7 @@ async function handleEvaluate() {
       score: evalScore.value,
       passed: isPassed,
       issue_type: issueTypeToSend,
-      comment: evalComment.value || (isPassed ? 'Agreement IoU overlap validated.' : 'Substandard consensus agreement.'),
+      comment: evalComment.value.trim() || `QA score ${evalScore.value}% (${isPassed ? 'passed' : 'failed'}).`,
     })
     toast.success('QA Evaluated', `Consensus score ${evalScore.value}% (${isPassed ? 'Passed' : 'Failed'}) recorded`)
     showEvalModal.value = false
@@ -337,6 +351,11 @@ async function handleEvaluate() {
 // --- BATCH EVALUATE MODAL LOGIC ---
 
 function openBatchPassSelected() {
+  const validIds = Array.from(selectedTaskIds.value).filter((id) => {
+    const t = qaTasks.value.find((task) => task.id === id)
+    return !t || t.status === 'PENDING' || t.status === 'UNASSIGNED'
+  })
+  selectedTaskIds.value = new Set(validIds)
   if (selectedTaskIds.value.size === 0) return
   batchMode.value = 'SELECTED'
   batchScore.value = 95.0
@@ -348,6 +367,11 @@ function openBatchPassSelected() {
 }
 
 function openBatchFailSelected() {
+  const validIds = Array.from(selectedTaskIds.value).filter((id) => {
+    const t = qaTasks.value.find((task) => task.id === id)
+    return !t || t.status === 'PENDING' || t.status === 'UNASSIGNED'
+  })
+  selectedTaskIds.value = new Set(validIds)
   if (selectedTaskIds.value.size === 0) return
   batchMode.value = 'SELECTED'
   batchScore.value = 50.0
@@ -463,69 +487,89 @@ onMounted(async () => {
       </div>
 
       <!-- View Switcher (By Project vs All Tasks) -->
-      <div v-if="!selectedProjectId" class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs self-start sm:self-auto">
+      <div v-if="!selectedProjectId" class="inline-flex p-1 rounded-xl bg-muted/60 border border-border/80 shadow-2xs self-start sm:self-auto gap-1">
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer select-none"
+          class="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
           :class="
             viewMode === 'PROJECTS'
-              ? 'bg-foreground text-background font-medium shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-foreground text-background font-bold shadow-2xs'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
           "
           @click="setViewMode('PROJECTS')"
         >
-          <FolderKanban class="size-3.5" :stroke-width="1.6" />
+          <FolderKanban class="size-3.5" :stroke-width="1.8" />
           <span>By Project</span>
         </button>
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer select-none"
+          class="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
           :class="
             viewMode === 'TASKS'
-              ? 'bg-foreground text-background font-medium shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-foreground text-background font-bold shadow-2xs'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
           "
           @click="setViewMode('TASKS')"
         >
-          <ListFilter class="size-3.5" :stroke-width="1.6" />
+          <ListFilter class="size-3.5" :stroke-width="1.8" />
           <span>All Tasks</span>
         </button>
       </div>
     </div>
 
-    <!-- Unified Minimalist Metric Strip -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 rounded-lg border border-border/70 bg-card divide-x divide-border/60 shadow-xs overflow-hidden">
-      <div class="p-3 sm:p-4">
-        <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Projects in QA</span>
-        <div class="mt-1 flex items-baseline gap-1.5">
-          <span class="text-xl font-bold tracking-tight text-foreground tabular-nums">{{ projects.length }}</span>
+    <!-- Berry 4-Card Metric Grid with dual circular accents -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-primary/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-primary/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
+        <div class="flex items-center justify-between text-xs text-muted-foreground">
+          <span class="font-semibold">Projects in QA</span>
+          <div class="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <FolderKanban class="size-3.5" :stroke-width="1.8" />
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="text-2xl font-bold tracking-tight text-foreground tabular-nums">{{ projects.length }}</span>
           <span v-if="activeProjectsCount > 0" class="text-[11px] text-muted-foreground">
             ({{ activeProjectsCount }} active)
           </span>
         </div>
       </div>
 
-      <div class="p-3 sm:p-4">
-        <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Pending QA</span>
-        <div class="mt-1 flex items-baseline gap-1.5">
-          <span class="text-xl font-bold tracking-tight text-foreground tabular-nums">{{ totalPendingTasks }}</span>
-          <span class="text-[11px] text-muted-foreground">tasks</span>
+      <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-amber-500/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-amber-500/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
+        <div class="flex items-center justify-between text-xs text-muted-foreground">
+          <span class="font-semibold">Pending</span>
+          <div class="flex size-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+            <Clock class="size-3.5" :stroke-width="1.8" />
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 tabular-nums">{{ totalPendingTasks }}</span>
+          <span class="text-[11px] text-muted-foreground">tasks queued</span>
         </div>
       </div>
 
-      <div class="p-3 sm:p-4">
-        <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Passed Quality</span>
-        <div class="mt-1 flex items-baseline gap-1.5">
-          <span class="text-xl font-bold tracking-tight text-foreground tabular-nums">{{ totalPassedTasks }}</span>
+      <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-emerald-500/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-emerald-500/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
+        <div class="flex items-center justify-between text-xs text-muted-foreground">
+          <span class="font-semibold">Passed</span>
+          <div class="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+            <CheckCircle2 class="size-3.5" :stroke-width="1.8" />
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">{{ totalPassedTasks }}</span>
           <span class="text-[11px] text-muted-foreground">verified</span>
         </div>
       </div>
 
-      <div class="p-3 sm:p-4">
-        <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Failed / Disputes</span>
-        <div class="mt-1 flex items-baseline gap-1.5">
-          <span class="text-xl font-bold tracking-tight text-foreground tabular-nums">{{ totalFailedTasks }}</span>
-          <span class="text-[11px] text-muted-foreground">flagged</span>
+      <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-destructive/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-destructive/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
+        <div class="flex items-center justify-between text-xs text-muted-foreground">
+          <span class="font-semibold">Failed</span>
+          <div class="flex size-7 items-center justify-center rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
+            <AlertTriangle class="size-3.5" :stroke-width="1.8" />
+          </div>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="text-2xl font-bold tracking-tight text-destructive tabular-nums">{{ totalFailedTasks }}</span>
+          <span class="text-[11px] text-muted-foreground">flagged for rework</span>
         </div>
       </div>
     </div>
@@ -537,14 +581,14 @@ onMounted(async () => {
       <!-- Toolbar: Search & Filter Pills -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <!-- Filter Pills -->
-        <div class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs self-start">
+        <div class="inline-flex p-1 rounded-xl bg-muted/60 border border-border/80 shadow-2xs self-start gap-1">
           <button
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               projectStatusFilter === 'ALL'
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="projectStatusFilter = 'ALL'"
           >
@@ -552,11 +596,11 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               projectStatusFilter === 'PENDING'
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="projectStatusFilter = 'PENDING'"
           >
@@ -564,11 +608,11 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               projectStatusFilter === 'COMPLETED'
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="projectStatusFilter = 'COMPLETED'"
           >
@@ -578,20 +622,20 @@ onMounted(async () => {
 
         <!-- Search Bar -->
         <div class="relative w-full sm:w-72">
-          <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" :stroke-width="1.6" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" :stroke-width="1.8" />
           <Input
             v-model="projectSearchQuery"
             placeholder="Search projects..."
-            class="pl-8 h-8 text-xs bg-card border-border"
+            class="pl-9 h-9 text-xs"
             @input="handleProjectSearchInput"
           />
           <button
             v-if="projectSearchQuery"
             type="button"
-            class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
             @click="projectSearchQuery = ''; fetchProjects()"
           >
-            <X class="size-3" :stroke-width="1.6" />
+            <X class="size-3" :stroke-width="1.8" />
           </button>
         </div>
       </div>
@@ -667,18 +711,18 @@ onMounted(async () => {
           <button
             v-if="currentProject && currentProject.pending_count > 0 && canEvaluate"
             type="button"
-            class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium bg-foreground text-background hover:bg-foreground/90 transition-all cursor-pointer active:scale-[0.98]"
+            class="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 transition-all cursor-pointer active:scale-[0.98] shadow-2xs"
             @click="openProjectPassAll(currentProject)"
           >
-            <CheckCheck class="size-3.5" :stroke-width="1.6" />
+            <CheckCheck class="size-3.5" :stroke-width="1.8" />
             <span>Pass All Pending ({{ currentProject.pending_count }})</span>
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium text-muted-foreground hover:text-foreground border border-border/70 hover:bg-muted transition-colors cursor-pointer"
+            class="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground border border-border/80 hover:bg-muted/80 transition-colors cursor-pointer shadow-2xs"
             @click="fetchQATasks"
           >
-            <RefreshCw class="size-3" :class="{ 'animate-spin': isLoadingTasks }" :stroke-width="1.6" />
+            <RefreshCw class="size-3" :class="{ 'animate-spin': isLoadingTasks }" :stroke-width="1.8" />
             <span>Refresh</span>
           </button>
         </div>
@@ -686,16 +730,16 @@ onMounted(async () => {
 
       <!-- Status Tabs -->
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs">
+        <div class="inline-flex p-1 rounded-xl bg-muted/60 border border-border/80 shadow-2xs gap-1">
           <button
             v-for="tab in statusTabs"
             :key="tab.id"
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               selectedStatusFilter === tab.id
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="setStatusFilter(tab.id)"
           >
@@ -704,10 +748,10 @@ onMounted(async () => {
         </div>
 
         <!-- Multi-Selection Summary Counter -->
-        <div v-if="selectedTaskIds.size > 0" class="inline-flex items-center gap-2 text-xs font-medium text-foreground bg-muted/50 px-2.5 py-1 rounded-md border border-border">
+        <div v-if="selectedTaskIds.size > 0" class="inline-flex items-center gap-2 text-xs font-semibold text-foreground bg-muted/60 px-3 py-1.5 rounded-xl border border-border/80 shadow-2xs">
           <span>{{ selectedTaskIds.size }} task(s) selected</span>
-          <button type="button" class="text-muted-foreground hover:text-foreground cursor-pointer" @click="deselectAll">
-            <X class="size-3" />
+          <button type="button" class="text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded-md hover:bg-muted" @click="deselectAll">
+            <X class="size-3" :stroke-width="1.8" />
           </button>
         </div>
       </div>
@@ -715,12 +759,12 @@ onMounted(async () => {
       <!-- Batch Action Toolbar (When items selected) -->
       <div
         v-if="selectedTaskIds.size > 0 && canEvaluate"
-        class="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-lg border border-border bg-card shadow-xs animate-in fade-in duration-150"
+        class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-border/80 bg-muted/30 shadow-2xs animate-in fade-in duration-150"
       >
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
             @click="toggleSelectAllPage"
           >
             <span>{{ isAllPageSelected ? 'Deselect Page' : 'Select All Page' }}</span>
@@ -730,19 +774,19 @@ onMounted(async () => {
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium bg-foreground text-background hover:bg-foreground/90 transition-all cursor-pointer"
+            class="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 transition-all cursor-pointer shadow-2xs"
             @click="openBatchPassSelected"
           >
-            <CheckCheck class="size-3.5" :stroke-width="1.6" />
+            <CheckCheck class="size-3.5" :stroke-width="1.8" />
             <span>Pass Selected ({{ selectedTaskIds.size }})</span>
           </button>
 
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium text-destructive hover:bg-destructive/10 border border-destructive/25 transition-colors cursor-pointer"
+            class="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive/10 border border-destructive/25 transition-colors cursor-pointer shadow-2xs"
             @click="openBatchFailSelected"
           >
-            <AlertTriangle class="size-3.5" :stroke-width="1.6" />
+            <AlertTriangle class="size-3.5" :stroke-width="1.8" />
             <span>Flag Disputed ({{ selectedTaskIds.size }})</span>
           </button>
         </div>
@@ -776,7 +820,7 @@ onMounted(async () => {
             v-for="task in qaTasks"
             :key="task.id"
             :task="task"
-            :selectable="canEvaluate"
+            :selectable="canEvaluate && (task.status === 'PENDING' || task.status === 'UNASSIGNED')"
             :selected="selectedTaskIds.has(task.id)"
             @update:selected="toggleTaskSelection(task.id, $event)"
             @score-consensus="openEvalModal"

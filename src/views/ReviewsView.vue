@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   CheckCheck,
   X,
+  XCircle,
   SlidersHorizontal,
   Clock,
   CheckCircle2,
@@ -457,40 +458,42 @@ onMounted(async () => {
 <template>
   <div class="flex flex-col gap-6 max-w-7xl mx-auto pb-12">
     <!-- Master Unified Navigation: Review Queue vs QA Inspection -->
-    <div class="flex items-center gap-1.5 border-b border-border/80 pb-3">
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer select-none"
-        :class="
-          activeTab === 'reviews'
-            ? 'bg-foreground text-background shadow-2xs font-semibold'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-        "
-        @click="switchTab('reviews')"
-      >
-        <FileCheck2 class="size-3.5" :stroke-width="1.6" />
-        <span>Review Queue</span>
-        <span
-          v-if="totalPendingReviews > 0"
-          class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold tabular-nums"
+    <div class="flex items-center justify-between border-b border-border/80 pb-4">
+      <div class="inline-flex p-1 rounded-xl bg-muted/60 border border-border/80 shadow-2xs gap-1">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none"
+          :class="
+            activeTab === 'reviews'
+              ? 'bg-foreground text-background shadow-2xs font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
+          "
+          @click="switchTab('reviews')"
         >
-          {{ totalPendingReviews }}
-        </span>
-      </button>
+          <FileCheck2 class="size-4" :stroke-width="1.8" />
+          <span>Review Queue</span>
+          <span
+            v-if="totalPendingReviews > 0"
+            class="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold tabular-nums border border-amber-500/25"
+          >
+            {{ totalPendingReviews }}
+          </span>
+        </button>
 
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer select-none"
-        :class="
-          activeTab === 'qa'
-            ? 'bg-foreground text-background shadow-2xs font-semibold'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-        "
-        @click="switchTab('qa')"
-      >
-        <CheckCircle2 class="size-3.5" :stroke-width="1.6" />
-        <span>QA Inspection & Consensus</span>
-      </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none"
+          :class="
+            activeTab === 'qa'
+              ? 'bg-foreground text-background shadow-2xs font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
+          "
+          @click="switchTab('qa')"
+        >
+          <CheckCircle2 class="size-4" :stroke-width="1.8" />
+          <span>QA Inspection</span>
+        </button>
+      </div>
     </div>
 
     <!-- Render QA Inspection View if activeTab === 'qa' -->
@@ -507,39 +510,39 @@ onMounted(async () => {
         <button
           v-if="selectedProject"
           type="button"
-          class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground mb-1 cursor-pointer transition-colors"
+          class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground mb-1 cursor-pointer transition-colors"
           @click="backToProjects"
         >
-          <ArrowLeft class="size-3.5" :stroke-width="1.6" />
+          <ArrowLeft class="size-3.5" :stroke-width="1.8" />
           <span>Back to All Projects</span>
         </button>
 
         <div class="flex items-center gap-2.5 flex-wrap">
-          <h1 class="text-xl font-semibold tracking-tight text-foreground">
+          <h1 class="text-xl font-bold tracking-tight text-foreground">
             {{ selectedProject ? selectedProject.project_name : 'Quality Reviews' }}
           </h1>
 
           <!-- Badges for selected project -->
           <template v-if="selectedProject">
             <span
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border"
+              class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shadow-2xs"
               :class="getModalityConfig(selectedProject.modality).badgeClass"
             >
-              <component :is="getModalityConfig(selectedProject.modality).icon" class="size-3" :stroke-width="1.75" />
+              <component :is="getModalityConfig(selectedProject.modality).icon" class="size-3" :stroke-width="1.8" />
               <span>{{ getModalityConfig(selectedProject.modality).shortLabel }}</span>
             </span>
             <span
               v-if="selectedProject.pending_count > 0"
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+              class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shadow-2xs"
             >
-              <Clock class="size-3" :stroke-width="1.6" />
+              <Clock class="size-3" :stroke-width="1.8" />
               {{ selectedProject.pending_count }} pending
             </span>
           </template>
 
           <span
             v-else-if="!isLoadingProjects"
-            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border"
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border shadow-2xs"
           >
             {{ totalPendingReviews }} pending across {{ projects.length }} projects
           </span>
@@ -556,84 +559,93 @@ onMounted(async () => {
       </div>
 
       <!-- Right Top Actions: Mode Switcher (only when not drilled into a project) -->
-      <div v-if="!selectedProject" class="inline-flex p-0.5 rounded-lg bg-muted/60 border border-border shadow-2xs self-start sm:self-auto shrink-0">
+      <div v-if="!selectedProject" class="inline-flex p-1 rounded-xl bg-muted/60 border border-border/80 shadow-2xs self-start sm:self-auto shrink-0 gap-1">
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all cursor-pointer select-none"
+          class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
           :class="
             viewMode === 'PROJECTS'
-              ? 'bg-foreground text-background font-medium shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-foreground text-background font-bold shadow-2xs'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
           "
           @click="viewMode = 'PROJECTS'"
         >
-          <FolderKanban class="size-3.5" :stroke-width="1.6" />
+          <FolderKanban class="size-3.5" :stroke-width="1.8" />
           <span>By Project</span>
         </button>
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all cursor-pointer select-none"
+          class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
           :class="
             viewMode === 'ITEMS'
-              ? 'bg-foreground text-background font-medium shadow-2xs'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-foreground text-background font-bold shadow-2xs'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
           "
           @click="viewMode = 'ITEMS'; fetchReviews()"
         >
-          <ListFilter class="size-3.5" :stroke-width="1.6" />
+          <ListFilter class="size-3.5" :stroke-width="1.8" />
           <span>All Items</span>
         </button>
       </div>
     </div>
 
     <template v-if="!selectedProject && viewMode === 'PROJECTS'">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div class="p-3.5 rounded-lg border border-border bg-card shadow-2xs">
+      <!-- Berry 4-card metric strip with dual circular accents -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-primary/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-primary/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
           <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Projects Needing Review</span>
-            <FolderKanban class="size-4 text-muted-foreground" :stroke-width="1.6" />
+            <span class="font-semibold">Projects Needing Review</span>
+            <div class="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <FolderKanban class="size-3.5" :stroke-width="1.8" />
+            </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span class="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl font-bold tracking-tight text-foreground tabular-nums">
               {{ activeProjectsCount }}
             </span>
             <span class="text-[11px] text-muted-foreground">of {{ projects.length }} active</span>
           </div>
         </div>
 
-        <div class="p-3.5 rounded-lg border border-border bg-card shadow-2xs">
+        <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-amber-500/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-amber-500/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
           <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Total Pending Reviews</span>
-            <Clock class="size-4 text-amber-500" :stroke-width="1.6" />
+            <span class="font-semibold">Total Pending Reviews</span>
+            <div class="flex size-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              <Clock class="size-3.5" :stroke-width="1.8" />
+            </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span class="text-2xl font-semibold tracking-tight text-amber-600 dark:text-amber-400 tabular-nums">
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 tabular-nums">
               {{ totalPendingReviews }}
             </span>
             <span class="text-[11px] text-muted-foreground">awaiting reviewer</span>
           </div>
         </div>
 
-        <div class="p-3.5 rounded-lg border border-border bg-card shadow-2xs">
+        <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-emerald-500/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-emerald-500/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
           <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Approved Annotations</span>
-            <CheckCircle2 class="size-4 text-emerald-500" :stroke-width="1.6" />
+            <span class="font-semibold">Approved Annotations</span>
+            <div class="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+              <CheckCircle2 class="size-3.5" :stroke-width="1.8" />
+            </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span class="text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
               {{ totalApprovedReviews }}
             </span>
             <span class="text-[11px] text-muted-foreground">passed checks</span>
           </div>
         </div>
 
-        <div class="p-3.5 rounded-lg border border-border bg-card shadow-2xs">
+        <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-2xs before:absolute before:size-24 before:rounded-full before:bg-destructive/5 before:-top-6 before:-right-6 after:absolute after:size-24 after:rounded-full after:bg-destructive/5 after:-bottom-6 after:-right-2 before:pointer-events-none after:pointer-events-none">
           <div class="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Rework / Rejected</span>
-            <XCircle class="size-4 text-destructive" :stroke-width="1.6" />
+            <span class="font-semibold">Rework / Rejected</span>
+            <div class="flex size-7 items-center justify-center rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
+              <XCircle class="size-3.5" :stroke-width="1.8" />
+            </div>
           </div>
-          <div class="mt-2 flex items-baseline gap-2">
-            <span class="text-2xl font-semibold tracking-tight text-destructive tabular-nums">
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl font-bold tracking-tight text-destructive tabular-nums">
               {{ totalRejectedReviews }}
             </span>
             <span class="text-[11px] text-muted-foreground">returned to queue</span>
@@ -644,14 +656,14 @@ onMounted(async () => {
       <!-- Project Search & Filter Controls -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <!-- Status Filter Pills -->
-        <div class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs self-start sm:self-auto">
+        <div class="inline-flex p-1 rounded-xl bg-muted/60 border border-border/80 shadow-2xs self-start sm:self-auto gap-1">
           <button
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               projectStatusFilter === 'ALL'
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="projectStatusFilter = 'ALL'"
           >
@@ -659,11 +671,11 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               projectStatusFilter === 'PENDING'
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="projectStatusFilter = 'PENDING'"
           >
@@ -671,11 +683,11 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               projectStatusFilter === 'COMPLETED'
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="projectStatusFilter = 'COMPLETED'"
           >
@@ -685,11 +697,11 @@ onMounted(async () => {
 
         <!-- Search Project Input -->
         <div class="relative w-full sm:w-72">
-          <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" :stroke-width="1.6" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" :stroke-width="1.8" />
           <Input
             :model-value="projectSearchQuery"
             placeholder="Search project by name..."
-            class="h-8 pl-8 pr-3 text-xs rounded-md shadow-2xs"
+            class="h-9 pl-9 pr-3 text-xs"
             @input="projectSearchQuery = ($event.target as HTMLInputElement).value; handleProjectSearchInput()"
           />
         </div>
@@ -721,16 +733,16 @@ onMounted(async () => {
 
     <template v-else>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="inline-flex p-0.5 rounded-md bg-muted/60 border border-border shadow-2xs self-start sm:self-auto">
+        <div class="inline-flex p-1 rounded-xl bg-muted/60 border border-border/80 shadow-2xs self-start sm:self-auto gap-1">
           <button
             v-for="tab in statusTabs"
             :key="tab.id"
             type="button"
-            class="rounded px-2.5 py-1 text-xs font-medium transition-all cursor-pointer select-none"
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer select-none"
             :class="
               selectedStatusFilter === tab.id
-                ? 'bg-foreground text-background font-medium shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
             "
             @click="setStatusFilter(tab.id)"
           >
@@ -740,11 +752,11 @@ onMounted(async () => {
 
         <!-- Search Bar -->
         <div class="relative w-full sm:w-72">
-          <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" :stroke-width="1.6" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" :stroke-width="1.8" />
           <Input
             :model-value="searchQuery"
             placeholder="Filter by file or comment..."
-            class="h-8 pl-8 pr-3 text-xs rounded-md shadow-2xs"
+            class="h-9 pl-9 pr-3 text-xs"
             @input="searchQuery = ($event.target as HTMLInputElement).value; handleSearchInput()"
           />
         </div>
@@ -752,15 +764,15 @@ onMounted(async () => {
 
       <!-- Batch Actions Bar (Toolbar) -->
       <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border border-border bg-muted/30 shadow-2xs"
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-3.5 rounded-2xl border border-border/80 bg-muted/30 shadow-2xs"
       >
         <!-- Left: Select All Checkbox & Count -->
         <div class="flex items-center gap-3">
-          <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground select-none">
+          <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground select-none">
             <input
               type="checkbox"
               :checked="isAllCurrentPageSelected"
-              class="size-3.5 rounded border-border text-primary focus:ring-0 cursor-pointer accent-primary"
+              class="size-4 rounded-md border-border text-primary cursor-pointer accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               @change="toggleSelectAllCurrentPage"
             />
             <span>Select All (Page)</span>
@@ -769,7 +781,7 @@ onMounted(async () => {
           <span class="text-border text-xs">|</span>
 
           <span class="text-xs text-muted-foreground tabular-nums">
-            <strong class="text-foreground font-semibold">{{ selectedAnnotationIds.size }}</strong> of {{ totalReviews }} selected
+            <strong class="text-foreground font-bold">{{ selectedAnnotationIds.size }}</strong> of {{ totalReviews }} selected
           </span>
         </div>
 
@@ -780,7 +792,7 @@ onMounted(async () => {
             v-if="canReject"
             type="button"
             :disabled="selectedAnnotationIds.size === 0"
-            class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium border border-border bg-card transition-colors cursor-pointer"
+            class="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-semibold border border-border/80 bg-card transition-colors cursor-pointer shadow-2xs"
             :class="
               selectedAnnotationIds.size > 0
                 ? 'text-destructive hover:bg-destructive/10 hover:border-destructive/25'
@@ -788,7 +800,7 @@ onMounted(async () => {
             "
             @click="openBatchRejectModal"
           >
-            <X class="size-3.5" :stroke-width="1.6" />
+            <X class="size-3.5" :stroke-width="1.8" />
             <span>Reject Selected ({{ selectedAnnotationIds.size }})</span>
           </button>
 
@@ -797,7 +809,7 @@ onMounted(async () => {
             v-if="canApprove"
             type="button"
             :disabled="selectedAnnotationIds.size === 0 || isSubmittingBatch"
-            class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium bg-foreground text-background transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
+            class="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-xs font-semibold bg-foreground text-background transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
             :class="
               selectedAnnotationIds.size > 0
                 ? 'hover:bg-foreground/90'
@@ -805,7 +817,7 @@ onMounted(async () => {
             "
             @click="handleBatchApproveSelected"
           >
-            <CheckCheck class="size-3.5" :stroke-width="1.6" />
+            <CheckCheck class="size-3.5" :stroke-width="1.8" />
             <span>Approve Selected ({{ selectedAnnotationIds.size }})</span>
           </button>
 
@@ -813,10 +825,10 @@ onMounted(async () => {
           <button
             v-if="selectedProject && selectedProject.pending_count > 0 && canApprove"
             type="button"
-            class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+            class="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer shadow-2xs"
             @click="promptApproveAllProject(selectedProject)"
           >
-            <Sparkles class="size-3.5" :stroke-width="1.6" />
+            <Sparkles class="size-3.5" :stroke-width="1.8" />
             <span>Approve All Project Pending ({{ selectedProject.pending_count }})</span>
           </button>
         </div>
