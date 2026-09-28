@@ -5,7 +5,17 @@ import { useAuthStore } from '@/stores/auth'
 import { toast } from '@/utils/toast'
 import Input from '@/components/ui/Input.vue'
 import Button from '@/components/ui/Button.vue'
-import { ArrowRight, Layers, LoaderCircle, CheckCircle2 } from 'lucide-vue-next'
+import AppLogo from '@/components/ui/AppLogo.vue'
+import {
+  LoaderCircle,
+  CheckCircle2,
+  Tag,
+  Video,
+  FileText,
+  Image,
+  ArrowRight,
+  ChevronRight,
+} from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -42,130 +52,186 @@ async function handleLogin() {
     isLoading.value = false
   }
 }
+
+const capabilities = [
+  {
+    icon: Image,
+    label: 'Image annotation',
+    desc: 'Bounding box, polygon, keypoint, segmentation',
+  },
+  {
+    icon: Video,
+    label: 'Video labeling',
+    desc: 'Frame-level classification and temporal events',
+  },
+  {
+    icon: FileText,
+    label: 'Text NER and classification',
+    desc: 'Named entity recognition, intent tagging',
+  },
+  {
+    icon: Tag,
+    label: 'Multi-class taxonomy',
+    desc: 'Hierarchical labels with consensus scoring',
+  },
+]
+
+const pipelineStages = ['Annotate', 'Review', 'QA', 'Complete']
 </script>
 
 <template>
   <div class="min-h-screen w-full flex flex-col lg:flex-row bg-background select-none font-sans overflow-x-hidden">
-    <!-- LEFT HALF: Utilitarian Brand Identity with Coordinate Grid & Technical Architecture -->
-    <div class="lg:w-1/2 w-full bg-muted/40 p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-border min-h-[300px] lg:min-h-screen">
-      <!-- Subtle Technical Grid Overlay -->
-      <div
-        class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
-        style="background-size: 32px 32px; background-image: linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px);"
-      ></div>
 
-      <!-- Top: Main Logo & Title -->
-      <div class="relative z-10 max-w-lg pt-4 lg:pt-16">
-        <div class="flex items-center gap-3 group">
-          <div class="size-8 rounded-md bg-foreground text-background flex items-center justify-center border border-border shrink-0 shadow-2xs">
-            <Layers class="size-4" :stroke-width="1.6" />
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-xl font-semibold tracking-tight text-foreground">
-              Data Annotation
-            </span>
-            <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60">
-              Enterprise
-            </span>
-          </div>
+    <!-- LEFT PANEL: Platform context -->
+    <div class="lg:w-[52%] w-full bg-sidebar flex flex-col justify-between p-8 lg:p-14 relative overflow-hidden border-b lg:border-b-0 lg:border-r border-sidebar-border min-h-[320px] lg:min-h-screen">
+
+      <!-- Top: Logo wordmark only — no badge -->
+      <div class="relative z-10">
+        <div class="flex items-center gap-2.5">
+          <AppLogo size="lg" :show-text="true" :theme-invert="true" />
         </div>
 
-        <div class="mt-8 space-y-2">
-          <h1 class="text-2xl lg:text-3xl font-semibold tracking-tight text-foreground">
-            Precision labeling workforce infrastructure.
-          </h1>
-          <p class="text-xs text-muted-foreground leading-relaxed max-w-md">
-            High-throughput annotation workflows, deterministic consensus metrics, and programmatic quality assurance.
+        <!-- Headline -->
+        <div class="mt-10 space-y-3 max-w-md">
+          <p class="text-[11px] font-medium tracking-widest uppercase text-sidebar-muted-foreground">
+            Multi-modal labeling platform
           </p>
+          <h1 class="text-2xl lg:text-[28px] font-semibold leading-snug tracking-tight text-sidebar-foreground">
+            Annotation infrastructure for production ML pipelines.
+          </h1>
         </div>
+
+        <!-- Capability list -->
+        <ul class="mt-8 space-y-4">
+          <li
+            v-for="cap in capabilities"
+            :key="cap.label"
+            class="flex items-start gap-3"
+          >
+            <div class="mt-0.5 size-7 rounded-md bg-sidebar-accent flex items-center justify-center shrink-0">
+              <component :is="cap.icon" class="size-3.5 text-sidebar-foreground" :stroke-width="1.6" aria-hidden="true" />
+            </div>
+            <div>
+              <p class="text-xs font-medium text-sidebar-foreground leading-tight">{{ cap.label }}</p>
+              <p class="text-[11px] text-sidebar-muted-foreground mt-0.5 leading-snug">{{ cap.desc }}</p>
+            </div>
+          </li>
+        </ul>
       </div>
 
-      <!-- Bottom: Quality & Security Assurance Note -->
-      <div class="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/80 pt-4 font-sans">
-        <span>Enterprise Data Platform</span>
-        <span>ISO / SOC-2 Compliant</span>
+      <!-- Bottom: workflow pipeline summary -->
+      <div class="relative z-10 mt-10">
+        <p class="text-[10px] font-medium tracking-widest uppercase text-sidebar-muted-foreground mb-3">
+          Annotation pipeline
+        </p>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <template v-for="(stage, i) in pipelineStages" :key="stage">
+            <span class="text-[11px] font-medium text-sidebar-foreground">{{ stage }}</span>
+            <ChevronRight
+              v-if="i < pipelineStages.length - 1"
+              class="size-3 text-sidebar-muted-foreground"
+              :stroke-width="1.6"
+              aria-hidden="true"
+            />
+          </template>
+        </div>
+        <p class="text-[11px] text-sidebar-muted-foreground mt-2 leading-snug">
+          Every item moves through annotation, review, and QA with a full audit trail.
+        </p>
       </div>
     </div>
 
-    <!-- RIGHT HALF: Clean Centered Login Card -->
-    <div class="lg:w-1/2 w-full bg-background flex items-center justify-center p-6 lg:p-12 relative">
-      <div class="w-full max-w-sm animate-scale-in">
-        <div class="rounded-lg border border-border bg-card p-7 sm:p-8 shadow-2xs">
-          <div class="mb-6">
-            <h2 class="text-lg font-semibold text-foreground tracking-tight">
-              Sign In
+    <!-- RIGHT PANEL: Login form -->
+    <div class="lg:w-[48%] w-full bg-background flex items-center justify-center p-6 lg:p-12 relative">
+      <div class="w-full max-w-[400px] login-form-enter">
+        <div class="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-8 shadow-sm before:absolute before:size-40 before:rounded-full before:bg-primary/5 before:-top-12 before:-right-12 after:absolute after:size-40 after:rounded-full after:bg-primary/5 after:-bottom-12 after:-left-12 before:pointer-events-none after:pointer-events-none">
+
+          <!-- Form header -->
+          <div class="relative z-10 mb-6 space-y-1 text-center">
+            <h2 class="text-xl font-bold text-foreground tracking-tight">
+              Hi, Welcome Back
             </h2>
-            <p class="text-xs text-muted-foreground mt-1">
-              Enter your organization credentials to access the workspace
+            <p class="text-xs text-muted-foreground leading-relaxed">
+              Enter your credentials to access the workspace
             </p>
           </div>
 
-          <form class="space-y-4" @submit.prevent="handleLogin">
-            <!-- Email Input -->
+          <form class="relative z-10 space-y-4" @submit.prevent="handleLogin">
+            <!-- Email -->
             <div class="space-y-1.5">
-              <label class="text-xs font-medium text-foreground">
-                Email Address
+              <label class="text-xs font-semibold text-foreground" for="login-email">
+                Work email
               </label>
               <Input
+                id="login-email"
                 v-model="email"
                 type="email"
                 required
                 autocomplete="email"
-                placeholder="example@mail.com"
-                class="h-9 text-xs"
+                placeholder="you@company.com"
+                class="h-10 text-sm"
               />
             </div>
 
-            <!-- Password Input -->
+            <!-- Password -->
             <div class="space-y-1.5">
-              <label class="text-xs font-medium text-foreground">
+              <label class="text-xs font-semibold text-foreground" for="login-password">
                 Password
               </label>
               <Input
+                id="login-password"
                 v-model="password"
                 type="password"
                 required
                 autocomplete="current-password"
-                placeholder="••••••••••••"
-                class="h-9 text-xs"
+                placeholder="••••••••"
+                class="h-10 text-sm"
               />
             </div>
 
-            <!-- Keep me logged in Checkbox -->
+            <!-- Remember -->
             <div class="flex items-center justify-between pt-0.5">
               <label class="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   v-model="rememberMe"
                   type="checkbox"
-                  class="size-3.5 rounded border-border text-foreground accent-foreground focus:ring-0 cursor-pointer"
+                  class="size-4 rounded-md border-border text-primary cursor-pointer accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 />
-                <span class="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  Remember this session
+                <span class="text-xs text-muted-foreground hover:text-foreground transition-colors duration-100">
+                  Keep me signed in
                 </span>
               </label>
             </div>
 
-            <!-- Submit Button -->
+            <!-- Submit -->
             <Button
               type="submit"
               :disabled="isLoading || isSuccess"
-              class="w-full h-9 mt-2 font-medium text-xs shadow-2xs"
-              :class="isSuccess ? 'bg-emerald-600 text-white border-emerald-600' : ''"
+              class="w-full h-10 mt-2 font-semibold text-xs rounded-xl shadow-2xs"
+              :class="isSuccess ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-600' : ''"
             >
               <template v-if="isLoading">
-                <LoaderCircle class="size-3.5 animate-spin" />
-                <span>Authenticating...</span>
+                <LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+                <span>Signing in...</span>
               </template>
               <template v-else-if="isSuccess">
-                <CheckCircle2 class="size-3.5" :stroke-width="1.6" />
-                <span>Authenticated</span>
+                <CheckCircle2 class="size-4" :stroke-width="1.8" aria-hidden="true" />
+                <span>Signed in</span>
               </template>
               <template v-else>
-                <span>Continue</span>
-                <ArrowRight class="size-3.5" :stroke-width="1.6" />
+                <span>Sign In</span>
+                <ArrowRight class="size-4" :stroke-width="1.8" aria-hidden="true" />
               </template>
             </Button>
           </form>
+
+          <!-- Footer note inside card -->
+          <div class="relative z-10 mt-6 pt-5 border-t border-border/80 text-center">
+            <p class="text-[11px] text-muted-foreground leading-relaxed">
+              Protected multi-modal labeling workspace.<br>
+              Authorized personnel and annotator access only.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -173,10 +239,10 @@ async function handleLogin() {
 </template>
 
 <style scoped>
-@keyframes fadeInDown {
+@keyframes loginFormIn {
   from {
     opacity: 0;
-    transform: translateY(-16px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -184,37 +250,7 @@ async function handleLogin() {
   }
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.animate-fade-in-down {
-  animation: fadeInDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.login-form-enter {
+  animation: loginFormIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 </style>

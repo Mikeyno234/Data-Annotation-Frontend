@@ -42,45 +42,45 @@ function setTab(tab: 'profile' | 'preferences' | 'security' | 'shortcuts') {
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="flex items-center gap-1 overflow-x-auto rounded-lg bg-muted/60 p-1 text-xs border border-border/50 scrollbar-none">
+    <!-- Navigation Tabs (Berry Segmented Pill Bar) -->
+    <div class="inline-flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-muted/60 p-1.5 text-xs border border-border/70 shadow-2xs scrollbar-none w-fit">
       <button
         type="button"
-        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'profile' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
+        class="flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'profile' ? 'bg-card text-foreground shadow-xs font-bold border border-border/70' : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border border-transparent'"
         @click="setTab('profile')"
       >
-        <User class="size-3.5" />
+        <User class="size-3.5" :stroke-width="1.8" />
         <span>Profile & Avatar</span>
       </button>
 
       <button
         type="button"
-        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'preferences' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
+        class="flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'preferences' ? 'bg-card text-foreground shadow-xs font-bold border border-border/70' : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border border-transparent'"
         @click="setTab('preferences')"
       >
-        <Sliders class="size-3.5" />
+        <Sliders class="size-3.5" :stroke-width="1.8" />
         <span>Workspace Preferences</span>
       </button>
 
       <button
         type="button"
-        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'security' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
+        class="flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'security' ? 'bg-card text-foreground shadow-xs font-bold border border-border/70' : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border border-transparent'"
         @click="setTab('security')"
       >
-        <Lock class="size-3.5" />
+        <Lock class="size-3.5" :stroke-width="1.8" />
         <span>Security & Password</span>
       </button>
 
       <button
         type="button"
-        class="flex items-center gap-2 rounded-md px-3.5 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
-        :class="activeTab === 'shortcuts' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'"
+        class="flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        :class="activeTab === 'shortcuts' ? 'bg-card text-foreground shadow-xs font-bold border border-border/70' : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border border-transparent'"
         @click="setTab('shortcuts')"
       >
-        <Keyboard class="size-3.5" />
+        <Keyboard class="size-3.5" :stroke-width="1.8" />
         <span>Keyboard Shortcuts</span>
       </button>
     </div>
