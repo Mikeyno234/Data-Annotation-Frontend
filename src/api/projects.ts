@@ -48,6 +48,7 @@ export const projectsApi = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 600000, // 10 minutes timeout for large dataset uploads (>= 1GB)
     })
   },
   exportProject(id: number | string, format: string = 'json') {

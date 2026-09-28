@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { User, Role, Permission, AuditLog, AnalyticsOverview, Menu, Pagination, Organization, CreateUserPayload, UpdateUserPayload } from '@/types'
+import type { User, Role, Permission, AuditLog, AnalyticsOverview, PipelineActivityItem, Menu, Pagination, Organization, CreateUserPayload, UpdateUserPayload } from '@/types'
 
 export const adminApi = {
   getUsers(params?: {
@@ -52,5 +52,8 @@ export const adminApi = {
   },
   getAnalyticsOverview() {
     return apiClient.get<{ success: boolean; data: AnalyticsOverview }>('/analytics/overview')
+  },
+  getPipelineActivities(params?: { limit?: number }) {
+    return apiClient.get<{ success: boolean; data: PipelineActivityItem[] }>('/analytics/activities', { params })
   }
 }

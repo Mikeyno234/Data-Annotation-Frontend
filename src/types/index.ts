@@ -281,6 +281,8 @@ export interface ImageBox {
   label: string
   confidence?: number
   color?: string
+  hidden?: boolean
+  locked?: boolean
 }
 
 export interface ImagePolygon {
@@ -289,6 +291,8 @@ export interface ImagePolygon {
   label: string
   confidence?: number
   color?: string
+  hidden?: boolean
+  locked?: boolean
 }
 
 export interface ImageClassificationPayload {
@@ -442,6 +446,20 @@ export interface AnalyticsOverview {
   pending_reviews: number
   mean_lead_time: string
   quality_score: string
+}
+
+export interface PipelineActivityItem {
+  id: number
+  user_id: number
+  name: string
+  action: string
+  target: string
+  project_id: number
+  created_at: string
+  avatar: string
+  time: string
+  type: string
+  color: string
 }
 
 export interface Pagination {
