@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { DataItem, TaskStatus, Batch } from '@/types'
 import { getStatusConfig } from '@/utils/design'
 import Button from '@/components/ui/Button.vue'
 import Badge from '@/components/ui/Badge.vue'
-import Card from '@/components/ui/Card.vue'
 import Pagination from '@/components/ui/Pagination.vue'
+import Select, { type SelectOption } from '@/components/ui/Select.vue'
 import {
   Table,
   TableHeader,
@@ -91,6 +92,35 @@ function getAssigneeInfo(item: DataItem) {
     subtext: 'Unassigned',
   }
 }
+
+const batchOptions = computed<SelectOption<number | ''>[]>(() => [
+  { value: '', label: 'All Batches' },
+  ...(props.batches || []).map((b) => ({
+    value: b.id,
+    label: `Batch #${b.sequence || b.id} - ${b.name}`,
+  })),
+])
+
+const statusOptions: SelectOption<TaskStatus | ''>[] = [
+  { value: '', label: 'All Statuses' },
+  { value: 'UNASSIGNED', label: 'Unassigned', badge: 'New' },
+  { value: 'IN_PROGRESS', label: 'In Progress', badge: 'Active' },
+  { value: 'ANNOTATED', label: 'Awaiting Review' },
+  { value: 'QA_PENDING', label: 'Awaiting QA' },
+  { value: 'REWORK', label: 'Rework' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'ESCALATED', label: 'Escalated' },
+]
+
+function onBatchChange(val: number | '') {
+  emit('update:selectedBatchFilter', val)
+  emit('batchFilterChange')
+}
+
+function onStatusChange(val: TaskStatus | '') {
+  emit('update:selectedStatusFilter', val)
+  emit('filterChange')
+}
 </script>
 
 <template>
@@ -99,74 +129,62 @@ function getAssigneeInfo(item: DataItem) {
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex flex-wrap items-center gap-3">
         <div class="flex items-center gap-2">
-          <h2 class="text-base font-semibold text-foreground tracking-tight">Data Items & Tasks</h2>
-          <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <h2 class="text-sm font-bold text-foreground tracking-tight">Data Items & Tasks</h2>
+          <span class="rounded-full bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 text-xs font-semibold tabular-nums">
             {{ totalDataItems.toLocaleString() }}
           </span>
         </div>
 
-        <div class="flex items-center gap-2 ml-2">
-          <!-- Batch Filter -->
-          <div v-if="batches && batches.length > 0" class="flex items-center gap-1.5">
-            <Layers class="size-3 text-muted-foreground" :stroke-width="1.6" />
-            <select
-              :value="selectedBatchFilter"
-              class="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/15 cursor-pointer transition-all"
-              @change="emit('update:selectedBatchFilter', ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : ''); emit('batchFilterChange')"
-            >
-              <option value="">All Batches</option>
-              <option v-for="b in batches" :key="b.id" :value="b.id">
-                Batch #{{ b.sequence || b.id }} - {{ b.name }}
-              </option>
-            </select>
+        <div class="flex items-center gap-2.5 ml-1">
+          <!-- Custom Batch Filter -->
+          <div v-if="batches && batches.length > 0" class="flex items-center gap-1.5 w-44 sm:w-56">
+            <Layers class="size-3.5 text-muted-foreground shrink-0" :stroke-width="1.8" />
+            <Select
+              :model-value="selectedBatchFilter ?? ''"
+              :options="batchOptions"
+              class-name="w-full text-xs shadow-2xs"
+              @change="onBatchChange"
+            />
           </div>
 
-          <!-- Status Filter -->
-          <div class="flex items-center gap-1.5">
-            <SlidersHorizontal class="size-3 text-muted-foreground" :stroke-width="1.6" />
-            <select
-              :value="selectedStatusFilter"
-              class="h-8 rounded-md border border-border bg-card px-2.5 text-xs text-foreground focus-visible:outline-none focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/15 cursor-pointer transition-all"
-              @change="emit('update:selectedStatusFilter', ($event.target as HTMLSelectElement).value as TaskStatus | ''); emit('filterChange')"
-            >
-              <option value="">All Statuses</option>
-              <option value="UNASSIGNED">Unassigned</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="ANNOTATED">Awaiting Review</option>
-              <option value="QA_PENDING">Awaiting QA</option>
-              <option value="REWORK">Rework</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="ESCALATED">Escalated</option>
-            </select>
+          <!-- Custom Status Filter -->
+          <div class="flex items-center gap-1.5 w-36 sm:w-44">
+            <SlidersHorizontal class="size-3.5 text-muted-foreground shrink-0" :stroke-width="1.8" />
+            <Select
+              :model-value="selectedStatusFilter ?? ''"
+              :options="statusOptions"
+              class-name="w-full text-xs shadow-2xs"
+              @change="onStatusChange"
+            />
           </div>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
         <!-- Resume in-progress task banner -->
-        <div v-if="myInProgressTask" class="flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20">
-          <RotateCcw class="size-3.5" :stroke-width="1.6" />
+        <div v-if="myInProgressTask" class="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-2xs">
+          <RotateCcw class="size-3.5" :stroke-width="1.8" />
           <span>You have an in-progress task</span>
         </div>
-        <Button size="sm" class="gap-1.5 shadow-2xs rounded-md h-8 px-3.5 cursor-pointer" @click="emit('checkoutNext')">
+        <Button size="sm" class="gap-2 shadow-xs rounded-xl h-9 px-4 font-semibold cursor-pointer" @click="emit('checkoutNext')">
           <Play class="size-3 fill-current" />
           <span>Checkout Next Task</span>
         </Button>
       </div>
     </div>
 
-    <!-- Data Items Table -->
-    <Card class="overflow-hidden shadow-2xs border border-border">
+    <!-- Data Items Table (Berry MainCard style) -->
+    <div class="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
       <Table>
         <TableHeader>
-          <TableRow class="bg-muted/40 hover:bg-muted/40">
-            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground w-20">Task ID</TableHead>
-            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">File Name</TableHead>
-            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">Batch</TableHead>
-            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground w-24">Modality</TableHead>
-            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">Status</TableHead>
-            <TableHead class="px-5 py-3 text-[11px] font-medium text-muted-foreground">Assignee</TableHead>
-            <TableHead class="px-5 py-3 text-right text-[11px] font-medium text-muted-foreground w-28">Actions</TableHead>
+          <TableRow class="bg-muted/50 hover:bg-muted/50 border-b border-border/70">
+            <TableHead class="px-5 py-3 text-[11px] font-semibold text-muted-foreground w-20">Task ID</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-semibold text-muted-foreground">File Name</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-semibold text-muted-foreground">Batch</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-semibold text-muted-foreground w-24">Modality</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-semibold text-muted-foreground">Status</TableHead>
+            <TableHead class="px-5 py-3 text-[11px] font-semibold text-muted-foreground">Assignee</TableHead>
+            <TableHead class="px-5 py-3 text-right text-[11px] font-semibold text-muted-foreground w-28">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -318,6 +336,6 @@ function getAssigneeInfo(item: DataItem) {
           @update:limit="emit('limitChange', $event)"
         />
       </div>
-    </Card>
+    </div>
   </div>
 </template>

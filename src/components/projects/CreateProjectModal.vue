@@ -296,7 +296,7 @@ function addNewLabel() {
                   :value="user.id"
                   :checked="(newProject.assignee_ids || []).includes(user.id)"
                   @change="toggleAssignee(user.id)"
-                  class="size-3.5 rounded border-border text-primary focus:ring-0 cursor-pointer accent-primary"
+                  class="size-4 rounded border-border text-primary cursor-pointer accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 />
                 <div class="truncate flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-1">
