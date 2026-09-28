@@ -1,6 +1,7 @@
 import { ref, onMounted, onUnmounted, getCurrentInstance, type Ref, type ComputedRef } from 'vue'
 import type { DataItem } from '@/types'
 import { annotationsApi } from '@/api/annotations'
+import { workflowApi } from '@/api/workflow'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { toast } from '@/utils/toast'
 import { useHistoryStack } from './useHistoryStack'
@@ -49,8 +50,9 @@ export interface UseAnnotationSessionReturn<T> {
   saveDraft: (customPayload?: T) => Promise<void>
   clearDraft: () => void
 
-  // Submission
+  // Submission & Workflow
   submit: () => Promise<void>
+  skip: () => Promise<void>
 
   // Timer Controls
   startTimer: () => void
@@ -148,6 +150,21 @@ export function useAnnotationSession<T>(
     }
   }
 
+  async function skip(): Promise<void> {
+    try {
+      await workflowApi.releaseTask(item.id)
+      leaseLock.stopTimer()
+      draftStorage.stopAutosave()
+      clearDraft()
+      toast.info('Task skipped', 'Task returned to queue. Loading next task...')
+      if (onSubmitted) {
+        onSubmitted()
+      }
+    } catch (err: any) {
+      toast.error('Failed to skip task', err?.response?.data?.message || err?.message || 'Error releasing task')
+    }
+  }
+
   // 6. Centralized Keyboard Shortcuts
   function handleGlobalKeyDown(event: KeyboardEvent) {
     const target = event.target as HTMLElement | null
@@ -160,6 +177,12 @@ export function useAnnotationSession<T>(
     }
 
     const isCtrlOrCmd = event.ctrlKey || event.metaKey
+
+    if (isCtrlOrCmd && event.code === 'Enter') {
+      event.preventDefault()
+      submit()
+      return
+    }
 
     if (isCtrlOrCmd && event.code === 'KeyZ' && !event.shiftKey) {
       event.preventDefault()
@@ -240,6 +263,7 @@ export function useAnnotationSession<T>(
     saveDraft,
     clearDraft,
     submit,
+    skip,
     startTimer: leaseLock.startTimer,
     stopTimer: leaseLock.stopTimer,
     resetTimer: leaseLock.resetTimer,

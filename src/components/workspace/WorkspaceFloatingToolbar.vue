@@ -13,6 +13,7 @@ import {
   ZoomIn,
   ZoomOut,
   Sparkles,
+  Maximize2,
 } from 'lucide-vue-next'
 
 export type CanvasTool = 'select' | 'bbox' | 'lasso' | 'polygon' | 'pan' | 'sam3'
@@ -29,6 +30,7 @@ withDefaults(
     canSubmit?: boolean
     isDrawingPolygon?: boolean
     canUseAI?: boolean
+    zoomScale?: number
   }>(),
   {
     subtype: 'bbox',
@@ -40,6 +42,7 @@ withDefaults(
     canSubmit: true,
     isDrawingPolygon: false,
     canUseAI: true,
+    zoomScale: 1,
   }
 )
 
@@ -53,6 +56,7 @@ const emit = defineEmits<{
   zoomIn: []
   zoomOut: []
   resetZoom: []
+  fitToScreen: []
 }>()
 </script>
 
@@ -200,11 +204,19 @@ const emit = defineEmits<{
       </button>
       <button
         type="button"
-        class="flex h-8 px-2.5 items-center justify-center rounded-xl text-xs font-semibold tabular-nums transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94]"
-        title="Reset Zoom & Pan (100%)"
+        class="flex h-8 px-2 items-center justify-center rounded-xl text-2xs font-mono font-bold tabular-nums transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94]"
+        :title="`Current Zoom: ${Math.round(zoomScale * 100)}% (Click to reset 100%)`"
         @click="emit('resetZoom')"
       >
-        1:1
+        {{ Math.round(zoomScale * 100) }}%
+      </button>
+      <button
+        type="button"
+        class="flex size-8 items-center justify-center rounded-xl transition-all cursor-pointer hover:bg-muted hover:text-foreground active:scale-[0.94]"
+        title="Fit to Screen"
+        @click="emit('fitToScreen')"
+      >
+        <Maximize2 class="size-3.5 stroke-[1.9]" />
       </button>
 
       <!-- Divider -->

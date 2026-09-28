@@ -277,14 +277,15 @@ async function handleSAM3Click(worldX: number, worldY: number) {
   isAILoading.value = true
   try {
     const b64 = getImageBase64()
+    const canvas = canvasRef.value
     const res: any = await aiApi.segmentPoint(activeProjectId.value, {
       data_item_id: props.item.id,
       image_url: props.item.source_url?.startsWith('http') ? props.item.source_url : undefined,
       image_base64: b64 || undefined,
       points: [{ x: worldX, y: worldY, label: 1 }],
       label_name: currentLabel.value,
-      canvas_width: imageEl.naturalWidth || 800,
-      canvas_height: imageEl.naturalHeight || 600,
+      canvas_width: canvas?.width || imageEl.naturalWidth || 800,
+      canvas_height: canvas?.height || imageEl.naturalHeight || 600,
     })
     const data: any = res?.data?.polygons ? res.data : (res?.polygons ? res : res?.data)
     if (data?.polygons && data.polygons.length > 0) {
@@ -325,29 +326,44 @@ async function handleSAM3ConceptPrompt() {
 }
 
 function applyAIPolygons(polys: any[]) {
+  const canvas = canvasRef.value
+  const canvasW = canvas?.width || 1
+  const canvasH = canvas?.height || 1
+
   if (detectedSubtype.value === 'polygon') {
-    const newPolys: ImagePolygon[] = polys.map((p, idx) => ({
-      id: `poly_sam3_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
-      points: p.points,
-      label: currentLabel.value || p.label || 'Object',
-    }))
+    const newPolys: ImagePolygon[] = polys.map((p, idx) => {
+      const srcW = p.image_width || canvasW
+      const srcH = p.image_height || canvasH
+      const scaleX = canvasW / srcW
+      const scaleY = canvasH / srcH
+      return {
+        id: `poly_sam3_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+        points: p.points.map((pt: [number, number]) => [pt[0] * scaleX, pt[1] * scaleY]),
+        label: currentLabel.value || p.label || 'Object',
+      }
+    })
     const updated = [...currentPolygons.value, ...newPolys]
     session.payload.value = updated
     session.pushState(updated)
   } else if (detectedSubtype.value === 'bbox') {
     const newBoxes: ImageBox[] = polys.map((p, idx) => {
-      const xs = p.points.map((pt: any) => pt[0])
-      const ys = p.points.map((pt: any) => pt[1])
+      const srcW = p.image_width || canvasW
+      const srcH = p.image_height || canvasH
+      const scaleX = canvasW / srcW
+      const scaleY = canvasH / srcH
+
+      const xs = p.points.map((pt: any) => pt[0] * scaleX)
+      const ys = p.points.map((pt: any) => pt[1] * scaleY)
       const minX = Math.min(...xs)
       const maxX = Math.max(...xs)
       const minY = Math.min(...ys)
       const maxY = Math.max(...ys)
       return {
         id: `box_sam3_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
-        x: Math.max(0, minX),
-        y: Math.max(0, minY),
-        width: Math.max(1, maxX - minX),
-        height: Math.max(1, maxY - minY),
+        x: Math.max(0, Math.round(minX)),
+        y: Math.max(0, Math.round(minY)),
+        width: Math.max(1, Math.round(maxX - minX)),
+        height: Math.max(1, Math.round(maxY - minY)),
         label: currentLabel.value || p.label || 'Object',
       }
     })
@@ -480,6 +496,7 @@ onUnmounted(() => {
             :has-selection="!!selectedItemId || selectedClasses.length > 0"
             :is-saving="session.isSaving.value"
             :is-drawing-polygon="polygonDrawer.currentPolyPoints.value.length >= 3"
+            :zoom-scale="viewport.zoomScale.value"
             @undo="session.undo()"
             @redo="session.redo()"
             @delete-selected="selectedItemId ? deleteItem(selectedItemId) : null"
@@ -488,6 +505,7 @@ onUnmounted(() => {
             @zoom-in="viewport.applyZoom(viewport.zoomScale.value * 1.3)"
             @zoom-out="viewport.applyZoom(viewport.zoomScale.value / 1.3)"
             @reset-zoom="viewport.resetViewport()"
+            @fit-to-screen="viewport.resetViewport()"
           />
         </div>
 
@@ -602,6 +620,9 @@ onUnmounted(() => {
           :has-prelabel="session.hasPrelabel.value"
           @select="selectedItemId = $event; drawCanvas()"
           @delete="deleteItem($event)"
+          @toggle-visibility="polygonDrawer.togglePolygonVisibility($event)"
+          @toggle-lock="polygonDrawer.togglePolygonLock($event)"
+          @toggle-all-visibility="polygonDrawer.toggleAllPolygonsVisibility()"
           @update-label="polygonDrawer.updatePolygonLabel"
         />
 
@@ -614,6 +635,9 @@ onUnmounted(() => {
           :has-prelabel="session.hasPrelabel.value"
           @select="selectedItemId = $event; drawCanvas()"
           @delete="deleteItem($event)"
+          @toggle-visibility="bboxInteraction.toggleBoxVisibility($event)"
+          @toggle-lock="bboxInteraction.toggleBoxLock($event)"
+          @toggle-all-visibility="bboxInteraction.toggleAllBoxesVisibility()"
           @update-label="bboxInteraction.updateBoxLabel"
         />
       </div>

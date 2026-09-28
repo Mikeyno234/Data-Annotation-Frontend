@@ -70,9 +70,9 @@ export function useBBoxInteraction(options: UseBBoxInteractionOptions) {
   const isDrawingLasso = ref(false)
 
   function startBBoxMouseDown(clickX: number, clickY: number, activeTool: string): boolean {
-    // 1. Check if clicking on an existing selected box's resize handles
-    const selectedBox = currentBoxes.value.find((b) => b.id === selectedItemId.value)
-    if (selectedBox) {
+    // 1. Check if clicking on an existing selected box's resize handles (if not locked)
+    const selectedBox = currentBoxes.value.find((b) => b.id === selectedItemId.value && !b.hidden)
+    if (selectedBox && !selectedBox.locked) {
       const handles = getBoxHandles(selectedBox)
       const hitRadius = 8 / zoomScale.value
       const hitHandle = handles.find((h) => Math.hypot(clickX - h.x, clickY - h.y) <= hitRadius)
@@ -85,17 +85,21 @@ export function useBBoxInteraction(options: UseBBoxInteractionOptions) {
       }
     }
 
-    // 2. Check if clicking inside a box (to select or move it)
+    // 2. Check if clicking inside a visible box (to select or move it)
     const clickedBox = [...currentBoxes.value].reverse().find(
-      (b) => clickX >= b.x && clickX <= b.x + b.width && clickY >= b.y && clickY <= b.y + b.height
+      (b) => !b.hidden && clickX >= b.x && clickX <= b.x + b.width && clickY >= b.y && clickY <= b.y + b.height
     )
 
     if (clickedBox) {
       selectedItemId.value = clickedBox.id
-      isDraggingBox = true
-      initialBoxState = { ...clickedBox }
-      dragBoxStartX = clickX
-      dragBoxStartY = clickY
+      if (!clickedBox.locked) {
+        isDraggingBox = true
+        initialBoxState = { ...clickedBox }
+        dragBoxStartX = clickX
+        dragBoxStartY = clickY
+      } else {
+        isDraggingBox = false
+      }
       onRedraw()
       return true
     }
@@ -331,11 +335,41 @@ export function useBBoxInteraction(options: UseBBoxInteractionOptions) {
   }
 
   function deleteBox(id: string) {
+    const target = currentBoxes.value.find((b) => b.id === id)
+    if (target?.locked) {
+      toast.warning('Box Locked', 'Unlock this box in the outliner before deleting.')
+      return
+    }
     const updated = currentBoxes.value.filter((b) => b.id !== id)
     if (selectedItemId.value === id) selectedItemId.value = null
     onCommit(updated)
     onRedraw()
     toast.info('Annotation item deleted')
+  }
+
+  function toggleBoxVisibility(id: string) {
+    const updated = currentBoxes.value.map((b) => {
+      if (b.id === id) return { ...b, hidden: !b.hidden }
+      return b
+    })
+    onCommit(updated)
+    onRedraw()
+  }
+
+  function toggleBoxLock(id: string) {
+    const updated = currentBoxes.value.map((b) => {
+      if (b.id === id) return { ...b, locked: !b.locked }
+      return b
+    })
+    onCommit(updated)
+    onRedraw()
+  }
+
+  function toggleAllBoxesVisibility() {
+    const hasVisible = currentBoxes.value.some((b) => !b.hidden)
+    const updated = currentBoxes.value.map((b) => ({ ...b, hidden: hasVisible }))
+    onCommit(updated)
+    onRedraw()
   }
 
   function cancelLasso() {
@@ -356,6 +390,9 @@ export function useBBoxInteraction(options: UseBBoxInteractionOptions) {
     handleBBoxMouseUp,
     updateBoxLabel,
     deleteBox,
+    toggleBoxVisibility,
+    toggleBoxLock,
+    toggleAllBoxesVisibility,
     cancelLasso,
   }
 }

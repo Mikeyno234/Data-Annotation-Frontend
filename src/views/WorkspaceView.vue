@@ -202,25 +202,25 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="mx-auto flex max-w-7xl flex-col gap-5">
-    <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-2xs">
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-xs">
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border">
-          <Button variant="ghost" size="icon" class="size-7 rounded" :disabled="currentIndex <= 0" @click="prevTask">
-            <ChevronLeft class="size-3.5" :stroke-width="1.6" />
+        <div class="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/70 shadow-2xs">
+          <Button variant="ghost" size="icon" class="size-7 rounded-lg" :disabled="currentIndex <= 0" @click="prevTask">
+            <ChevronLeft class="size-4" :stroke-width="1.8" />
           </Button>
-          <span class="text-[11px] text-muted-foreground px-1.5 tabular-nums font-medium">
-            Task <strong class="text-foreground font-semibold">{{ dataItems.length ? currentIndex + 1 : 0 }}</strong>/{{ dataItems.length }}
+          <span class="text-[11px] text-muted-foreground px-2 tabular-nums font-medium">
+            Task <strong class="text-foreground font-bold">{{ dataItems.length ? currentIndex + 1 : 0 }}</strong>/{{ dataItems.length }}
           </span>
-          <Button variant="ghost" size="icon" class="size-7 rounded" :disabled="currentIndex >= dataItems.length - 1" @click="nextTask">
-            <ChevronRight class="size-3.5" :stroke-width="1.6" />
+          <Button variant="ghost" size="icon" class="size-7 rounded-lg" :disabled="currentIndex >= dataItems.length - 1" @click="nextTask">
+            <ChevronRight class="size-4" :stroke-width="1.8" />
           </Button>
         </div>
 
         <div class="hidden min-w-0 items-center gap-3 sm:flex pl-1">
           <div class="min-w-0">
-            <div class="max-w-[22rem] truncate text-xs font-semibold text-foreground tracking-tight">{{ activeItem?.file_name || 'Preparing next task...' }}</div>
-            <div class="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-              <span class="tabular-nums font-medium">#{{ activeItem?.id || '-' }}</span>
+            <div class="max-w-[22rem] truncate text-xs font-bold text-foreground tracking-tight">{{ activeItem?.file_name || 'Preparing next task...' }}</div>
+            <div class="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
+              <span class="tabular-nums font-semibold text-primary">#{{ activeItem?.id || '-' }}</span>
               <span v-if="projectAnnotationType" class="text-border/70">/</span>
               <span v-if="projectAnnotationType" class="max-w-[16rem] truncate font-medium text-foreground/80">{{ projectAnnotationType }}</span>
             </div>
@@ -230,14 +230,14 @@ onBeforeUnmount(() => {
 
       <div class="flex items-center gap-2">
         <span
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border shadow-2xs"
+          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-2xs"
           :class="modalityMeta.badgeClass"
         >
-          <component :is="modalityMeta.icon" class="size-3.5" :stroke-width="1.75" />
+          <component :is="modalityMeta.icon" class="size-3.5" :stroke-width="1.8" />
           <span>{{ modalityMeta.shortLabel }}</span>
         </span>
-        <Button variant="outline" size="sm" class="h-7 px-2 text-[11px] gap-1.5 font-medium" @click="fetchTasks">
-          <RefreshCw class="size-3" :stroke-width="1.6" :class="{ 'animate-spin': isLoading }" />
+        <Button variant="outline" size="sm" class="h-8 px-3 text-xs gap-1.5 font-medium rounded-xl shadow-2xs" @click="fetchTasks">
+          <RefreshCw class="size-3.5" :stroke-width="1.8" :class="{ 'animate-spin': isLoading }" />
           <span class="hidden sm:inline">Refresh</span>
         </Button>
       </div>

@@ -32,7 +32,7 @@ export function usePolygonDrawing(options: UsePolygonDrawingOptions) {
 
   function startPolygonMouseDown(clickX: number, clickY: number, activeTool: string): boolean {
     if (activeTool === 'select') {
-      const found = currentPolygons.value.find((p) => isPointInPolygon({ x: clickX, y: clickY }, p.points))
+      const found = currentPolygons.value.filter((p) => !p.hidden).find((p) => isPointInPolygon({ x: clickX, y: clickY }, p.points))
       selectedItemId.value = found ? found.id : null
       onRedraw()
       return true
@@ -100,11 +100,41 @@ export function usePolygonDrawing(options: UsePolygonDrawingOptions) {
   }
 
   function deletePolygon(id: string) {
+    const target = currentPolygons.value.find((p) => p.id === id)
+    if (target?.locked) {
+      toast.warning('Polygon Locked', 'Unlock this polygon in the outliner before deleting.')
+      return
+    }
     const updated = currentPolygons.value.filter((p) => p.id !== id)
     if (selectedItemId.value === id) selectedItemId.value = null
     onCommit(updated)
     onRedraw()
     toast.info('Annotation item deleted')
+  }
+
+  function togglePolygonVisibility(id: string) {
+    const updated = currentPolygons.value.map((p) => {
+      if (p.id === id) return { ...p, hidden: !p.hidden }
+      return p
+    })
+    onCommit(updated)
+    onRedraw()
+  }
+
+  function togglePolygonLock(id: string) {
+    const updated = currentPolygons.value.map((p) => {
+      if (p.id === id) return { ...p, locked: !p.locked }
+      return p
+    })
+    onCommit(updated)
+    onRedraw()
+  }
+
+  function toggleAllPolygonsVisibility() {
+    const hasVisible = currentPolygons.value.some((p) => !p.hidden)
+    const updated = currentPolygons.value.map((p) => ({ ...p, hidden: hasVisible }))
+    onCommit(updated)
+    onRedraw()
   }
 
   function updatePolygonLabel(id: string, newLabel: string, newColor: string) {
@@ -128,6 +158,9 @@ export function usePolygonDrawing(options: UsePolygonDrawingOptions) {
     popLastPoint,
     cancelPolygon,
     deletePolygon,
+    togglePolygonVisibility,
+    togglePolygonLock,
+    toggleAllPolygonsVisibility,
     updatePolygonLabel,
   }
 }

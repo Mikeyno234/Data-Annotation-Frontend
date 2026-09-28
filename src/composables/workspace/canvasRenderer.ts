@@ -47,17 +47,23 @@ export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanv
   // 2. Bounding Boxes Layer
   if (c.subtype === 'bbox') {
     c.boxes.forEach((box) => {
+      if (box.hidden) return // Respect outliner visibility toggle
       const isSelected = box.id === c.selectedItemId
       const color = box.color || '#38bdf8'
       ctx.fillStyle = isSelected ? `${color}33` : `${color}1a`
       ctx.fillRect(box.x, box.y, box.width, box.height)
       ctx.strokeStyle = isSelected ? '#ffffff' : color
       ctx.lineWidth = (isSelected ? 2.5 : 1.8) / c.zoomScale
+      if (box.locked && !isSelected) {
+        ctx.setLineDash([3 / c.zoomScale, 2 / c.zoomScale])
+      }
       ctx.strokeRect(box.x, box.y, box.width, box.height)
+      ctx.setLineDash([])
 
+      const displayLabel = box.locked ? `${box.label} 🔒` : box.label
       const badgeH = 15 / c.zoomScale
       const fontSize = Math.max(9 / c.zoomScale, 7.5)
-      const badgeW = Math.max((box.label.length * 6.2 + 8) / c.zoomScale, 32 / c.zoomScale)
+      const badgeW = Math.max((displayLabel.length * 6.2 + 8) / c.zoomScale, 32 / c.zoomScale)
       const bx = box.x
       const by = box.y > badgeH + 2 / c.zoomScale ? box.y - badgeH - 1 / c.zoomScale : box.y + 1 / c.zoomScale
 
@@ -76,9 +82,9 @@ export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanv
       }
       ctx.fillStyle = '#ffffff'
       ctx.font = `600 ${fontSize}px Inter, -apple-system, sans-serif`
-      ctx.fillText(box.label, bx + 4 / c.zoomScale, by + badgeH - 3.5 / c.zoomScale)
+      ctx.fillText(displayLabel, bx + 4 / c.zoomScale, by + badgeH - 3.5 / c.zoomScale)
 
-      if (isSelected) {
+      if (isSelected && !box.locked) {
         const handleR = 4 / c.zoomScale
         getBoxHandles(box).forEach((h) => {
           ctx.fillStyle = '#ffffff'
@@ -107,6 +113,7 @@ export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanv
   // 3. Polygons Layer
   if (c.subtype === 'polygon') {
     c.polygons.forEach((poly) => {
+      if (poly.hidden) return // Respect outliner visibility toggle
       if (!poly.points || poly.points.length < 3) return
       const isSelected = poly.id === c.selectedItemId
       const color = poly.color || '#38bdf8'
@@ -119,7 +126,11 @@ export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanv
       ctx.fill()
       ctx.strokeStyle = isSelected ? '#ffffff' : color
       ctx.lineWidth = (isSelected ? 2.5 : 1.8) / c.zoomScale
+      if (poly.locked && !isSelected) {
+        ctx.setLineDash([3 / c.zoomScale, 2 / c.zoomScale])
+      }
       ctx.stroke()
+      ctx.setLineDash([])
 
       poly.points.forEach((pt) => {
         ctx.fillStyle = isSelected ? '#ffffff' : color
@@ -129,9 +140,10 @@ export function renderCanvasWorkspace(ctx: CanvasRenderingContext2D, c: DrawCanv
       })
 
       const p0 = poly.points[0]
+      const displayLabel = poly.locked ? `${poly.label} 🔒` : poly.label
       const badgeH = 15 / c.zoomScale
       const fontSize = Math.max(9 / c.zoomScale, 7.5)
-      const badgeW = Math.max((poly.label.length * 6.2 + 8) / c.zoomScale, 32 / c.zoomScale)
+      const badgeW = Math.max((displayLabel.length * 6.2 + 8) / c.zoomScale, 32 / c.zoomScale)
       const bx = p0.x
       const by = p0.y > badgeH + 2 / c.zoomScale ? p0.y - badgeH - 1 / c.zoomScale : p0.y + 1 / c.zoomScale
 
