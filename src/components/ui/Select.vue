@@ -57,12 +57,12 @@ const selectedOption = computed(() =>
 const sizeClasses = computed(() => {
   switch (props.size) {
     case 'sm':
-      return 'h-8 px-2.5 py-1 text-xs rounded-md'
+      return 'min-h-8.5 px-3 py-1.5 text-xs rounded-xl'
     case 'lg':
-      return 'h-10 px-3.5 py-2 text-sm rounded-xl'
+      return 'min-h-10.5 px-4 py-2.5 text-sm rounded-xl'
     case 'default':
     default:
-      return 'h-9 px-3 py-1.5 text-xs rounded-lg'
+      return 'min-h-9 px-3.5 py-2 text-xs rounded-xl'
   }
 })
 

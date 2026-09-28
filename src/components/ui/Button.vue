@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const buttonClasses = computed(() => {
-  const base = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-xs font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer tracking-normal active:scale-[0.98]'
+  const base = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-xs font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer tracking-normal active:scale-[0.98]'
 
   const variants = {
     default: 'bg-primary text-primary-foreground border border-primary/50 hover:bg-primary/90 shadow-xs',
@@ -31,10 +31,10 @@ const buttonClasses = computed(() => {
   }
 
   const sizes = {
-    default: 'h-9 px-3.5 py-1.5',
-    sm: 'h-7.5 rounded-md px-2.5 text-[11px]',
-    lg: 'h-10 rounded-lg px-5 text-sm',
-    icon: 'size-8.5 p-0 rounded-lg',
+    default: 'min-h-9 px-4 py-2 text-xs',
+    sm: 'min-h-8.5 px-3.5 py-1.5 rounded-xl text-xs',
+    lg: 'min-h-10.5 px-5 py-2.5 rounded-xl text-sm',
+    icon: 'size-9 p-0 rounded-xl',
   }
 
   return cn(base, variants[props.variant], sizes[props.size], props.className)
